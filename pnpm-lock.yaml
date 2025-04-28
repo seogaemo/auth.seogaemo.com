@@ -27,6 +27,9 @@ importers:
       '@opennextjs/cloudflare':
         specifier: ~1.0.0-beta.0 || ^1.0.0
         version: 1.0.0-beta.3(wrangler@4.13.2(@cloudflare/workers-types@4.20250428.0))
+      '@seogaemo/ds-tailwind':
+        specifier: ^1.0.14
+        version: 1.0.14(tailwindcss@4.1.4)
       '@tailwindcss/postcss':
         specifier: ^4
         version: 4.1.4
@@ -45,6 +48,9 @@ importers:
       eslint-config-next:
         specifier: 15.3.1
         version: 15.3.1(eslint@9.25.1(jiti@2.4.2))(typescript@5.8.3)
+      tailwind-scrollbar-hide:
+        specifier: ^2.0.0
+        version: 2.0.0(tailwindcss@4.1.4)
       tailwindcss:
         specifier: ^4
         version: 4.1.4
@@ -1168,6 +1174,11 @@ packages:
 
   '@rushstack/eslint-patch@1.11.0':
     resolution: {integrity: sha512-zxnHvoMQVqewTJr/W4pKjF0bMGiKJv1WX7bSrkl46Hg0QjESbzBROWK0Wg4RphzSOS5Jiy7eFimmM3UgMrMZbQ==}
+
+  '@seogaemo/ds-tailwind@1.0.14':
+    resolution: {integrity: sha512-GISFtqhJnryPe2uEK8wqR8JCq7B8wO2VF7hDzz371Ctgr5SmJ+JYkh4cY2mX7OVVK3zB6zcGAo2KbU5VoTIT1g==}
+    peerDependencies:
+      tailwindcss: ^3.0.0
 
   '@smithy/abort-controller@2.2.0':
     resolution: {integrity: sha512-wRlta7GuLWpTqtFfGo+nZyOO1vEvewdNR1R4rTxpC8XU6vG/NDyrFBhwLZsqg1NUoR1noVaXJPC/7ZK47QCySw==}
@@ -3318,6 +3329,11 @@ packages:
     resolution: {integrity: sha512-ot0WnXS9fgdkgIcePe6RHNk1WA8+muPa6cSjeR3V8K27q9BB1rTE3R1p7Hv0z1ZyAc8s6Vvv8DIyWf681MAt0w==}
     engines: {node: '>= 0.4'}
 
+  tailwind-scrollbar-hide@2.0.0:
+    resolution: {integrity: sha512-lqiIutHliEiODwBRHy4G2+Tcayo2U7+3+4frBmoMETD72qtah+XhOk5XcPzC1nJvXhXUdfl2ajlMhUc2qC6CIg==}
+    peerDependencies:
+      tailwindcss: '>=3.0.0 || >= 4.0.0 || >= 4.0.0-beta.8 || >= 4.0.0-alpha.20'
+
   tailwindcss@4.1.4:
     resolution: {integrity: sha512-1ZIUqtPITFbv/DxRmDr5/agPqJwF69d24m9qmM1939TJehgY539CtzeZRjbLt5G6fSy/7YqqYsfvoTEw9xUI2A==}
 
@@ -5082,6 +5098,10 @@ snapshots:
   '@rtsao/scc@1.1.0': {}
 
   '@rushstack/eslint-patch@1.11.0': {}
+
+  '@seogaemo/ds-tailwind@1.0.14(tailwindcss@4.1.4)':
+    dependencies:
+      tailwindcss: 4.1.4
 
   '@smithy/abort-controller@2.2.0':
     dependencies:
@@ -7711,6 +7731,10 @@ snapshots:
       has-flag: 4.0.0
 
   supports-preserve-symlinks-flag@1.0.0: {}
+
+  tailwind-scrollbar-hide@2.0.0(tailwindcss@4.1.4):
+    dependencies:
+      tailwindcss: 4.1.4
 
   tailwindcss@4.1.4: {}
 
