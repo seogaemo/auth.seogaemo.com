@@ -22,6 +22,13 @@
       "pattern": "auth.seogaemo.com",
       "custom_domain": true
     }
+  ],
+	"d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "db.auth.seogaemo.com",
+      "database_id": "170e7f8e-2caa-416e-a969-ff22e7ccc3a9"
+    }
   ]
 	/**
 	 * Smart Placement
