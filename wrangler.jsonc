@@ -35,7 +35,7 @@
       "binding": "R2",
       "bucket_name": "r2-auth-seogaemo-com"
     }
-  ]
+  ],
 	/**
 	 * Smart Placement
 	 * Docs: https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
@@ -53,7 +53,10 @@
 	 * Environment Variables
 	 * https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables
 	 */
-	// "vars": { "MY_VARIABLE": "production_value" },
+	"vars": {
+		"ACCESS_TOKEN_SECRET": "66630d3675592013ae8bb8198da1a7b3",
+		"REFRESH_TOKEN_SECRET": "ae8f68c25ec28dd96ce149f22663d08c"
+	},
 	/**
 	 * Note: Use secrets to store sensitive data.
 	 * https://developers.cloudflare.com/workers/configuration/secrets/
