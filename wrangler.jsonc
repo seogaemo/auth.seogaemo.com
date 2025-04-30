@@ -29,6 +29,12 @@
       "database_name": "db.auth.seogaemo.com",
       "database_id": "170e7f8e-2caa-416e-a969-ff22e7ccc3a9"
     }
+  ],
+	"r2_buckets": [
+    {
+      "binding": "R2",
+      "bucket_name": "r2-auth-seogaemo-com"
+    }
   ]
 	/**
 	 * Smart Placement
