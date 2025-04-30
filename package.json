@@ -9,10 +9,15 @@
 		"lint": "next lint",
 		"deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
 		"preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-		"cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
+		"cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
+		"db:generate": "prisma migrate diff --script --from-empty --to-schema-datamodel ./prisma/schema.prisma --output migrations/migration.sql",
+		"db:migrate:local": "wrangler d1 migrations apply db.auth.seogaemo.com --local",
+		"db:migrate:remote": "wrangler d1 migrations apply db.auth.seogaemo.com --remote"
 	},
 	"dependencies": {
-		"@auth/d1-adapter": "^1.9.0",
+		"@prisma/adapter-d1": "^6.4.1",
+		"@prisma/client": "^6.4.1",
+		"dotenv": "^16.5.0",
 		"next": "15.3.1",
 		"react": "^19.0.0",
 		"react-dom": "^19.0.0"
@@ -28,6 +33,7 @@
 		"@types/react-dom": "^19",
 		"eslint": "^9",
 		"eslint-config-next": "15.3.1",
+		"prisma": "^6.4.1",
 		"tailwind-scrollbar-hide": "^2.0.0",
 		"tailwindcss": "^3.0.0",
 		"typescript": "^5",
