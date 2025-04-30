@@ -9,10 +9,10 @@ importers:
   .:
     dependencies:
       '@prisma/adapter-d1':
-        specifier: ^6.4.1
+        specifier: ^6.7.0
         version: 6.7.0
       '@prisma/client':
-        specifier: ^6.4.1
+        specifier: ^6.7.0
         version: 6.7.0(prisma@6.7.0(typescript@5.8.3))(typescript@5.8.3)
       dotenv:
         specifier: ^16.5.0
@@ -37,8 +37,8 @@ importers:
         specifier: ~1.0.0-beta.0 || ^1.0.0
         version: 1.0.0-beta.3(wrangler@4.13.2(@cloudflare/workers-types@4.20250428.0))
       '@seogaemo/ds-tailwind':
-        specifier: ^1.0.14
-        version: 1.0.14(tailwindcss@3.4.17)
+        specifier: ^1.0.16
+        version: 1.0.16(tailwindcss@3.4.17)
       '@tailwindcss/postcss':
         specifier: ^4
         version: 4.1.4
@@ -58,13 +58,13 @@ importers:
         specifier: 15.3.1
         version: 15.3.1(eslint@9.25.1(jiti@2.4.2))(typescript@5.8.3)
       prisma:
-        specifier: ^6.4.1
+        specifier: ^6.7.0
         version: 6.7.0(typescript@5.8.3)
       tailwind-scrollbar-hide:
         specifier: ^2.0.0
         version: 2.0.0(tailwindcss@3.4.17)
       tailwindcss:
-        specifier: ^3.0.0
+        specifier: ^3.4.1
         version: 3.4.17
       typescript:
         specifier: ^5
@@ -1230,8 +1230,8 @@ packages:
   '@rushstack/eslint-patch@1.11.0':
     resolution: {integrity: sha512-zxnHvoMQVqewTJr/W4pKjF0bMGiKJv1WX7bSrkl46Hg0QjESbzBROWK0Wg4RphzSOS5Jiy7eFimmM3UgMrMZbQ==}
 
-  '@seogaemo/ds-tailwind@1.0.14':
-    resolution: {integrity: sha512-GISFtqhJnryPe2uEK8wqR8JCq7B8wO2VF7hDzz371Ctgr5SmJ+JYkh4cY2mX7OVVK3zB6zcGAo2KbU5VoTIT1g==}
+  '@seogaemo/ds-tailwind@1.0.16':
+    resolution: {integrity: sha512-8FjE53kAlsKb5oBB2x9HCATB5pfbGvBjVWZN0VMq1Mhv4BphQgeAt6yp7yKPtUEIdpbm4HeJjSF27OKP7T0Ldg==}
     peerDependencies:
       tailwindcss: ^3.0.0
 
@@ -5366,7 +5366,7 @@ snapshots:
 
   '@rushstack/eslint-patch@1.11.0': {}
 
-  '@seogaemo/ds-tailwind@1.0.14(tailwindcss@3.4.17)':
+  '@seogaemo/ds-tailwind@1.0.16(tailwindcss@3.4.17)':
     dependencies:
       tailwindcss: 3.4.17
 
