@@ -8,8 +8,14 @@ datasource db {
 }
 
 model Service {
-  id        Int      @id @default(autoincrement())
-  name      String
+  id       Int     @id @default(autoincrement())
+  uuid     String  @unique @default(uuid())
+  name     String
+  image    String?
+  provider Json    @default("[]")
+
+  User User[]
+
   createdAt DateTime @default(now())
 }
 
@@ -17,4 +23,11 @@ model User {
   id    Int     @id @default(autoincrement())
   email String  @unique
   name  String?
+
+  serviceId Int
+  service   Service @relation(fields: [serviceId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([serviceId, email])
 }
