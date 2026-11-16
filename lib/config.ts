@@ -43,6 +43,8 @@ export const LIMITS = {
 export const LOGIN_TX_COOKIE = "sg_login_tx";
 /** 인증 코드 입력 단계에서 어떤 코드(EmailCode.id)를 확인 중인지 */
 export const EMAIL_CODE_COOKIE = "sg_email_code";
+/** 첫 단계에서 입력한 이메일. 비밀번호, 가입, 재설정 단계가 이어 받는다 */
+export const LOGIN_EMAIL_COOKIE = "sg_login_email";
 
 /** 콘솔 자신도 이 SSO의 서비스다 (migrations/0002_console_service.sql) */
 export const CONSOLE_CLIENT_ID = "seogaemo-console";

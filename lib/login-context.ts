@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { LOGIN_TX_COOKIE, type Provider } from "./config";
+import { LOGIN_EMAIL_COOKIE, LOGIN_TX_COOKIE, type Provider } from "./config";
 import { isProviderConfigured } from "./oauth/providers";
 import { findActiveTransaction } from "./oauth/transaction";
 import { getProviders } from "./service";
@@ -22,4 +22,9 @@ export async function loadLoginContext(require?: Provider) {
     providers,
     logoUrl: service.logoKey ? `/service-logo/${service.id}` : null,
   };
+}
+
+/** 첫 단계에서 입력한 이메일 (화면에 미리 채우는 용도) */
+export async function loadLoginEmail() {
+  return (await cookies()).get(LOGIN_EMAIL_COOKIE)?.value ?? undefined;
 }

@@ -3,9 +3,10 @@
 import { useActionState, useEffect, useState, useTransition } from "react";
 
 import {
+  continueWithEmail,
+  emailCodeInstead,
   passwordLogin,
   resendCode,
-  startEmailLogin,
   startReset,
   startSignup,
   verifyCode,
@@ -21,8 +22,9 @@ function useNavigate(state: LoginFormState) {
   return Boolean(state?.redirectTo);
 }
 
-export function PasswordLoginForm({ canSignup }: { canSignup: boolean }) {
-  const [state, action, pending] = useActionState<LoginFormState, FormData>(passwordLogin, null);
+/** 첫 단계: 이메일만 받는다. 다음 화면은 서버가 계정에 맞춰 고른다. */
+export function EmailStartForm({ defaultEmail, canSignup }: { defaultEmail?: string; canSignup: boolean }) {
+  const [state, action, pending] = useActionState<LoginFormState, FormData>(continueWithEmail, null);
   const navigating = useNavigate(state);
 
   return (
@@ -35,9 +37,32 @@ export function PasswordLoginForm({ canSignup }: { canSignup: boolean }) {
         type="email"
         autoComplete="username"
         required
-        defaultValue={state?.email}
+        defaultValue={state?.email ?? defaultEmail}
         placeholder="name@example.com"
       />
+      <div className="pt-1">
+        <LoginButton type="submit" disabled={pending || navigating}>
+          {pending ? "확인 중" : "계속하기"}
+        </LoginButton>
+      </div>
+      {canSignup && (
+        <div className="flex justify-end pt-1">
+          <LoginTextLink href="/login/signup">회원가입 →</LoginTextLink>
+        </div>
+      )}
+    </form>
+  );
+}
+
+/** 비밀번호 단계. 이메일은 첫 단계에서 받았고, 비밀번호 관리자를 위해 숨은 칸으로 다시 둔다. */
+export function PasswordLoginForm({ email }: { email: string }) {
+  const [state, action, pending] = useActionState<LoginFormState, FormData>(passwordLogin, null);
+  const navigating = useNavigate(state);
+
+  return (
+    <form action={action} className="flex flex-col gap-3">
+      <LoginError>{state?.error}</LoginError>
+      <input type="email" name="username" autoComplete="username" value={email} readOnly hidden />
       <LoginField
         label="비밀번호"
         id="password"
@@ -45,21 +70,36 @@ export function PasswordLoginForm({ canSignup }: { canSignup: boolean }) {
         type="password"
         autoComplete="current-password"
         required
+        autoFocus
       />
       <div className="pt-1">
         <LoginButton type="submit" disabled={pending || navigating}>
           {pending ? "확인 중" : "로그인"}
         </LoginButton>
       </div>
-      <div className="flex items-center justify-between pt-1">
+      <div className="flex justify-end pt-1">
         <LoginTextLink href="/login/reset">비밀번호를 잊으셨나요?</LoginTextLink>
-        {canSignup && <LoginTextLink href="/login/signup">회원가입 →</LoginTextLink>}
       </div>
     </form>
   );
 }
 
-export function SignupForm() {
+/** 비밀번호 대신 같은 이메일로 코드를 받는다 */
+export function EmailCodeInsteadForm() {
+  const [state, action, pending] = useActionState<LoginFormState, FormData>(emailCodeInstead, null);
+  const navigating = useNavigate(state);
+
+  return (
+    <form action={action} className="flex flex-col gap-3">
+      <LoginError>{state?.error}</LoginError>
+      <LoginButton type="submit" variant="secondary" icon="/icons/mail.svg" disabled={pending || navigating}>
+        {pending ? "메일 보내는 중" : "이메일 코드로 로그인"}
+      </LoginButton>
+    </form>
+  );
+}
+
+export function SignupForm({ defaultEmail }: { defaultEmail?: string }) {
   const [state, action, pending] = useActionState<LoginFormState, FormData>(startSignup, null);
   const navigating = useNavigate(state);
 
@@ -73,7 +113,7 @@ export function SignupForm() {
         type="email"
         autoComplete="email"
         required
-        defaultValue={state?.email}
+        defaultValue={state?.email ?? defaultEmail}
         placeholder="name@example.com"
       />
       <LoginField
@@ -95,12 +135,9 @@ export function SignupForm() {
   );
 }
 
-/** 이메일만 받아 코드를 보낸다 (이메일 코드 로그인, 비밀번호 재설정) */
-export function EmailCodeRequestForm({ purpose }: { purpose: "login" | "reset" }) {
-  const [state, action, pending] = useActionState<LoginFormState, FormData>(
-    purpose === "login" ? startEmailLogin : startReset,
-    null,
-  );
+/** 비밀번호 재설정: 이메일을 받아 코드를 보낸다 */
+export function ResetRequestForm({ defaultEmail }: { defaultEmail?: string }) {
+  const [state, action, pending] = useActionState<LoginFormState, FormData>(startReset, null);
   const navigating = useNavigate(state);
 
   return (
@@ -113,7 +150,7 @@ export function EmailCodeRequestForm({ purpose }: { purpose: "login" | "reset" }
         type="email"
         autoComplete="email"
         required
-        defaultValue={state?.email}
+        defaultValue={state?.email ?? defaultEmail}
         placeholder="name@example.com"
       />
       <div className="pt-1">

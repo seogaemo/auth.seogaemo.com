@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 
 import {
   EMAIL_CODE_COOKIE,
+  LOGIN_EMAIL_COOKIE,
   LOGIN_TX_COOKIE,
   TTL,
   type Provider,
@@ -77,6 +78,78 @@ async function complete(
   navigate(url);
 }
 
+/** 첫 단계에서 입력한 이메일을 다음 단계로 넘긴다 */
+async function rememberEmail(email: string) {
+  (await cookies()).set(LOGIN_EMAIL_COOKIE, email, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "lax",
+    path: "/login",
+    maxAge: TTL.emailCodeMs / 1000,
+  });
+}
+
+async function savedEmail() {
+  return normalizeEmail((await cookies()).get(LOGIN_EMAIL_COOKIE)?.value ?? null);
+}
+
+function enabledProviders(transaction: NonNullable<Awaited<ReturnType<typeof currentTransaction>>>) {
+  return getProviders(transaction.service).filter(isProviderConfigured);
+}
+
+async function sendLoginCodeTo(
+  transaction: NonNullable<Awaited<ReturnType<typeof currentTransaction>>>,
+  email: string,
+): Promise<LoginFormState> {
+  const result = await sendEmailCode({
+    service: transaction.service,
+    transaction,
+    purpose: "login",
+    email,
+  });
+  if (!result.ok) return { error: result.error, email };
+  await goToVerify(result.codeId);
+  return null;
+}
+
+/**
+ * 첫 단계: 이메일만 받고 다음 화면을 고른다.
+ * 비밀번호가 있는 계정이면 비밀번호 화면, 아니면 이메일 코드(꺼져 있으면 가입 화면).
+ */
+export async function continueWithEmail(
+  _prev: LoginFormState,
+  form: FormData,
+): Promise<LoginFormState> {
+  return run(async () => {
+    const transaction = await currentTransaction();
+    if (!transaction) navigate("/login/error?code=expired");
+    const providers = enabledProviders(transaction);
+    const passwordOn = providers.includes("password");
+    const emailOn = providers.includes("email");
+    if (!passwordOn && !emailOn) navigate("/login");
+
+    const email = normalizeEmail(form.get("email"));
+    if (!email) return { error: "이메일 주소를 확인하세요." };
+    await rememberEmail(email);
+
+    if (passwordOn && (await hasPasswordAccount(transaction.serviceId, email))) {
+      navigate("/login/password");
+    }
+    if (emailOn) return sendLoginCodeTo(transaction, email);
+    navigate("/login/signup");
+  });
+}
+
+/** 비밀번호 화면의 "이메일 코드로 로그인" */
+export async function emailCodeInstead(): Promise<LoginFormState> {
+  return run(async () => {
+    const transaction = await requireLogin("email");
+    const email = await savedEmail();
+    if (!email) navigate("/login");
+    return sendLoginCodeTo(transaction, email);
+  });
+}
+
 async function goToVerify(codeId: string) {
   (await cookies()).set(EMAIL_CODE_COOKIE, codeId, {
     httpOnly: true,
@@ -94,10 +167,10 @@ export async function passwordLogin(
 ): Promise<LoginFormState> {
   return run(async () => {
     const transaction = await requireLogin("password");
-    const email = normalizeEmail(form.get("email"));
+    const email = await savedEmail();
+    if (!email) navigate("/login");
     const password = String(form.get("password") ?? "");
-    if (!email || !password)
-      return { error: "이메일과 비밀번호를 입력하세요.", email: email ?? "" };
+    if (!password) return { error: "비밀번호를 입력하세요." };
 
     const result = await loginWithPassword(
       transaction.serviceId,
@@ -121,6 +194,7 @@ export async function startSignup(
     const password = String(form.get("password") ?? "");
     if (!email) return { error: "이메일 주소를 확인하세요." };
 
+    await rememberEmail(email);
     const rule = checkPasswordRule(password);
     if (rule) return { error: rule, email };
     if (await hasPasswordAccount(transaction.serviceId, email)) {
@@ -137,27 +211,6 @@ export async function startSignup(
       purpose: "signup",
       email,
       pendingPasswordHash: await hashPassword(password),
-    });
-    if (!result.ok) return { error: result.error, email };
-    await goToVerify(result.codeId);
-    return null;
-  });
-}
-
-export async function startEmailLogin(
-  _prev: LoginFormState,
-  form: FormData,
-): Promise<LoginFormState> {
-  return run(async () => {
-    const transaction = await requireLogin("email");
-    const email = normalizeEmail(form.get("email"));
-    if (!email) return { error: "이메일 주소를 확인하세요." };
-
-    const result = await sendEmailCode({
-      service: transaction.service,
-      transaction,
-      purpose: "login",
-      email,
     });
     if (!result.ok) return { error: result.error, email };
     await goToVerify(result.codeId);
