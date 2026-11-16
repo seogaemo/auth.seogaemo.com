@@ -1,7 +1,8 @@
 import type { Service } from "@prisma/client";
 
 import { getPrisma } from "@/cloudflare";
-import { hashSecret, verifyPkce } from "@/lib/crypto";
+import { hashSecret } from "@/lib/crypto";
+import { consumeAuthorizationCode } from "@/lib/oauth/codes";
 import { authenticateClient, json, oauthError, preflight, readForm } from "@/lib/oauth/http";
 import { issueTokens, revokeAllRefreshTokens } from "@/lib/oauth/tokens";
 
@@ -37,39 +38,10 @@ async function exchangeAuthorizationCode(service: Service, form: URLSearchParams
     return oauthError("invalid_request", "code, redirect_uri and code_verifier are required");
   }
 
-  const prisma = getPrisma();
-  const codeHash = await hashSecret(code);
-  const record = await prisma.authorizationCode.findUnique({
-    where: { codeHash },
-    include: { user: true },
-  });
+  const result = await consumeAuthorizationCode(service, { code, redirectUri, codeVerifier });
+  if (!result.ok) return oauthError(result.error, result.description);
 
-  if (!record || record.serviceId !== service.id) {
-    return oauthError("invalid_grant", "invalid authorization code");
-  }
-
-  if (record.usedAt) {
-    // 같은 code가 두 번 쓰였다면 탈취를 의심하고, 그 code로 받은 토큰을 다 끊는다 (RFC 6749 4.1.2)
-    await revokeAllRefreshTokens(record.serviceId, record.userId);
-    return oauthError("invalid_grant", "authorization code was already used");
-  }
-  if (record.expiresAt < new Date()) {
-    return oauthError("invalid_grant", "authorization code expired");
-  }
-  if (record.redirectUri !== redirectUri) {
-    return oauthError("invalid_grant", "redirect_uri does not match");
-  }
-  if (!(await verifyPkce(codeVerifier, record.codeChallenge))) {
-    return oauthError("invalid_grant", "code_verifier does not match");
-  }
-
-  // 동시에 두 요청이 들어와도 하나만 성공하게 조건부로 표시한다
-  const { count } = await prisma.authorizationCode.updateMany({
-    where: { codeHash, usedAt: null },
-    data: { usedAt: new Date() },
-  });
-  if (count !== 1) return oauthError("invalid_grant", "authorization code was already used");
-
+  const { record } = result;
   return json(
     await issueTokens({ service, user: record.user, scope: record.scope, nonce: record.nonce }),
   );

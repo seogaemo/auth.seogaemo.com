@@ -1,7 +1,7 @@
 import type { Service } from "@prisma/client";
 
 import { getPrisma } from "@/cloudflare";
-import { isProvider, type Provider } from "./config";
+import { endpoint, isProvider, type Provider } from "./config";
 import { hashSecret, timingSafeEqual } from "./crypto";
 
 function stringArray(value: unknown): string[] {
@@ -18,6 +18,8 @@ export function getProviders(service: Service): Provider[] {
 
 /** 등록된 값과 문자 하나까지 같아야 한다 (RFC 6749 3.1.2, OAuth 2.1). */
 export function isRegisteredRedirectUri(service: Service, redirectUri: string) {
+  // 콘솔의 콜백 주소는 환경(로컬, 운영)마다 다르므로 issuer 기준으로 정한다
+  if (service.isSystem) return redirectUri === endpoint("/console/callback");
   return getRedirectUris(service).includes(redirectUri);
 }
 

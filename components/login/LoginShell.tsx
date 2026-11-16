@@ -18,10 +18,20 @@ function brandingStyle({ brandColor, brandBackground }: Branding): CSSProperties
 }
 
 /** 브랜드 색 그리드 배경 + 가운데 카드 (DESIGN.md 4.1) */
-export function LoginShell({ branding = {}, children }: { branding?: Branding; children: ReactNode }) {
+export function LoginShell({
+  branding = {},
+  preview = false,
+  children,
+}: {
+  branding?: Branding;
+  /** 콘솔 미리보기용. 화면 전체가 아니라 상자 안에 그린다. */
+  preview?: boolean;
+  children: ReactNode;
+}) {
+  const Root = preview ? "div" : "main";
   return (
-    <main
-      className="login-grid flex min-h-dvh items-center justify-center px-4 py-12"
+    <Root
+      className={`login-grid flex items-center justify-center px-4 py-12 ${preview ? "rounded-lg" : "min-h-dvh"}`}
       style={brandingStyle(branding)}
     >
       <div className="flex w-full max-w-[480px] flex-col gap-8 break-keep border-8 border-login-brand-strong bg-white p-6">
@@ -31,6 +41,6 @@ export function LoginShell({ branding = {}, children }: { branding?: Branding; c
           <img src="/brand/seogaemo-wordmark.svg" alt="Seogaemo" width={107} height={24} />
         </footer>
       </div>
-    </main>
+    </Root>
   );
 }

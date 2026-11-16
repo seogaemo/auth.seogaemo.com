@@ -14,17 +14,18 @@ const STYLES: Record<Provider, { label: string; icon: string; className: string 
   },
 };
 
-export function ProviderButton({ provider }: { provider: Provider }) {
+export function ProviderButton({ provider, preview = false }: { provider: Provider; preview?: boolean }) {
   const { label, icon, className } = STYLES[provider];
+  const Root = preview ? "span" : "a";
 
   return (
-    <a
-      href={`/oauth/provider/${provider}/start`}
+    <Root
+      href={preview ? undefined : `/oauth/provider/${provider}/start`}
       className={`flex h-16 w-full items-center justify-center gap-2 rounded px-4 font-mono text-[18px] font-[500] tracking-[-0.02em] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-login-brand focus-visible:ring-offset-2 ${className}`}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={icon} alt="" width={24} height={24} className="size-6" />
       {label}
-    </a>
+    </Root>
   );
 }

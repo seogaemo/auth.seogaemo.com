@@ -11,9 +11,15 @@ export const TTL = {
   authorizationCodeMs: 5 * 60 * 1000,
   refreshTokenMs: 30 * 24 * 60 * 60 * 1000,
   accessTokenSec: 60 * 60,
+  consoleSessionSec: 7 * 24 * 60 * 60,
 } as const;
 
 export const LOGIN_TX_COOKIE = "sg_login_tx";
+
+/** 콘솔 자신도 이 SSO의 서비스다 (migrations/0002_console_service.sql) */
+export const CONSOLE_CLIENT_ID = "seogaemo-console";
+export const CONSOLE_SESSION_COOKIE = "sg_console";
+export const CONSOLE_LOGIN_COOKIE = "sg_console_login";
 
 export function isProvider(value: string): value is Provider {
   return (PROVIDERS as readonly string[]).includes(value);

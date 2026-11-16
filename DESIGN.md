@@ -65,6 +65,10 @@ Figma 파일(`idaas.seogaemo.com`)은 아주 초기 초안이다. 이 문서는 
 
 **테두리**: `border-base` (gray-200)가 기본이다.
 
+**주의: 글자색은 상속되지 않는다.** DS가 base 스타일로 모든 요소(`*`)에 `color: var(--content-primary)`를 직접 건다. 그래서 부모에 `text-quaternary`를 줘도 자식 요소(`<th>`, `<span>` 등)는 primary가 된다. 글자색은 글자를 가진 요소에 직접 준다.
+
+**주의: Tailwind 기본 스케일이 없다.** DS preset이 `fontSize`, `fontWeight`, `fontFamily`, `colors`를 통째로 바꾼다. `text-lg`, `font-medium`, `text-gray-500` 같은 기본 클래스는 생성되지 않으니 DS 이름(`text-title`, `font-strong`, `text-tertiary`)을 쓴다. 로그인 화면처럼 DS 밖의 값이 필요하면 `text-[18px]`, `font-[500]`처럼 임의 값을 쓴다.
+
 **다크모드**: DS는 `:root[data-theme='dark']`로 토큰을 바꾼다. 위 토큰만 쓰면 다크모드가 자동으로 따라온다. `prefers-color-scheme`에 따라 `data-theme`을 넣어주는 코드는 따로 만들어야 한다.
 
 ### 3.2 타이포 (DS 스케일)

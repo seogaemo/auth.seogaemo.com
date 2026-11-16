@@ -14,9 +14,16 @@ const row = (id, clientId, secretHash, name) =>
   `INSERT OR REPLACE INTO "Service" ("id","clientId","clientSecretHash","name","redirectUris","providers","isSystem","createdAt","updatedAt") ` +
   `VALUES ('${id}','${clientId}','${secretHash}','${name}','${redirectUris}','${providers}',false,'${now}','${now}');`;
 
+// 콘솔용 개발자 (시스템 서비스 svc_console의 사용자). 테스트 서비스들의 소유자다.
+const developer =
+  `INSERT OR IGNORE INTO "User" ("id","email","name","serviceId","createdAt") ` +
+  `VALUES ('usr_dev_owner','dev@example.com','Dev','svc_console','${now}');`;
+
 const sql = [
+  developer,
   row("svc_dev", "dev-client", sha256("dev-secret"), "Dev Service"),
   row("svc_dev_public", "dev-public", "", "Dev Public App"),
+  `UPDATE "Service" SET "ownerId" = 'usr_dev_owner' WHERE "id" IN ('svc_dev','svc_dev_public');`,
 ].join("\n");
 
 execFileSync(

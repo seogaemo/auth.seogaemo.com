@@ -89,6 +89,7 @@ async function loadKeys(source: string): Promise<SigningKeys> {
 async function sign(
   { sub, aud, ...rest }: JWTPayload & { sub: string; aud: string },
   typ: string,
+  expiresInSec: number = TTL.accessTokenSec,
 ) {
   const { kid, privateKey } = await getSigningKeys();
 
@@ -98,7 +99,7 @@ async function sign(
     .setSubject(sub)
     .setAudience(aud)
     .setIssuedAt()
-    .setExpirationTime(`${TTL.accessTokenSec}s`)
+    .setExpirationTime(`${expiresInSec}s`)
     .sign(privateKey);
 }
 
@@ -121,6 +122,32 @@ export async function verifyAccessToken(token: string, audience?: string) {
   });
 
   return payload;
+}
+
+const CONSOLE_SESSION_TYP = "console-session+jwt";
+
+function consoleAudience() {
+  return `${getIssuer()}/console`;
+}
+
+/** 콘솔 로그인 세션 쿠키 값. sub는 시스템 서비스(콘솔)의 User id. */
+export function signConsoleSession(userId: string) {
+  return sign(
+    { sub: userId, aud: consoleAudience() },
+    CONSOLE_SESSION_TYP,
+    TTL.consoleSessionSec,
+  );
+}
+
+export async function verifyConsoleSession(token: string) {
+  const { publicKey } = await getSigningKeys();
+  const { payload } = await jwtVerify(token, publicKey, {
+    issuer: getIssuer(),
+    audience: consoleAudience(),
+    algorithms: [ALG],
+    typ: CONSOLE_SESSION_TYP,
+  });
+  return payload.sub ?? null;
 }
 
 /** /.well-known/jwks.json 응답 */
