@@ -13,7 +13,7 @@ export function ServiceHeading({ name, logoUrl }: { name: string; logoUrl?: stri
           {name.slice(0, 1).toUpperCase()}
         </div>
       )}
-      <h1 className="font-mono text-[32px] font-[450] leading-[1.4] tracking-[-0.02em] text-black">
+      <h1 className="font-mono text-[32px] font-[450] leading-[1.4] tracking-[-0.04em] text-black">
         {name}에
         <br />
         로그인하기

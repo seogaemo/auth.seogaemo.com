@@ -1,40 +1,89 @@
 import Link from "next/link";
-import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, TextareaHTMLAttributes } from "react";
+import type {
+  ButtonHTMLAttributes,
+  InputHTMLAttributes,
+  ReactNode,
+  TextareaHTMLAttributes,
+} from "react";
 
-/** 콘솔 공통 컴포넌트. DS 토큰만 쓴다 (DESIGN.md 6). */
+/**
+ * 콘솔 공통 컴포넌트. 수치는 Figma 시안(Wireframe 13:195, 28:927 / Page 1 0:891, 0:1072)을 따른다.
+ * 색, 글자는 DS 토큰. 글자색은 상속되지 않으니 글자를 가진 요소에 직접 준다 (DESIGN.md 3.1).
+ */
 
 const focusRing =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--content-accent)] focus-visible:ring-offset-2";
 
 type ButtonVariant = "primary" | "secondary" | "danger";
+type ButtonSize = "md" | "lg";
 
-const BUTTON: Record<ButtonVariant, string> = {
-  primary: "bg-accent text-white hover:bg-accent-pressed",
-  secondary: "bg-base text-primary hover:bg-base-pressed",
-  danger: "bg-negative-elevated text-content-negative hover:bg-negative-elevated-pressed",
+/**
+ * primary는 Seogaemo 시그니처 입체 버튼: 3px 반투명 테두리 + 아래 그림자, 누르면 내려앉는다.
+ */
+const BUTTON_VARIANT: Record<ButtonVariant, string> = {
+  primary:
+    "border-[3px] border-[rgba(0,0,0,0.2)] bg-[#2c73f4] text-white shadow-[0_4px_0_0_#2551a2] hover:bg-[#2667dc] active:translate-y-[4px] active:shadow-none",
+  secondary:
+    "border border-base bg-base-elevated text-primary shadow-[0_2px_0_0_var(--border-base)] hover:bg-base active:translate-y-[2px] active:shadow-none",
+  danger:
+    "border-[3px] border-[rgba(0,0,0,0.2)] bg-[#ff3b30] text-white shadow-[0_4px_0_0_#b2231a] hover:bg-[#e8362c] active:translate-y-[4px] active:shadow-none",
 };
+
+const BUTTON_SIZE: Record<ButtonSize, string> = {
+  md: "h-12 px-5 text-title",
+  lg: "h-16 px-8 text-heading",
+};
+
+function buttonClass(variant: ButtonVariant, size: ButtonSize, extra = "") {
+  return `inline-flex shrink-0 items-center justify-center gap-2 rounded-lg font-strong transition-[background-color,transform,box-shadow] duration-75 disabled:pointer-events-none disabled:opacity-50 ${BUTTON_VARIANT[variant]} ${BUTTON_SIZE[size]} ${focusRing} ${extra}`;
+}
 
 export function Button({
   variant = "primary",
+  size = "md",
   className = "",
   ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant }) {
+}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant; size?: ButtonSize }) {
+  return <button {...props} className={buttonClass(variant, size, className)} />;
+}
+
+export function ButtonLink({
+  href,
+  size = "md",
+  children,
+}: {
+  href: string;
+  size?: ButtonSize;
+  children: ReactNode;
+}) {
   return (
-    <button
-      {...props}
-      className={`inline-flex h-12 items-center justify-center rounded-lg px-5 text-body font-strong transition disabled:cursor-not-allowed disabled:opacity-50 ${BUTTON[variant]} ${focusRing} ${className}`}
-    />
+    <Link href={href} className={buttonClass("primary", size)}>
+      {children}
+    </Link>
   );
 }
 
-export function ButtonLink({ href, children }: { href: string; children: ReactNode }) {
+/** 파란 글자 + > 아이콘 ("사진 변경하기 >", "복사") */
+export function TextAction({
+  children,
+  tone = "accent",
+  arrow = false,
+  ...props
+}: ButtonHTMLAttributes<HTMLButtonElement> & { tone?: "accent" | "negative"; arrow?: boolean }) {
   return (
-    <Link
-      href={href}
-      className={`inline-flex h-12 items-center justify-center rounded-lg bg-accent px-5 text-body font-strong text-white transition hover:bg-accent-pressed ${focusRing}`}
+    <button
+      type="button"
+      {...props}
+      className={`inline-flex shrink-0 items-center gap-1 rounded text-label font-strong hover:underline ${
+        tone === "accent" ? "text-content-accent" : "text-content-negative"
+      } ${focusRing} ${props.className ?? ""}`}
     >
       {children}
-    </Link>
+      {arrow && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src="/icons/arrow_forward.svg" alt="" width={16} height={16} />
+      )}
+    </button>
   );
 }
 
@@ -56,7 +105,7 @@ export function Textarea(props: TextareaHTMLAttributes<HTMLTextAreaElement>) {
   );
 }
 
-/** 왼쪽 라벨 + 오른쪽 입력 (DESIGN.md FormRow) */
+/** 왼쪽 라벨(96px) + 오른쪽 입력, 간격 8px (Page 1 로그인 설정) */
 export function FormRow({
   label,
   htmlFor,
@@ -69,8 +118,11 @@ export function FormRow({
   children: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-2 sm:flex-row sm:gap-4">
-      <label htmlFor={htmlFor} className="shrink-0 pt-3 text-footnote text-quaternary sm:w-28">
+    <div className="flex flex-col gap-2 sm:flex-row">
+      <label
+        htmlFor={htmlFor}
+        className="shrink-0 text-footnote text-quaternary sm:w-24 sm:pt-[14px]"
+      >
         {label}
       </label>
       <div className="flex min-w-0 flex-1 flex-col gap-1">
@@ -81,59 +133,102 @@ export function FormRow({
   );
 }
 
-export function PageHeader({
-  title,
-  back,
-  action,
-}: {
-  title: string;
-  back?: { href: string; label: string };
-  action?: ReactNode;
-}) {
+/** 콘텐츠 영역. 기본 640px, wide면 넓게 (미리보기가 있는 화면) */
+export function Page({ wide = false, children }: { wide?: boolean; children: ReactNode }) {
   return (
-    <header className="flex flex-col gap-10 pb-8">
-      {back ? (
-        <Link href={back.href} className="w-fit text-body text-tertiary hover:text-primary">
-          ← {back.label}
-        </Link>
-      ) : (
-        <span aria-hidden className="h-[22px]" />
-      )}
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-display font-strong text-primary">{title}</h1>
-        {action}
-      </div>
-    </header>
+    <div className={`mx-auto flex w-full flex-col gap-16 pb-24 ${wide ? "max-w-[1184px]" : "max-w-[640px]"}`}>
+      {children}
+    </div>
   );
 }
 
-export function Section({
+/** 뒤로가기(20px 화살표 + body tertiary). 없으면 같은 높이를 비워 둔다. */
+export function BackLink({ href, label }: { href?: string; label?: string }) {
+  if (!href) return <span aria-hidden className="block h-[22px]" />;
+  return (
+    <Link href={href} className={`flex w-fit items-center rounded ${focusRing}`}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/icons/arrow_back.svg" alt="" width={20} height={20} />
+      <span className="text-body text-tertiary hover:text-primary">{label}</span>
+    </Link>
+  );
+}
+
+export function PageTitle({ children, action }: { children: ReactNode; action?: ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <h1 className="text-display font-strong text-primary">{children}</h1>
+      {action}
+    </div>
+  );
+}
+
+/** 블록 제목 + 내용. 블록 사이 24px, 제목과 내용 사이 8px */
+export function Block({
   title,
   description,
   children,
 }: {
-  title: string;
+  title?: string;
   description?: string;
   children: ReactNode;
 }) {
   return (
-    <section className="flex flex-col gap-6 border-t border-base py-8">
-      <div className="flex flex-col gap-1">
-        <h2 className="text-headline font-strong text-primary">{title}</h2>
-        {description && <p className="text-footnote text-tertiary">{description}</p>}
-      </div>
+    <section className="flex flex-col gap-2">
+      {title && (
+        <div className="flex flex-col gap-0.5 pb-1">
+          <h2 className="text-heading font-strong text-primary">{title}</h2>
+          {description && <p className="text-footnote text-tertiary">{description}</p>}
+        </div>
+      )}
       {children}
     </section>
   );
 }
 
-export function Notice({ tone, children }: { tone: "positive" | "negative"; children: ReactNode }) {
-  const style =
-    tone === "positive"
-      ? "bg-positive-elevated text-content-positive"
-      : "bg-negative-elevated text-content-negative";
+/** 테두리 카드 한 줄: 라벨 160px + 값 (Wireframe 28:1036) */
+export function InfoRow({
+  label,
+  children,
+  action,
+}: {
+  label: string;
+  children: ReactNode;
+  action?: ReactNode;
+}) {
   return (
-    <p role={tone === "negative" ? "alert" : "status"} className={`rounded-lg px-4 py-3 text-footnote ${style}`}>
+    <div className="flex flex-col gap-1 rounded-lg border border-base bg-base-elevated p-4 sm:flex-row sm:items-center sm:gap-2.5">
+      <span className="shrink-0 text-title font-strong text-primary sm:w-40">{label}</span>
+      <div className="min-w-0 flex-1 text-body text-primary">{children}</div>
+      {action}
+    </div>
+  );
+}
+
+/** 폼을 담는 테두리 카드 */
+export function Card({ children, tone = "default" }: { children: ReactNode; tone?: "default" | "danger" }) {
+  return (
+    <div
+      className={`flex flex-col gap-8 rounded-lg border p-6 ${
+        tone === "danger" ? "border-negative bg-base-elevated" : "border-base bg-base-elevated"
+      }`}
+    >
+      {children}
+    </div>
+  );
+}
+
+export function Notice({ tone, children }: { tone: "positive" | "negative" | "warning"; children: ReactNode }) {
+  const style = {
+    positive: "bg-positive-elevated",
+    negative: "bg-negative-elevated",
+    warning: "bg-warning-elevated",
+  }[tone];
+  return (
+    <p
+      role={tone === "negative" ? "alert" : "status"}
+      className={`rounded-lg px-4 py-3 text-footnote text-primary ${style}`}
+    >
       {children}
     </p>
   );

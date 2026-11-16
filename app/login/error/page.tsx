@@ -16,7 +16,7 @@ export default async function LoginErrorPage({
   return (
     <LoginShell>
       <div role="alert" className="flex flex-col gap-2">
-        <h1 className="font-mono text-[32px] font-[450] leading-[1.4] tracking-[-0.02em] text-black">
+        <h1 className="font-mono text-[32px] font-[450] leading-[1.4] tracking-[-0.04em] text-black">
           로그인할 수 없어요
         </h1>
         <p className="text-body text-secondary">{message}</p>

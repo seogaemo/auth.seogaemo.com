@@ -18,7 +18,7 @@ export default async function ConsoleLoginPage({
   return (
     <LoginShell>
       <header className="flex flex-col gap-2">
-        <h1 className="font-mono text-[32px] font-[450] leading-[1.4] tracking-[-0.02em] text-black">
+        <h1 className="font-mono text-[32px] font-[450] leading-[1.4] tracking-[-0.04em] text-black">
           Seogaemo SSO
         </h1>
         <p className="text-body text-secondary">
@@ -32,7 +32,7 @@ export default async function ConsoleLoginPage({
       )}
       <a
         href="/console/login/start"
-        className="flex h-16 w-full items-center justify-center gap-2 rounded border-[3px] border-login-stroke-strong bg-login-brand font-mono text-[18px] font-[600] tracking-[-0.02em] text-white transition hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-login-brand focus-visible:ring-offset-2"
+        className="flex h-16 w-full items-center justify-center gap-2 rounded border-[3px] border-login-stroke-strong bg-login-brand font-mono text-[18px] font-[600] tracking-[-0.06em] text-white transition hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-login-brand focus-visible:ring-offset-2"
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/brand/seogaemo-symbol-white.svg" alt="" width={20} height={20} />

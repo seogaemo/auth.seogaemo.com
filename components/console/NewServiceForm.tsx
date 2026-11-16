@@ -1,11 +1,23 @@
 "use client";
 
-import Link from "next/link";
 import { useActionState } from "react";
 
 import { createService, type ActionState } from "@/actions/services";
 import { CopyField } from "./CopyField";
-import { Button, FormRow, Input, Notice, Textarea } from "./ui";
+import { Block, Button, ButtonLink, Card, FormRow, Input, Notice, Textarea } from "./ui";
+
+const CLIENT_TYPES = [
+  {
+    value: "confidential",
+    title: "서버가 있는 웹앱",
+    description: "서버에서 토큰을 받아요. Client Secret을 발급해요.",
+  },
+  {
+    value: "public",
+    title: "SPA, 모바일 앱",
+    description: "브라우저나 앱에서 바로 토큰을 받아요. Secret 없이 PKCE만 써요.",
+  },
+] as const;
 
 export function NewServiceForm() {
   const [state, action, pending] = useActionState<ActionState, FormData>(createService, null);
@@ -14,81 +26,80 @@ export function NewServiceForm() {
     return (
       <div className="flex flex-col gap-6">
         <Notice tone="positive">서비스를 만들었어요.</Notice>
-        <CopyField label="Client ID" value={state.clientId} />
-        <CopyField label="Client Secret" value={state.secret} secret />
-        <p className="rounded-lg bg-warning-elevated px-4 py-3 text-footnote text-primary">
-          Client Secret은 지금 한 번만 보여줘요. 안전한 곳에 저장하세요. 잃어버리면 설정에서 새로 발급할 수 있어요.
-        </p>
+        <Block title="연동 정보">
+          <CopyField label="Client ID" value={state.clientId} />
+          <CopyField label="Client Secret" value={state.secret} secret />
+          <Notice tone="warning">
+            Client Secret은 지금 한 번만 보여줘요. 안전한 곳에 저장하세요. 잃어버리면 설정에서 새로 발급할 수 있어요.
+          </Notice>
+        </Block>
         <div>
-          <Link
-            href={`/console/services/${state.serviceId}`}
-            className="inline-flex h-12 items-center rounded-lg bg-accent px-5 text-body font-strong text-white hover:bg-accent-pressed"
-          >
-            서비스 설정으로 가기
-          </Link>
+          <ButtonLink href={`/console/services/${state.serviceId}`}>서비스 설정으로 가기</ButtonLink>
         </div>
       </div>
     );
   }
 
+  const selectedType = state?.fields?.clientType ?? "confidential";
+
   return (
-    <form key={JSON.stringify(state?.fields ?? {})} action={action} className="flex flex-col gap-8">
+    <form key={JSON.stringify(state?.fields ?? {})} action={action} className="flex flex-col gap-6">
       {state?.error && <Notice tone="negative">{state.error}</Notice>}
 
-      <FormRow label="이름" htmlFor="name" hint="로그인 화면에 &quot;{이름}에 로그인하기&quot;로 보여요.">
-        <Input
-          id="name"
-          name="name"
-          required
-          maxLength={40}
-          placeholder="예: SeoulMetro"
-          defaultValue={state?.fields?.name}
-        />
-      </FormRow>
+      <Card>
+        <FormRow label="이름" htmlFor="name" hint="로그인 화면에 &quot;{이름}에 로그인하기&quot;로 보여요.">
+          <Input
+            id="name"
+            name="name"
+            required
+            maxLength={40}
+            placeholder="예: SeoulMetro"
+            defaultValue={state?.fields?.name}
+          />
+        </FormRow>
 
-      <FormRow
-        label="Redirect URI"
-        htmlFor="redirectUris"
-        hint="로그인이 끝나면 돌아갈 주소. 한 줄에 하나씩, 나중에 바꿀 수 있어요."
-      >
-        <Textarea
-          id="redirectUris"
-          name="redirectUris"
-          rows={3}
-          placeholder="https://example.com/auth/callback"
-          defaultValue={state?.fields?.redirectUris}
-        />
-      </FormRow>
+        <FormRow
+          label="Redirect URI"
+          htmlFor="redirectUris"
+          hint="로그인이 끝나면 돌아갈 주소. 한 줄에 하나씩, 나중에 바꿀 수 있어요."
+        >
+          <Textarea
+            id="redirectUris"
+            name="redirectUris"
+            rows={3}
+            placeholder="https://example.com/auth/callback"
+            defaultValue={state?.fields?.redirectUris}
+          />
+        </FormRow>
 
-      <fieldset className="flex flex-col gap-2 sm:flex-row sm:gap-4">
-        <legend className="sr-only">앱 종류</legend>
-        <span aria-hidden className="shrink-0 pt-3 text-footnote text-quaternary sm:w-28">
-          앱 종류
-        </span>
-        <div className="flex flex-1 flex-col gap-2">
-          <label className="flex cursor-pointer gap-3 rounded-lg border border-base p-4 has-[:checked]:border-accent">
-            <input type="radio" name="clientType" value="confidential" defaultChecked={state?.fields?.clientType !== "public"} className="mt-1" />
-            <span className="flex flex-col gap-1">
-              <span className="text-body font-strong text-primary">서버가 있는 웹앱</span>
-              <span className="text-footnote text-tertiary">
-                서버에서 토큰을 받아요. Client Secret을 발급해요.
-              </span>
-            </span>
-          </label>
-          <label className="flex cursor-pointer gap-3 rounded-lg border border-base p-4 has-[:checked]:border-accent">
-            <input type="radio" name="clientType" value="public" defaultChecked={state?.fields?.clientType === "public"} className="mt-1" />
-            <span className="flex flex-col gap-1">
-              <span className="text-body font-strong text-primary">SPA, 모바일 앱</span>
-              <span className="text-footnote text-tertiary">
-                브라우저나 앱에서 바로 토큰을 받아요. Secret 없이 PKCE만 써요.
-              </span>
-            </span>
-          </label>
-        </div>
-      </fieldset>
+        <fieldset className="flex flex-col gap-2 sm:flex-row">
+          <legend className="sr-only">앱 종류</legend>
+          <span aria-hidden className="shrink-0 text-footnote text-quaternary sm:w-24 sm:pt-[14px]">
+            앱 종류
+          </span>
+          <div className="grid flex-1 gap-2 sm:grid-cols-2">
+            {CLIENT_TYPES.map((type) => (
+              <label
+                key={type.value}
+                className="flex cursor-pointer flex-col gap-1 rounded-lg border-2 border-base p-4 transition-colors hover:bg-base has-[:checked]:border-accent has-[:checked]:bg-accent-elevated has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[var(--content-accent)]"
+              >
+                <input
+                  type="radio"
+                  name="clientType"
+                  value={type.value}
+                  defaultChecked={selectedType === type.value}
+                  className="sr-only"
+                />
+                <span className="text-body font-strong text-primary">{type.title}</span>
+                <span className="text-footnote text-tertiary">{type.description}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      </Card>
 
-      <div>
-        <Button type="submit" disabled={pending}>
+      <div className="flex justify-end">
+        <Button type="submit" size="lg" disabled={pending}>
           {pending ? "만드는 중" : "서비스 만들기"}
         </Button>
       </div>

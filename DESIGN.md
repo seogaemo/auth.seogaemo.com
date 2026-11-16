@@ -119,7 +119,7 @@ Hosted Login에만 쓴다. `tailwind.config.ts`의 `theme.extend`나 `globals.cs
   - 시안에서 쓰는 굵기는 Text, Medium, SemiBold 세 가지뿐이다. 나머지는 넣지 않는다.
   - 한글 전체 글리프라 용량이 크다. woff2로 변환하고 서브셋(KS X 1001 2350자 + 라틴)을 만들거나 `unicode-range`로 쪼갠다.
   - OFL상 서브셋, 포맷 변환은 수정본에 해당하고 "Monoplex"가 예약 이름이라, 변환한 파일은 다른 family 이름(예: `SeogaemoMono`)으로 등록한다. `public/fonts/`에 넣을 때 `LICENSE.md`도 같이 둔다.
-- 시안은 Monoplex KR에 `-0.1em`(18px 기준 -1.8px)까지 자간을 줬는데, 한글이 붙어 보일 만큼 과하다. `-0.02em`부터 시작해서 맞춘다.
+- 자간은 시안 값을 따른다: 제목(32px) `-0.04em`, 버튼(18px) `-0.06em`. 고정폭 한글은 글자 폭이 넓어서 좁혀야 단어로 읽힌다. 시안의 버튼 값(`-0.1em`)은 영문(Google)이 붙어 보여서 조금 풀었다.
 
 ### 3.5 간격, 반경, 크기
 

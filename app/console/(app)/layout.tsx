@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
+import { getPrisma } from "@/cloudflare";
 import { Sidebar } from "@/components/console/Sidebar";
 import { requireDeveloper } from "@/lib/console/session";
 
@@ -9,13 +10,19 @@ export const metadata: Metadata = { title: { default: "콘솔", template: "%s | 
 
 export default async function ConsoleLayout({ children }: { children: ReactNode }) {
   const developer = await requireDeveloper();
+  const services = await getPrisma().service.findMany({
+    where: { ownerId: developer.id, isSystem: false },
+    select: { id: true, name: true, logoKey: true },
+  });
 
   return (
     <div className="flex min-h-dvh flex-col bg-base-elevated md:flex-row">
-      <Sidebar email={developer.email} name={developer.name} />
-      <main className="flex flex-1 justify-center px-4 py-4 md:px-16">
-        <div className="w-full max-w-[640px]">{children}</div>
-      </main>
+      <Sidebar
+        email={developer.email}
+        name={developer.name}
+        services={services.map((s) => ({ id: s.id, name: s.name, hasLogo: !!s.logoKey }))}
+      />
+      <main className="flex-1 px-4 py-4 md:px-12 lg:px-16">{children}</main>
     </div>
   );
 }
