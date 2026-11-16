@@ -1,4 +1,5 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 
-const r2 = getCloudflareContext().env.R2;
-export { r2 };
+export function getR2() {
+  return getCloudflareContext().env.R2;
+}

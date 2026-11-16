@@ -1,38 +1,106 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
-import { signAsync, verifyAsync } from "./jwt";
-import { JwtPayload } from "jsonwebtoken";
+import {
+  importJWK,
+  jwtVerify,
+  SignJWT,
+  type CryptoKey,
+  type JWK,
+  type JWTPayload,
+} from "jose";
 
-enum TokenType {
-  ACCESS = "access",
-  REFRESH = "refresh",
-}
+const ALG = "ES256";
+const ISSUER = "https://auth.seogaemo.com";
+const ACCESS_TOKEN_TTL = "1h";
 
-interface TokenPayload {
+export interface AccessTokenClaims extends JWTPayload {
+  /** 서비스 안에서의 사용자 id */
   sub: string;
-  serviceId: string;
+  /** 토큰을 받는 서비스의 client id */
+  aud: string;
 }
 
-export class TokenManager {
-  private static readonly secrets: Record<TokenType, string> = {
-    [TokenType.ACCESS]: getCloudflareContext().env.ACCESS_TOKEN_SECRET,
-    [TokenType.REFRESH]: getCloudflareContext().env.REFRESH_TOKEN_SECRET,
+interface SigningKeys {
+  kid: string;
+  privateKey: CryptoKey;
+  publicKey: CryptoKey;
+  publicJwk: JWK;
+}
+
+let cached: { source: string; keys: Promise<SigningKeys> } | undefined;
+
+/**
+ * 서명 키는 JWT_PRIVATE_JWK 시크릿(EC P-256 개인키 JWK, kid 포함) 하나로 관리한다.
+ * 공개키는 개인키 JWK에서 d를 뺀 값이다.
+ */
+function getSigningKeys() {
+  const source = getCloudflareContext().env.JWT_PRIVATE_JWK;
+  if (!source) {
+    throw new Error("JWT_PRIVATE_JWK is not set");
+  }
+
+  if (cached && cached.source === source) {
+    return cached.keys;
+  }
+
+  const keys = loadKeys(source);
+  cached = { source, keys };
+  return keys;
+}
+
+async function loadKeys(source: string): Promise<SigningKeys> {
+  const jwk = JSON.parse(source) as JWK;
+  if (!jwk.kid || !jwk.d) {
+    throw new Error("JWT_PRIVATE_JWK must be a private JWK with kid");
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { d, ...publicPart } = jwk;
+  const publicJwk: JWK = {
+    kty: publicPart.kty,
+    crv: publicPart.crv,
+    x: publicPart.x,
+    y: publicPart.y,
+    kid: jwk.kid,
+    alg: ALG,
+    use: "sig",
   };
 
-  public static async generateToken(payload: TokenPayload, type: TokenType) {
-    const token = await signAsync(payload, this.secrets[type], {
-      expiresIn: "1h",
-    });
+  const [privateKey, publicKey] = await Promise.all([
+    importJWK(jwk, ALG) as Promise<CryptoKey>,
+    importJWK(publicJwk, ALG) as Promise<CryptoKey>,
+  ]);
 
-    return token;
-  }
+  return { kid: jwk.kid, privateKey, publicKey, publicJwk };
+}
 
-  public static async validateToken(token: string, type: TokenType) {
-    const decoded = await verifyAsync(token, this.secrets[type]);
+export async function signAccessToken(claims: AccessTokenClaims) {
+  const { kid, privateKey } = await getSigningKeys();
+  const { sub, aud, ...rest } = claims;
 
-    if (!decoded) {
-      throw new Error("Invalid token");
-    }
+  return new SignJWT(rest)
+    .setProtectedHeader({ alg: ALG, kid, typ: "at+jwt" })
+    .setIssuer(ISSUER)
+    .setSubject(sub)
+    .setAudience(aud)
+    .setIssuedAt()
+    .setExpirationTime(ACCESS_TOKEN_TTL)
+    .sign(privateKey);
+}
 
-    return decoded as JwtPayload & TokenPayload;
-  }
+/** 서명, 만료, 발급자, (주어진 경우) audience를 검증한다. 실패하면 예외를 던진다. */
+export async function verifyAccessToken(token: string, audience?: string) {
+  const { publicKey } = await getSigningKeys();
+  const { payload } = await jwtVerify<AccessTokenClaims>(token, publicKey, {
+    issuer: ISSUER,
+    audience,
+    algorithms: [ALG],
+  });
+
+  return payload;
+}
+
+/** /.well-known/jwks.json 응답 */
+export async function getJwks() {
+  const { publicJwk } = await getSigningKeys();
+  return { keys: [publicJwk] };
 }

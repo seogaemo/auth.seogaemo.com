@@ -53,10 +53,8 @@
 	 * Environment Variables
 	 * https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables
 	 */
-	"vars": {
-		"ACCESS_TOKEN_SECRET": "66630d3675592013ae8bb8198da1a7b3",
-		"REFRESH_TOKEN_SECRET": "ae8f68c25ec28dd96ce149f22663d08c"
-	},
+	// 비밀값은 여기 두지 않는다. 로컬은 .dev.vars, 배포 환경은 `wrangler secret put <NAME>`.
+	// 필요한 시크릿: JWT_PRIVATE_JWK
 	/**
 	 * Note: Use secrets to store sensitive data.
 	 * https://developers.cloudflare.com/workers/configuration/secrets/
