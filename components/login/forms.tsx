@@ -27,7 +27,7 @@ export function PasswordLoginForm({ canSignup }: { canSignup: boolean }) {
 
   return (
     <form action={action} className="flex flex-col gap-3">
-      {state?.error && <LoginError>{state.error}</LoginError>}
+      <LoginError>{state?.error}</LoginError>
       <LoginField
         label="이메일"
         id="email"
@@ -65,7 +65,7 @@ export function SignupForm() {
 
   return (
     <form action={action} className="flex flex-col gap-3">
-      {state?.error && <LoginError>{state.error}</LoginError>}
+      <LoginError>{state?.error}</LoginError>
       <LoginField
         label="이메일"
         id="email"
@@ -105,7 +105,7 @@ export function EmailCodeRequestForm({ purpose }: { purpose: "login" | "reset" }
 
   return (
     <form action={action} className="flex flex-col gap-3">
-      {state?.error && <LoginError>{state.error}</LoginError>}
+      <LoginError>{state?.error}</LoginError>
       <LoginField
         label="이메일"
         id="email"
@@ -133,7 +133,7 @@ export function VerifyCodeForm({ needsNewPassword }: { needsNewPassword: boolean
 
   return (
     <form action={action} className="flex flex-col gap-3">
-      {(state?.error || resendError) && <LoginError>{state?.error ?? resendError}</LoginError>}
+      <LoginError>{state?.error ?? resendError}</LoginError>
       <div className="flex flex-col gap-1.5">
         <label htmlFor="code" className="font-mono text-[13px] font-[500] tracking-[-0.04em] text-quaternary">
           인증 코드
@@ -147,9 +147,13 @@ export function VerifyCodeForm({ needsNewPassword }: { needsNewPassword: boolean
           maxLength={6}
           required
           autoFocus
+          aria-describedby="code-hint"
           placeholder="000000"
           className="h-14 w-full border-2 border-[rgba(0,0,0,0.12)] bg-white text-center font-mono text-[28px] font-[600] tracking-[0.4em] text-[#101016] placeholder:text-[#e7e7e9] focus:border-login-brand focus:outline-none"
         />
+        <p id="code-hint" className="sr-only">
+          메일로 받은 숫자 6자리
+        </p>
       </div>
       {needsNewPassword && (
         <LoginField

@@ -22,10 +22,15 @@ export function LoginField({
       </label>
       <input
         id={id}
+        aria-describedby={hint ? `${id}-hint` : undefined}
         {...input}
         className={`h-12 w-full border-2 border-[rgba(0,0,0,0.12)] bg-white px-3 font-mono text-[15px] tracking-[-0.02em] text-[#101016] placeholder:text-unselected focus:border-login-brand focus:outline-none ${input.className ?? ""}`}
       />
-      {hint && <p className="text-label text-quaternary">{hint}</p>}
+      {hint && (
+        <p id={`${id}-hint`} className="text-label text-quaternary">
+          {hint}
+        </p>
+      )}
     </div>
   );
 }
@@ -86,11 +91,17 @@ export function LoginTextLink({ href, children }: { href: string; children: Reac
   );
 }
 
-export function LoginError({ children }: { children: ReactNode }) {
+/**
+ * 오류 알림 영역. 글자가 없을 때도 영역을 먼저 그려 둬야 스크린 리더가 바뀐 글자를 읽는다.
+ * 폼(gap-3)의 첫 자식으로 두고, 비어 있을 땐 아래 간격을 없앤다.
+ */
+export function LoginError({ children }: { children?: ReactNode }) {
   return (
-    <p role="alert" className="border-l-4 border-[#ff3b30] bg-[#fff1f0] px-3 py-2 text-footnote text-[#b2231a]">
-      {children}
-    </p>
+    <div role="alert" className={children ? "" : "-mb-3"}>
+      {children && (
+        <p className="border-l-4 border-[#ff3b30] bg-[#fff1f0] px-3 py-2 text-footnote text-[#b2231a]">{children}</p>
+      )}
+    </div>
   );
 }
 

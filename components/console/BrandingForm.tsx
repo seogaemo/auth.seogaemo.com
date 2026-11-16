@@ -3,7 +3,7 @@
 import { useActionState, useRef, useState } from "react";
 
 import { updateBranding, type ActionState } from "@/actions/services";
-import { Button, Card, FormRow, Input, Notice } from "./ui";
+import { Button, Card, FormFeedback, FormRow, Input } from "./ui";
 
 interface Props {
   serviceId: string;
@@ -33,7 +33,7 @@ function ColorInput({
   return (
     <FormRow label={label} htmlFor={name} hint={hint}>
       <div className="flex items-center gap-2">
-        <label className="relative size-10 shrink-0 cursor-pointer overflow-hidden rounded-lg border border-base">
+        <label className="relative size-10 shrink-0 cursor-pointer overflow-hidden rounded-lg border border-base has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[var(--content-accent)] has-[:focus-visible]:ring-offset-2">
           <span className="absolute inset-1 rounded" style={{ background: HEX.test(value) ? value : fallback }} />
           <input
             type="color"
@@ -71,8 +71,7 @@ export function BrandingForm({ serviceId, brandColor, brandBackground, logoUrl }
 
   return (
     <form action={action} className="flex flex-col gap-4">
-      {state?.error && <Notice tone="negative">{state.error}</Notice>}
-      {state?.message && <Notice tone="positive">{state.message}</Notice>}
+      <FormFeedback error={state?.error} message={state?.message} />
 
       <Card>
         {/* Page 1 프로필: 56px 이미지 + "사진 변경하기 >" + 안내 */}

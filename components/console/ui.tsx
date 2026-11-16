@@ -205,6 +205,24 @@ export function InfoRow({
   );
 }
 
+/**
+ * 선택 칩의 체크 표시. 바로 앞 형제 input에 peer 클래스가 있어야 한다.
+ * 선택 상태를 테두리 색만으로 알리지 않도록 모양으로도 보여준다 (WCAG 1.4.1).
+ */
+export function CheckMark() {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 16 16"
+      width={16}
+      height={16}
+      className="hidden shrink-0 text-content-accent peer-checked:block"
+    >
+      <path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 /** 폼을 담는 테두리 카드 */
 export function Card({ children, tone = "default" }: { children: ReactNode; tone?: "default" | "danger" }) {
   return (
@@ -224,12 +242,23 @@ export function Notice({ tone, children }: { tone: "positive" | "negative" | "wa
     negative: "bg-negative-elevated",
     warning: "bg-warning-elevated",
   }[tone];
+  return <p className={`rounded-lg px-4 py-3 text-footnote text-primary ${style}`}>{children}</p>;
+}
+
+/**
+ * 폼 결과 알림. 스크린 리더가 바뀐 글자를 읽도록 알림 영역을 비어 있을 때부터 그려 둔다.
+ * gap-4 세로 목록의 첫 자식으로 두고, 비어 있으면 아래 간격을 없앤다.
+ * key로 다시 그려지는 폼 안에 두면 영역도 새로 생겨서 읽히지 않으니 폼 바깥에 둔다.
+ */
+export function FormFeedback({ error, message }: { error?: string | null; message?: string | null }) {
   return (
-    <p
-      role={tone === "negative" ? "alert" : "status"}
-      className={`rounded-lg px-4 py-3 text-footnote text-primary ${style}`}
-    >
-      {children}
-    </p>
+    <>
+      <div role="alert" className={error ? "" : "-mb-4"}>
+        {error && <Notice tone="negative">{error}</Notice>}
+      </div>
+      <div role="status" className={message ? "" : "-mb-4"}>
+        {message && <Notice tone="positive">{message}</Notice>}
+      </div>
+    </>
   );
 }

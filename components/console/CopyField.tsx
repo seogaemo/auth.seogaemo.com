@@ -13,6 +13,7 @@ export function CopyField({ label, value, secret = false }: { label: string; val
       label={label}
       action={
         <TextAction
+          aria-label={`${label} 복사`}
           onClick={async () => {
             await navigator.clipboard.writeText(value);
             setCopied(true);
@@ -20,6 +21,9 @@ export function CopyField({ label, value, secret = false }: { label: string; val
           }}
         >
           {copied ? "복사됨" : "복사"}
+          <span role="status" className="sr-only">
+            {copied ? `${label} 복사됨` : ""}
+          </span>
         </TextAction>
       }
     >

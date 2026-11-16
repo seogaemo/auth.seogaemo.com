@@ -78,13 +78,12 @@ export function Sidebar({ email, name, services }: Props) {
           ) : (
             <span
               key={item.label}
-              aria-disabled
-              title="서비스를 먼저 고르세요"
               className="flex items-center gap-1 rounded-lg p-2 opacity-30"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={`/icons/${item.icon}.svg`} alt="" width={20} height={20} />
               <span className="text-footnote text-white">{item.label}</span>
+              <span className="sr-only">(서비스를 고르면 쓸 수 있어요)</span>
             </span>
           ),
         )}

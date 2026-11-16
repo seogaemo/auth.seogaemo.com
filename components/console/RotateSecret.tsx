@@ -44,7 +44,7 @@ export function RotateSecret({ serviceId }: { serviceId: string }) {
       >
         <span className="font-mono text-footnote text-quaternary">sgs_••••••••••••</span>
       </InfoRow>
-      {error && <Notice tone="negative">{error}</Notice>}
+      <div role="alert">{error && <Notice tone="negative">{error}</Notice>}</div>
     </>
   );
 }

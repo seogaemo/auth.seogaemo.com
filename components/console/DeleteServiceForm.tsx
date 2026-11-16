@@ -3,7 +3,7 @@
 import { useActionState, useEffect } from "react";
 
 import { deleteService, type ActionState } from "@/actions/services";
-import { Button, Card, FormRow, Input, Notice } from "./ui";
+import { Button, Card, FormFeedback, FormRow, Input } from "./ui";
 
 export function DeleteServiceForm({ serviceId, name }: { serviceId: string; name: string }) {
   const [state, action, pending] = useActionState<ActionState, FormData>(
@@ -15,8 +15,8 @@ export function DeleteServiceForm({ serviceId, name }: { serviceId: string; name
   }, [state]);
 
   return (
-    <form action={action} className="flex flex-col gap-2">
-      {state?.error && <Notice tone="negative">{state.error}</Notice>}
+    <form action={action} className="flex flex-col gap-4">
+      <FormFeedback error={state?.error} />
       <Card tone="danger">
         <FormRow label="확인" htmlFor="confirm" hint={`지우려면 "${name}"을 입력하세요.`}>
           <div className="flex flex-col gap-3 sm:flex-row">

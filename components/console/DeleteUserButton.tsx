@@ -9,7 +9,7 @@ export function DeleteUserButton({ action, label }: { action: () => Promise<void
         if (!confirm(`${label} 사용자를 지울까요? 로그인 기록과 토큰도 같이 지워져요.`)) e.preventDefault();
       }}
     >
-      <button type="submit" className="text-footnote text-content-negative hover:underline">
+      <button type="submit" aria-label={`삭제 ${label}`} className="text-footnote text-content-negative hover:underline">
         삭제
       </button>
     </form>
