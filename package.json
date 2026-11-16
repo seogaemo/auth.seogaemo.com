@@ -11,9 +11,10 @@
 		"preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
 		"cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
 		"postinstall": "prisma generate",
-		"db:generate": "prisma migrate diff --script --from-empty --to-schema-datamodel ./prisma/schema.prisma --output migrations/migration.sql",
 		"db:migrate:local": "wrangler d1 migrations apply db.auth.seogaemo.com --local",
-		"db:migrate:remote": "wrangler d1 migrations apply db.auth.seogaemo.com --remote"
+		"db:migrate:remote": "wrangler d1 migrations apply db.auth.seogaemo.com --remote",
+		"db:diff": "prisma migrate diff --from-local-d1 --to-schema-datamodel ./prisma/schema.prisma --script",
+		"db:seed:local": "node scripts/seed-dev.mjs"
 	},
 	"dependencies": {
 		"@prisma/adapter-d1": "^6.7.0",

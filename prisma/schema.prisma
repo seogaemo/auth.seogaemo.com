@@ -7,27 +7,136 @@ datasource db {
   provider = "sqlite"
 }
 
+/// Seogaemo SSO에 등록된 서비스 (OAuth 클라이언트).
+/// 시스템 서비스(isSystem)는 Seogaemo 콘솔 자신이다.
 model Service {
-  id       Int     @id @default(autoincrement())
-  uuid     String  @unique @default(uuid())
-  name     String
-  image    String?
-  provider Json    @default("[]")
+  id               String  @id @default(cuid())
+  clientId         String  @unique
+  /// SHA-256(client_secret) hex. 원문은 발급할 때 한 번만 보여준다.
+  clientSecretHash String
+  name             String
+  /// R2 object key
+  logoKey          String?
+  /// string[]
+  redirectUris     Json    @default("[]")
+  /// ("google" | "kakao")[]
+  providers        Json    @default("[]")
+  brandColor       String?
+  brandBackground  String?
+  isSystem         Boolean @default(false)
 
-  User User[]
+  /// 서비스를 등록한 개발자. 개발자는 시스템 서비스(콘솔)의 User다.
+  ownerId String?
+  owner   User?   @relation("OwnedServices", fields: [ownerId], references: [id])
 
+  users              User[]              @relation("ServiceUsers")
+  identities         Identity[]
+  authorizationCodes AuthorizationCode[]
+  refreshTokens      RefreshToken[]
+  loginTransactions  LoginTransaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ownerId])
+}
+
+/// 서비스별 사용자. 같은 사람이라도 서비스가 다르면 다른 User다.
+model User {
+  id     String  @id @default(cuid())
+  email  String?
+  name   String?
+  image  String?
+
+  serviceId String
+  service   Service @relation("ServiceUsers", fields: [serviceId], references: [id], onDelete: Cascade)
+
+  identities         Identity[]
+  ownedServices      Service[]           @relation("OwnedServices")
+  authorizationCodes AuthorizationCode[]
+  refreshTokens      RefreshToken[]
+
+  createdAt   DateTime  @default(now())
+  lastLoginAt DateTime?
+
+  @@unique([serviceId, email])
+}
+
+/// 사용자에 연결된 외부 로그인 수단 (Google, 카카오 ...)
+model Identity {
+  id             String  @id @default(cuid())
+  provider       String
+  providerUserId String
+  email          String?
+
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([serviceId, provider, providerUserId])
+  @@index([userId])
+}
+
+/// /oauth/authorize 부터 외부 제공자 콜백까지 이어지는 로그인 진행 상태.
+model LoginTransaction {
+  id String @id @default(cuid())
+
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  /// 서비스가 보낸 값
+  redirectUri         String
+  state               String?
+  scope               String
+  nonce               String?
+  codeChallenge       String
+  codeChallengeMethod String
+
+  /// 외부 제공자로 보낼 때 채운다
+  provider             String?
+  providerState        String? @unique
+  providerCodeVerifier String?
+
+  expiresAt DateTime
   createdAt DateTime @default(now())
 }
 
-model User {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
-  name  String?
+model AuthorizationCode {
+  /// SHA-256(code) hex
+  codeHash String @id
 
-  serviceId Int
-  service   Service @relation(fields: [serviceId], references: [id])
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  createdAt DateTime @default(now())
+  redirectUri         String
+  scope               String
+  nonce               String?
+  codeChallenge       String
+  codeChallengeMethod String
 
-  @@unique([serviceId, email])
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+}
+
+model RefreshToken {
+  /// SHA-256(token) hex
+  tokenHash String @id
+
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  scope     String
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
 }
