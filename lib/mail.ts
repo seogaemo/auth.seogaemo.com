@@ -92,3 +92,24 @@ export function emailCodeMessage(purpose: EmailCodePurpose, serviceName: string,
 
   return { subject, text, html };
 }
+
+/** 서비스 관리자로 추가됐다는 알림 */
+export function memberAddedMessage(serviceName: string, inviter: string, consoleUrl: string) {
+  const subject = `[Seogaemo SSO] ${serviceName} 관리자로 추가됐어요`;
+  const lead = `${inviter}님이 ${serviceName} 서비스의 관리자로 추가했어요. 이 이메일로 콘솔에 로그인하면 바로 관리할 수 있어요.`;
+  const text = [subject, "", lead, "", consoleUrl, "", "Seogaemo SSO"].join("\n");
+
+  const html = `<!doctype html><html lang="ko"><body style="margin:0;padding:32px 16px;background:#f4f4f6;font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Pretendard',sans-serif;color:#101016">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:440px;background:#ffffff;border:6px solid #235cc3">
+<tr><td style="padding:28px">
+<p style="margin:0 0 4px;font-size:13px;color:#777783">Seogaemo SSO</p>
+<h1 style="margin:0 0 16px;font-size:22px;line-height:1.35">${escapeHtml(serviceName)} 관리자로 추가됐어요</h1>
+<p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#5a5a66">${escapeHtml(lead)}</p>
+<a href="${escapeHtml(consoleUrl)}" style="display:inline-block;padding:12px 20px;background:#2c73f4;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none">콘솔 열기</a>
+</td></tr></table>
+<p style="margin:16px 0 0;font-size:12px;color:#9797a0">Seogaemo SSO</p>
+</td></tr></table></body></html>`;
+
+  return { subject, text, html };
+}

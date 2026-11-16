@@ -5,7 +5,7 @@ import { ServiceHeader } from "@/components/console/ServiceHeader";
 import { BackLink, Page } from "@/components/console/ui";
 import { getPrisma } from "@/cloudflare";
 import { isProvider } from "@/lib/config";
-import { requireOwnedService } from "@/lib/console/session";
+import { requireServiceAccess } from "@/lib/console/session";
 
 export const metadata = { title: "User Management" };
 
@@ -24,7 +24,7 @@ export default async function UsersPage({
   searchParams: Promise<{ page?: string }>;
 }) {
   const { id } = await params;
-  const { service } = await requireOwnedService(id);
+  const { service } = await requireServiceAccess(id);
   const page = Math.max(1, Number((await searchParams).page) || 1);
 
   const prisma = getPrisma();

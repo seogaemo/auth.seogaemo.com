@@ -1,3 +1,4 @@
+import type { Prisma, User } from "@prisma/client/wasm";
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
@@ -33,11 +34,24 @@ export async function requireDeveloper() {
 }
 
 /**
- * 로그인한 개발자가 소유한 서비스. 남의 서비스면 404 (존재 여부도 알려주지 않는다).
+ * 이 개발자가 관리할 수 있는 서비스: 소유자이거나 관리자로 추가된 서비스.
+ * 관리자는 콘솔 계정의 이메일로 맞춘다. User.email은 제공자가 확인한 이메일만 저장된다.
  */
-export async function requireOwnedService(serviceId: string) {
+export function manageableServices(developer: Pick<User, "id" | "email">): Prisma.ServiceWhereInput {
+  const or: Prisma.ServiceWhereInput[] = [{ ownerId: developer.id }];
+  if (developer.email) or.push({ members: { some: { email: developer.email } } });
+  return { isSystem: false, OR: or };
+}
+
+/**
+ * 관리할 수 있는 서비스. 아니면 404 (존재 여부도 알려주지 않는다).
+ * 서비스 삭제와 관리자 관리처럼 소유자만 하는 일은 isOwner로 따로 확인한다.
+ */
+export async function requireServiceAccess(serviceId: string) {
   const developer = await requireDeveloper();
-  const service = await getPrisma().service.findUnique({ where: { id: serviceId } });
-  if (!service || service.isSystem || service.ownerId !== developer.id) notFound();
-  return { developer, service };
+  const service = await getPrisma().service.findFirst({
+    where: { id: serviceId, ...manageableServices(developer) },
+  });
+  if (!service) notFound();
+  return { developer, service, isOwner: service.ownerId === developer.id };
 }

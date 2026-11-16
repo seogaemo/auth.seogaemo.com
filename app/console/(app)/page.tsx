@@ -3,7 +3,7 @@ import Link from "next/link";
 import { getPrisma } from "@/cloudflare";
 import { ProviderIcons } from "@/components/console/ProviderIcons";
 import { Page, PageTitle } from "@/components/console/ui";
-import { requireDeveloper } from "@/lib/console/session";
+import { manageableServices, requireDeveloper } from "@/lib/console/session";
 import { getProviders } from "@/lib/service";
 
 export const metadata = { title: "서비스 목록" };
@@ -14,7 +14,7 @@ const dateFormat = new Intl.DateTimeFormat("ko-KR", { dateStyle: "medium", timeZ
 export default async function ServiceListPage() {
   const developer = await requireDeveloper();
   const services = await getPrisma().service.findMany({
-    where: { ownerId: developer.id, isSystem: false },
+    where: manageableServices(developer),
     orderBy: { createdAt: "desc" },
   });
 
@@ -53,6 +53,11 @@ export default async function ServiceListPage() {
                     </span>
                   )}
                   <span className="truncate text-body font-strong text-primary">{service.name}</span>
+                  {service.ownerId !== developer.id && (
+                    <span className="shrink-0 rounded bg-base px-1.5 py-0.5 text-caption font-strong text-tertiary">
+                      관리자
+                    </span>
+                  )}
                   <span className="shrink-0 text-label text-tertiary">
                     {dateFormat.format(service.createdAt)}
                   </span>

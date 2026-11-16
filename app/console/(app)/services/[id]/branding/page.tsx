@@ -2,7 +2,7 @@ import { BrandingForm } from "@/components/console/BrandingForm";
 import { ServiceHeader } from "@/components/console/ServiceHeader";
 import { BackLink, Block, Page } from "@/components/console/ui";
 import { LoginPreview } from "@/components/login/LoginPreview";
-import { requireOwnedService } from "@/lib/console/session";
+import { requireServiceAccess } from "@/lib/console/session";
 import { getProviders } from "@/lib/service";
 
 export const metadata = { title: "Branding" };
@@ -10,7 +10,7 @@ export const metadata = { title: "Branding" };
 /** Page 1 0:1072: 왼쪽 설정, 오른쪽 로그인 화면 미리보기 */
 export default async function BrandingPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { service } = await requireOwnedService(id);
+  const { service } = await requireServiceAccess(id);
   const logoUrl = service.logoKey
     ? `/service-logo/${service.id}?v=${encodeURIComponent(service.logoKey)}`
     : null;

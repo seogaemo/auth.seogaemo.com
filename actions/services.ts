@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { getPrisma, getR2 } from "@/cloudflare";
-import { requireDeveloper, requireOwnedService } from "@/lib/console/session";
+import { requireDeveloper, requireServiceAccess } from "@/lib/console/session";
 import {
   parseHexColor,
   parseProviders,
@@ -71,7 +71,7 @@ export async function updateSettings(
   _prev: ActionState,
   form: FormData,
 ): Promise<ActionState> {
-  await requireOwnedService(serviceId);
+  await requireServiceAccess(serviceId);
   const fields = echo(form, "name", "redirectUris");
 
   const parsedName = parseServiceName(form.get("name"));
@@ -94,7 +94,7 @@ export async function updateSettings(
 }
 
 export async function rotateClientSecret(serviceId: string): Promise<ActionState> {
-  const { service } = await requireOwnedService(serviceId);
+  const { service } = await requireServiceAccess(serviceId);
   if (service.clientSecretHash === "") {
     return { error: "public client는 client secret을 쓰지 않아요." };
   }
@@ -112,7 +112,8 @@ export async function deleteService(
   _prev: ActionState,
   form: FormData,
 ): Promise<ActionState> {
-  const { service } = await requireOwnedService(serviceId);
+  const { service, isOwner } = await requireServiceAccess(serviceId);
+  if (!isOwner) return { error: "서비스는 소유자만 지울 수 있어요." };
   if (String(form.get("confirm") ?? "").trim() !== service.name) {
     return { error: "서비스 이름이 맞지 않아요." };
   }
@@ -131,7 +132,7 @@ export async function updateBranding(
   _prev: ActionState,
   form: FormData,
 ): Promise<ActionState> {
-  const { service } = await requireOwnedService(serviceId);
+  const { service } = await requireServiceAccess(serviceId);
 
   const fields = echo(form, "brandColor", "brandBackground");
   const brand = parseHexColor(form.get("brandColor"));
@@ -167,7 +168,7 @@ export async function updateBranding(
 }
 
 export async function deleteServiceUser(serviceId: string, userId: string) {
-  await requireOwnedService(serviceId);
+  await requireServiceAccess(serviceId);
   // serviceId 조건을 같이 걸어 다른 서비스의 사용자를 지우지 못하게 한다
   await getPrisma().user.deleteMany({ where: { id: userId, serviceId } });
   revalidatePath(`/console/services/${serviceId}/users`);

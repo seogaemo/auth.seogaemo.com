@@ -35,11 +35,30 @@ model Service {
   refreshTokens      RefreshToken[]
   loginTransactions  LoginTransaction[]
   emailCodes         EmailCode[]
+  members            ServiceMember[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([ownerId])
+}
+
+/// 서비스 관리자 (소유자 말고 콘솔에서 이 서비스를 같이 관리하는 개발자).
+/// 콘솔 계정의 확인된 이메일로 맞춘다. 아직 콘솔에 가입하지 않은 사람도 미리 추가할 수 있다.
+model ServiceMember {
+  id String @id @default(cuid())
+
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  /// 소문자로 저장한다
+  email       String
+  invitedById String?
+
+  createdAt DateTime @default(now())
+
+  @@unique([serviceId, email])
+  @@index([email])
 }
 
 /// 서비스별 사용자. 같은 사람이라도 서비스가 다르면 다른 User다.

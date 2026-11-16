@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 
 import { getPrisma } from "@/cloudflare";
 import { Sidebar } from "@/components/console/Sidebar";
-import { requireDeveloper } from "@/lib/console/session";
+import { manageableServices, requireDeveloper } from "@/lib/console/session";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: { default: "콘솔", template: "%s | Seogaemo SSO" } };
@@ -11,7 +11,8 @@ export const metadata: Metadata = { title: { default: "콘솔", template: "%s | 
 export default async function ConsoleLayout({ children }: { children: ReactNode }) {
   const developer = await requireDeveloper();
   const services = await getPrisma().service.findMany({
-    where: { ownerId: developer.id, isSystem: false },
+    where: manageableServices(developer),
+    orderBy: { createdAt: "desc" },
     select: { id: true, name: true, logoKey: true },
   });
 

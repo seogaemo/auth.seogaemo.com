@@ -5,7 +5,7 @@ import { ServiceHeader } from "@/components/console/ServiceHeader";
 import { SettingsForm } from "@/components/console/SettingsForm";
 import { BackLink, Block, InfoRow, Notice, Page } from "@/components/console/ui";
 import { endpoint, PROVIDERS } from "@/lib/config";
-import { requireOwnedService } from "@/lib/console/session";
+import { requireServiceAccess } from "@/lib/console/session";
 import { isProviderConfigured } from "@/lib/oauth/providers";
 import { getProviders, getRedirectUris, isPublicClient } from "@/lib/service";
 
@@ -20,7 +20,7 @@ export default async function ServiceSettingsPage({
 }) {
   const { id } = await params;
   const { created } = await searchParams;
-  const { service } = await requireOwnedService(id);
+  const { service, isOwner } = await requireServiceAccess(id);
   const publicClient = isPublicClient(service);
 
   return (
@@ -53,9 +53,11 @@ export default async function ServiceSettingsPage({
           />
         </Block>
 
-        <Block title="서비스 삭제" description="이 서비스의 사용자와 토큰이 모두 지워지고 되돌릴 수 없어요.">
-          <DeleteServiceForm serviceId={service.id} name={service.name} />
-        </Block>
+        {isOwner && (
+          <Block title="서비스 삭제" description="이 서비스의 사용자와 토큰이 모두 지워지고 되돌릴 수 없어요.">
+            <DeleteServiceForm serviceId={service.id} name={service.name} />
+          </Block>
+        )}
       </div>
     </Page>
   );
