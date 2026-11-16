@@ -16,25 +16,26 @@
 		"db:diff": "prisma migrate diff --from-local-d1 --to-schema-datamodel ./prisma/schema.prisma --script",
 		"db:seed:local": "node scripts/seed-dev.mjs"
 	},
+	"packageManager": "pnpm@9.15.9",
 	"dependencies": {
 		"@prisma/adapter-d1": "^6.7.0",
 		"@prisma/client": "^6.7.0",
 		"dotenv": "^16.5.0",
 		"jose": "^6",
-		"next": "15.3.1",
+		"next": "15.5.28",
 		"react": "^19.0.0",
 		"react-dom": "^19.0.0"
 	},
 	"devDependencies": {
-		"@cloudflare/workers-types": "^4.20250428.0",
+		"@cloudflare/workers-types": "^5.20261101.1",
 		"@eslint/eslintrc": "^3",
-		"@opennextjs/cloudflare": "~1.0.0-beta.0 || ^1.0.0",
+		"@opennextjs/cloudflare": "^1.20.15",
 		"@seogaemo/ds-tailwind": "^1.0.16",
 		"@types/node": "^20",
 		"@types/react": "^19",
 		"@types/react-dom": "^19",
 		"eslint": "^9",
-		"eslint-config-next": "15.3.1",
+		"eslint-config-next": "15.5.28",
 		"postcss": "^8.5.3",
 		"prettier": "^3.5.3",
 		"prettier-plugin-tailwindcss": "^0.6.11",
@@ -42,6 +43,6 @@
 		"tailwind-scrollbar-hide": "^2.0.0",
 		"tailwindcss": "^3.4.1",
 		"typescript": "^5",
-		"wrangler": "^4.13.2"
+		"wrangler": "^4.156.1"
 	}
 }

@@ -1,0 +1,120 @@
+import type { Service } from "@prisma/client";
+
+import { getPrisma } from "@/cloudflare";
+import { hashSecret, verifyPkce } from "@/lib/crypto";
+import { authenticateClient, json, oauthError, preflight, readForm } from "@/lib/oauth/http";
+import { issueTokens, revokeAllRefreshTokens } from "@/lib/oauth/tokens";
+
+export const dynamic = "force-dynamic";
+
+export const OPTIONS = preflight;
+
+/** OAuth 2.0 Token Endpoint: authorization_code, refresh_token */
+export async function POST(request: Request) {
+  const form = await readForm(request);
+  if (!form) {
+    return oauthError("invalid_request", "content-type must be application/x-www-form-urlencoded");
+  }
+
+  const service = await authenticateClient(request, form);
+  if (!service) return oauthError("invalid_client", "client authentication failed", 401);
+
+  switch (form.get("grant_type")) {
+    case "authorization_code":
+      return exchangeAuthorizationCode(service, form);
+    case "refresh_token":
+      return rotateRefreshToken(service, form);
+    default:
+      return oauthError("unsupported_grant_type", "grant_type is not supported");
+  }
+}
+
+async function exchangeAuthorizationCode(service: Service, form: URLSearchParams) {
+  const code = form.get("code");
+  const redirectUri = form.get("redirect_uri");
+  const codeVerifier = form.get("code_verifier");
+  if (!code || !redirectUri || !codeVerifier) {
+    return oauthError("invalid_request", "code, redirect_uri and code_verifier are required");
+  }
+
+  const prisma = getPrisma();
+  const codeHash = await hashSecret(code);
+  const record = await prisma.authorizationCode.findUnique({
+    where: { codeHash },
+    include: { user: true },
+  });
+
+  if (!record || record.serviceId !== service.id) {
+    return oauthError("invalid_grant", "invalid authorization code");
+  }
+
+  if (record.usedAt) {
+    // 같은 code가 두 번 쓰였다면 탈취를 의심하고, 그 code로 받은 토큰을 다 끊는다 (RFC 6749 4.1.2)
+    await revokeAllRefreshTokens(record.serviceId, record.userId);
+    return oauthError("invalid_grant", "authorization code was already used");
+  }
+  if (record.expiresAt < new Date()) {
+    return oauthError("invalid_grant", "authorization code expired");
+  }
+  if (record.redirectUri !== redirectUri) {
+    return oauthError("invalid_grant", "redirect_uri does not match");
+  }
+  if (!(await verifyPkce(codeVerifier, record.codeChallenge))) {
+    return oauthError("invalid_grant", "code_verifier does not match");
+  }
+
+  // 동시에 두 요청이 들어와도 하나만 성공하게 조건부로 표시한다
+  const { count } = await prisma.authorizationCode.updateMany({
+    where: { codeHash, usedAt: null },
+    data: { usedAt: new Date() },
+  });
+  if (count !== 1) return oauthError("invalid_grant", "authorization code was already used");
+
+  return json(
+    await issueTokens({ service, user: record.user, scope: record.scope, nonce: record.nonce }),
+  );
+}
+
+async function rotateRefreshToken(service: Service, form: URLSearchParams) {
+  const token = form.get("refresh_token");
+  if (!token) return oauthError("invalid_request", "refresh_token is required");
+
+  const prisma = getPrisma();
+  const tokenHash = await hashSecret(token);
+  const record = await prisma.refreshToken.findUnique({
+    where: { tokenHash },
+    include: { user: true },
+  });
+
+  if (!record || record.serviceId !== service.id) {
+    return oauthError("invalid_grant", "invalid refresh token");
+  }
+
+  if (record.revokedAt) {
+    // 이미 교체된 토큰이 다시 쓰였다 = 유출됐을 수 있다. 이 사용자의 토큰을 전부 끊는다.
+    await revokeAllRefreshTokens(record.serviceId, record.userId);
+    return oauthError("invalid_grant", "refresh token was revoked");
+  }
+  if (record.expiresAt < new Date()) {
+    return oauthError("invalid_grant", "refresh token expired");
+  }
+
+  const { count } = await prisma.refreshToken.updateMany({
+    where: { tokenHash, revokedAt: null },
+    data: { revokedAt: new Date() },
+  });
+  if (count !== 1) {
+    await revokeAllRefreshTokens(record.serviceId, record.userId);
+    return oauthError("invalid_grant", "refresh token was revoked");
+  }
+
+  // scope를 줄여 달라는 요청만 허용한다
+  const requested = form.get("scope")?.split(" ").filter(Boolean);
+  const granted = record.scope.split(" ");
+  if (requested?.some((s) => !granted.includes(s))) {
+    return oauthError("invalid_scope", "scope exceeds the original grant");
+  }
+  const scope = requested?.length ? requested.join(" ") : record.scope;
+
+  return json(await issueTokens({ service, user: record.user, scope }));
+}

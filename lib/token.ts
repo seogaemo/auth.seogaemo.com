@@ -8,15 +8,28 @@ import {
   type JWTPayload,
 } from "jose";
 
+import { getIssuer, TTL } from "./config";
+
 const ALG = "ES256";
-const ISSUER = "https://auth.seogaemo.com";
-const ACCESS_TOKEN_TTL = "1h";
 
 export interface AccessTokenClaims extends JWTPayload {
   /** 서비스 안에서의 사용자 id */
   sub: string;
   /** 토큰을 받는 서비스의 client id */
   aud: string;
+  /** 공백으로 구분한 scope */
+  scope: string;
+  client_id: string;
+}
+
+export interface IdTokenClaims extends JWTPayload {
+  sub: string;
+  aud: string;
+  nonce?: string;
+  email?: string;
+  email_verified?: boolean;
+  name?: string;
+  picture?: string;
 }
 
 interface SigningKeys {
@@ -73,27 +86,38 @@ async function loadKeys(source: string): Promise<SigningKeys> {
   return { kid: jwk.kid, privateKey, publicKey, publicJwk };
 }
 
-export async function signAccessToken(claims: AccessTokenClaims) {
+async function sign(
+  { sub, aud, ...rest }: JWTPayload & { sub: string; aud: string },
+  typ: string,
+) {
   const { kid, privateKey } = await getSigningKeys();
-  const { sub, aud, ...rest } = claims;
 
   return new SignJWT(rest)
-    .setProtectedHeader({ alg: ALG, kid, typ: "at+jwt" })
-    .setIssuer(ISSUER)
+    .setProtectedHeader({ alg: ALG, kid, typ })
+    .setIssuer(getIssuer())
     .setSubject(sub)
     .setAudience(aud)
     .setIssuedAt()
-    .setExpirationTime(ACCESS_TOKEN_TTL)
+    .setExpirationTime(`${TTL.accessTokenSec}s`)
     .sign(privateKey);
+}
+
+export function signAccessToken(claims: AccessTokenClaims) {
+  return sign(claims, "at+jwt");
+}
+
+export function signIdToken(claims: IdTokenClaims) {
+  return sign(claims, "JWT");
 }
 
 /** 서명, 만료, 발급자, (주어진 경우) audience를 검증한다. 실패하면 예외를 던진다. */
 export async function verifyAccessToken(token: string, audience?: string) {
   const { publicKey } = await getSigningKeys();
   const { payload } = await jwtVerify<AccessTokenClaims>(token, publicKey, {
-    issuer: ISSUER,
+    issuer: getIssuer(),
     audience,
     algorithms: [ALG],
+    typ: "at+jwt",
   });
 
   return payload;

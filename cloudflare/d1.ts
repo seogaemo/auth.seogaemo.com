@@ -1,4 +1,5 @@
-import { PrismaClient } from "@prisma/client";
+// Workers에서는 Node용 엔진을 못 쓰므로 wasm 진입점을 직접 쓴다.
+import { PrismaClient } from "@prisma/client/wasm";
 import { PrismaD1 } from "@prisma/adapter-d1";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 
