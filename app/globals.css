@@ -27,17 +27,21 @@
   --login-brand: #2c73f4;
   --login-stroke: rgba(0, 0, 0, 0.1);
   --login-stroke-strong: rgba(0, 0, 0, 0.2);
-  --kakao: #fee500;
+  /* 시안 값. 카카오 공식 색은 #fee500 */
+  --kakao: #f4ed2c;
 }
 
 @layer components {
+  /* 로그인 배경 (Figma 0:632): 패턴 이미지 두 장을 브랜드 색 위에 겹친다 */
   .login-grid {
-    /* 파생 색은 브랜딩을 덮어쓴 이 요소에서 계산해야 서비스 색을 따라간다 */
+    /* 파생 색은 브랜딩을 덮어쓴 이 요소에서 계산해야 서비스 색을 따라간다.
+       기본 #2c73f4 기준으로 계산하면 시안의 #235cc3이 나온다. */
     --login-brand-strong: color-mix(in srgb, var(--login-brand) 80%, black);
     background-color: var(--login-background, var(--login-brand));
-    background-image:
-      linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
-    background-size: 32px 32px;
+    background-image: url("/brand/login-bg-1.png"), url("/brand/login-bg-2.png");
+    background-size:
+      400.5px 400.5px,
+      576px 345.6px;
+    background-position: top left;
   }
 }

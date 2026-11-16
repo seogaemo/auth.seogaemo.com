@@ -1,4 +1,4 @@
-/** 서비스 로고(없으면 첫 글자) + "{서비스}에 로그인하기" */
+/** 로고 64 + "{서비스}에 / 로그인하기" (Monoplex Text 32px, 모바일 28px, 행간 1.4, 자간 -0.04em) */
 export function ServiceHeading({ name, logoUrl }: { name: string; logoUrl?: string | null }) {
   return (
     <header className="flex flex-col gap-2">
@@ -13,7 +13,7 @@ export function ServiceHeading({ name, logoUrl }: { name: string; logoUrl?: stri
           {name.slice(0, 1).toUpperCase()}
         </div>
       )}
-      <h1 className="font-mono text-[32px] font-[450] leading-[1.4] tracking-[-0.04em] text-black">
+      <h1 className="font-mono text-[28px] font-[450] leading-[1.4] tracking-[-0.04em] text-black sm:text-[32px]">
         {name}에
         <br />
         로그인하기
