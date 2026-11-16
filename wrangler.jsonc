@@ -55,7 +55,7 @@
 	 */
 	"vars": {
 		"ISSUER": "https://auth.seogaemo.com",
-		"GOOGLE_CLIENT_ID": "",
+		"GOOGLE_CLIENT_ID": "247451597886-t3595mbr1n6rk137sncl3hjf5hqbh43i.apps.googleusercontent.com",
 		"KAKAO_CLIENT_ID": ""
 	},
 	// 비밀값은 여기 두지 않는다. 로컬은 .dev.vars, 배포 환경은 `wrangler secret put <NAME>`.
