@@ -33,7 +33,7 @@ function ColorInput({
   return (
     <FormRow label={label} htmlFor={name} hint={hint}>
       <div className="flex items-center gap-2">
-        <label className="relative size-12 shrink-0 cursor-pointer overflow-hidden rounded-lg border border-base">
+        <label className="relative size-10 shrink-0 cursor-pointer overflow-hidden rounded-lg border border-base">
           <span className="absolute inset-1 rounded" style={{ background: HEX.test(value) ? value : fallback }} />
           <input
             type="color"
@@ -80,9 +80,9 @@ export function BrandingForm({ serviceId, brandColor, brandBackground, logoUrl }
           <div className="flex gap-2">
             {shownLogo ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={shownLogo} alt="로고" width={56} height={56} className="size-14 shrink-0 rounded-sm object-cover" />
+              <img src={shownLogo} alt="로고" width={48} height={48} className="size-12 shrink-0 rounded-md object-cover" />
             ) : (
-              <span className="flex size-14 shrink-0 items-center justify-center rounded-sm bg-base text-label text-quaternary">
+              <span className="flex size-12 shrink-0 items-center justify-center rounded-md bg-base text-label text-quaternary">
                 없음
               </span>
             )}

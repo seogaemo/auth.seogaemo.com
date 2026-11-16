@@ -18,8 +18,8 @@ function brandingStyle({ brandColor, brandBackground }: Branding): CSSProperties
 }
 
 /**
- * Figma 0:632(데스크톱), 0:733(모바일).
- * 바깥 여백 16, 카드 최대 480, 테두리 8, 안쪽 여백 24(모바일 16), 블록 간격 32.
+ * 패턴 배경 + 굵은 테두리 카드 (Figma 0:632의 스타일, 크기는 실제 화면 기준으로 줄임).
+ * 카드 400, 테두리 6, 안쪽 28(모바일 20), 뒤에 깔린 단단한 그림자로 입체감을 준다.
  */
 export function LoginShell({
   branding = {},
@@ -34,20 +34,14 @@ export function LoginShell({
   const Root = preview ? "div" : "main";
   return (
     <Root
-      className={`login-grid flex flex-col items-center justify-center px-4 ${preview ? "rounded-lg py-12" : "min-h-dvh py-8"}`}
+      className={`login-grid flex flex-col items-center justify-center px-4 ${preview ? "rounded-lg py-10" : "min-h-dvh py-10"}`}
       style={brandingStyle(branding)}
     >
-      <div className="flex w-full max-w-[480px] flex-col gap-8 overflow-hidden break-keep border-8 border-login-brand-strong bg-white p-4 sm:p-6">
+      <div className="flex w-full max-w-[400px] flex-col gap-7 break-keep border-[6px] border-login-brand-strong bg-white p-5 shadow-[8px_8px_0_0_rgba(0,0,0,0.18)] sm:p-7">
         {children}
-        <footer className="flex justify-center pb-2">
+        <footer className="flex justify-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/brand/seogaemo-wordmark.svg"
-            alt="Seogaemo"
-            width={125}
-            height={28}
-            className="h-5 w-auto sm:h-7"
-          />
+          <img src="/brand/seogaemo-wordmark.svg" alt="Seogaemo" width={80} height={18} className="h-[18px] w-auto" />
         </footer>
       </div>
     </Root>

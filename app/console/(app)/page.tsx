@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { getPrisma } from "@/cloudflare";
 import { ProviderIcons } from "@/components/console/ProviderIcons";
-import { BackLink, Page, PageTitle } from "@/components/console/ui";
+import { Page, PageTitle } from "@/components/console/ui";
 import { requireDeveloper } from "@/lib/console/session";
 import { getProviders } from "@/lib/service";
 
@@ -20,11 +20,10 @@ export default async function ServiceListPage() {
 
   return (
     <Page>
-      <BackLink />
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-3">
         <PageTitle>서비스 목록</PageTitle>
         {services.length === 0 && (
-          <p className="text-body text-tertiary">
+          <p className="text-footnote text-tertiary">
             서비스를 등록하면 Client ID를 받아 &quot;Seogaemo로 로그인&quot;을 붙일 수 있어요.
           </p>
         )}
@@ -33,7 +32,7 @@ export default async function ServiceListPage() {
             <li key={service.id}>
               <Link
                 href={`/console/services/${service.id}`}
-                className="-mx-3 flex items-center justify-between gap-4 rounded-lg px-3 py-3 transition-colors hover:bg-base"
+                className="-mx-3 flex items-center justify-between gap-4 rounded-lg px-3 py-2.5 transition-colors hover:bg-base"
               >
                 <span className="flex min-w-0 items-center gap-2">
                   {service.logoKey ? (
@@ -53,8 +52,8 @@ export default async function ServiceListPage() {
                       {service.name.slice(0, 1).toUpperCase()}
                     </span>
                   )}
-                  <span className="truncate text-heading text-primary">{service.name}</span>
-                  <span className="shrink-0 text-footnote text-tertiary">
+                  <span className="truncate text-body font-strong text-primary">{service.name}</span>
+                  <span className="shrink-0 text-label text-tertiary">
                     {dateFormat.format(service.createdAt)}
                   </span>
                 </span>
@@ -65,11 +64,11 @@ export default async function ServiceListPage() {
           <li>
             <Link
               href="/console/services/new"
-              className="-mx-3 flex items-center gap-2 rounded-lg px-3 py-3 transition-colors hover:bg-base"
+              className="-mx-3 flex items-center gap-2 rounded-lg px-3 py-2.5 transition-colors hover:bg-base"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/icons/add.svg" alt="" width={24} height={24} />
-              <span className="text-heading font-strong text-content-accent">서비스 추가하기</span>
+              <img src="/icons/add.svg" alt="" width={20} height={20} className="m-0.5" />
+              <span className="text-body font-strong text-content-accent">서비스 추가하기</span>
             </Link>
           </li>
         </ul>

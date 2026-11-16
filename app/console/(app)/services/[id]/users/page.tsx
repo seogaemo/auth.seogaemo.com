@@ -43,21 +43,16 @@ export default async function UsersPage({
   return (
     <Page wide>
       <BackLink href={`/console/services/${service.id}`} label={service.name} />
-      <div className="flex flex-col gap-6">
-        <div className="flex flex-col gap-1">
-          <ServiceHeader
-            id={service.id}
-            name={service.name}
-            hasLogo={!!service.logoKey}
-            title="사용자 관리"
-          />
-          <p className="text-footnote text-tertiary">
-            사용자 {total.toLocaleString("ko-KR")}명
-          </p>
-        </div>
+      <div className="flex flex-col gap-8">
+        <ServiceHeader
+          id={service.id}
+          name={service.name}
+          hasLogo={!!service.logoKey}
+          subtitle={`User Management / 사용자 ${total.toLocaleString("ko-KR")}명`}
+        />
 
         {users.length === 0 ? (
-          <p className="rounded-lg border border-base p-6 text-body text-tertiary">
+          <p className="rounded-lg border border-base p-5 text-footnote text-tertiary">
             아직 로그인한 사용자가 없어요.
           </p>
         ) : (
@@ -83,10 +78,10 @@ export default async function UsersPage({
                 {users.map((user) => (
                   <tr
                     key={user.id}
-                    className="h-14 border-b border-base transition-colors hover:bg-base [&>td+td]:border-l [&>td+td]:border-base"
+                    className="h-12 border-b border-base transition-colors hover:bg-base [&>td+td]:border-l [&>td+td]:border-base"
                   >
                     <td className="px-2">
-                      <span className="block text-body text-primary">
+                      <span className="block text-footnote text-primary">
                         {user.email ?? user.name ?? "이름 없음"}
                       </span>
                       <span className="block font-mono text-caption text-quaternary">

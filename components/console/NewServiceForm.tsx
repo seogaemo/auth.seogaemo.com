@@ -43,7 +43,7 @@ export function NewServiceForm() {
   const selectedType = state?.fields?.clientType ?? "confidential";
 
   return (
-    <form key={JSON.stringify(state?.fields ?? {})} action={action} className="flex flex-col gap-6">
+    <form key={JSON.stringify(state?.fields ?? {})} action={action} className="flex flex-col gap-4">
       {state?.error && <Notice tone="negative">{state.error}</Notice>}
 
       <Card>
@@ -72,16 +72,16 @@ export function NewServiceForm() {
           />
         </FormRow>
 
-        <fieldset className="flex flex-col gap-2 sm:flex-row">
+        <fieldset className="flex flex-col gap-1.5 sm:flex-row sm:gap-3">
           <legend className="sr-only">앱 종류</legend>
-          <span aria-hidden className="shrink-0 text-footnote text-quaternary sm:w-24 sm:pt-[14px]">
+          <span aria-hidden className="shrink-0 text-footnote text-tertiary sm:w-28 sm:pt-[10px]">
             앱 종류
           </span>
           <div className="grid flex-1 gap-2 sm:grid-cols-2">
             {CLIENT_TYPES.map((type) => (
               <label
                 key={type.value}
-                className="flex cursor-pointer flex-col gap-1 rounded-lg border-2 border-base p-4 transition-colors hover:bg-base has-[:checked]:border-accent has-[:checked]:bg-accent-elevated has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[var(--content-accent)]"
+                className="flex cursor-pointer flex-col gap-0.5 rounded-lg border-2 border-base px-3 py-2.5 transition-colors hover:bg-base has-[:checked]:border-accent has-[:checked]:bg-accent-elevated has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[var(--content-accent)]"
               >
                 <input
                   type="radio"
@@ -90,8 +90,8 @@ export function NewServiceForm() {
                   defaultChecked={selectedType === type.value}
                   className="sr-only"
                 />
-                <span className="text-body font-strong text-primary">{type.title}</span>
-                <span className="text-footnote text-tertiary">{type.description}</span>
+                <span className="text-footnote font-strong text-primary">{type.title}</span>
+                <span className="text-label text-tertiary">{type.description}</span>
               </label>
             ))}
           </div>
@@ -99,7 +99,7 @@ export function NewServiceForm() {
       </Card>
 
       <div className="flex justify-end">
-        <Button type="submit" size="lg" disabled={pending}>
+        <Button type="submit" disabled={pending}>
           {pending ? "만드는 중" : "서비스 만들기"}
         </Button>
       </div>

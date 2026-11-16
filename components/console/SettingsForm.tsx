@@ -46,9 +46,9 @@ export function SettingsForm({ serviceId, name, redirectUris, providers, availab
           />
         </FormRow>
 
-        <fieldset className="flex flex-col gap-2 sm:flex-row">
+        <fieldset className="flex flex-col gap-1.5 sm:flex-row sm:gap-3">
           <legend className="sr-only">인증 방식</legend>
-          <span aria-hidden className="shrink-0 text-footnote text-quaternary sm:w-24 sm:pt-[14px]">
+          <span aria-hidden className="shrink-0 text-footnote text-tertiary sm:w-28 sm:pt-[10px]">
             인증 방식
           </span>
           <div className="flex flex-1 flex-wrap gap-2">
@@ -57,7 +57,7 @@ export function SettingsForm({ serviceId, name, redirectUris, providers, availab
               return (
                 <label
                   key={provider}
-                  className={`flex h-12 items-center gap-2 rounded-lg border-2 border-base px-4 transition-colors has-[:checked]:border-accent has-[:checked]:bg-accent-elevated has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[var(--content-accent)] ${
+                  className={`flex h-10 items-center gap-2 rounded-lg border-2 border-base px-3 transition-colors has-[:checked]:border-accent has-[:checked]:bg-accent-elevated has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[var(--content-accent)] ${
                     ready ? "cursor-pointer hover:bg-base" : "cursor-not-allowed opacity-50"
                   }`}
                 >
@@ -70,8 +70,8 @@ export function SettingsForm({ serviceId, name, redirectUris, providers, availab
                     className="sr-only"
                   />
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={`/icons/${provider}-on.svg`} alt="" width={20} height={20} />
-                  <span className="text-body font-strong text-primary">{PROVIDER_LABEL[provider]}</span>
+                  <img src={`/icons/${provider}-on.svg`} alt="" width={18} height={18} />
+                  <span className="text-footnote font-strong text-primary">{PROVIDER_LABEL[provider]}</span>
                   {!ready && <span className="text-label text-quaternary">준비 중</span>}
                 </label>
               );

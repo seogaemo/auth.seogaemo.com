@@ -1,19 +1,19 @@
 import type { Provider } from "@/lib/config";
 
 /**
- * Figma 0:1144 ~ 0:1159: 높이 64(모바일 52), 각진 모서리, 아이콘 24 + 간격 8,
- * 왼쪽 16 / 오른쪽 32 여백, Monoplex Medium 18px(모바일 15px) 자간 -0.1em.
+ * 높이 48, 각진 모서리, 2px 테두리, 아래 3px 단단한 그림자 (누르면 내려앉음).
+ * 아이콘 20 + 간격 8, 모노 15px.
  */
 const STYLES: Record<Provider, { label: string; icon: string; className: string }> = {
   google: {
     label: "Google로 로그인",
     icon: "/brand/google.svg",
-    className: "border-2 border-login-stroke bg-white",
+    className: "bg-white hover:bg-[#f7f7f8]",
   },
   kakao: {
     label: "카카오로 로그인",
     icon: "/brand/kakao.svg",
-    className: "border-2 border-login-stroke bg-kakao",
+    className: "bg-kakao hover:brightness-[0.97]",
   },
 };
 
@@ -24,13 +24,11 @@ export function ProviderButton({ provider, preview = false }: { provider: Provid
   return (
     <Root
       href={preview ? undefined : `/oauth/provider/${provider}/start`}
-      className={`flex h-[52px] w-full items-center justify-center gap-2 pl-4 pr-8 transition-[filter] hover:brightness-95 active:brightness-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-login-brand focus-visible:ring-offset-2 sm:h-16 ${className}`}
+      className={`flex h-12 w-full items-center justify-center gap-2 border-2 border-[rgba(0,0,0,0.12)] pr-2 shadow-[0_3px_0_0_rgba(0,0,0,0.12)] transition-[transform,box-shadow,filter,background-color] duration-75 active:translate-y-[3px] active:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-login-brand focus-visible:ring-offset-2 ${className}`}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={icon} alt="" width={24} height={24} className="size-5 sm:size-6" />
-      <span className="font-mono text-[15px] font-[500] tracking-[-0.1em] text-[#101016] sm:text-[18px]">
-        {label}
-      </span>
+      <img src={icon} alt="" width={20} height={20} className="size-5" />
+      <span className="font-mono text-[15px] font-[500] tracking-[-0.06em] text-[#101016]">{label}</span>
     </Root>
   );
 }

@@ -22,9 +22,9 @@ export default async function BrandingPage({ params }: { params: Promise<{ id: s
     <Page wide>
       <BackLink href={`/console/services/${service.id}`} label={service.name} />
 
-      <div className="grid items-start gap-10 xl:grid-cols-2">
-        <div className="flex flex-col gap-6">
-          <ServiceHeader id={service.id} name={service.name} hasLogo={!!service.logoKey} title="Branding" />
+      <div className="grid items-start gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <div className="flex flex-col gap-8">
+          <ServiceHeader id={service.id} name={service.name} hasLogo={!!service.logoKey} subtitle="Branding" />
           <Block title="로그인 화면" description="저장하면 오른쪽 미리보기와 실제 로그인 화면에 바로 반영돼요.">
             <BrandingForm
               serviceId={service.id}

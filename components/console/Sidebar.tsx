@@ -35,7 +35,7 @@ export function Sidebar({ email, name, services }: Props) {
       : pathname === href);
 
   return (
-    <aside className="flex w-full shrink-0 flex-col gap-6 bg-black px-2 py-4 md:sticky md:top-0 md:h-dvh md:w-64">
+    <aside className="flex w-full shrink-0 flex-col gap-6 bg-black px-2 py-4 md:sticky md:top-0 md:h-dvh md:w-60">
       <Link href="/console" aria-label="Seogaemo SSO 콘솔 홈" className="flex h-6 items-center px-2">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/icons/wordmark-white.svg" alt="" width={120} height={20} />
@@ -45,14 +45,14 @@ export function Sidebar({ email, name, services }: Props) {
         <div className="flex items-center gap-2 px-2">
           {current.hasLogo ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={`/service-logo/${current.id}`} alt="" width={40} height={40} className="size-10 rounded-sm bg-white object-cover" />
+            <img src={`/service-logo/${current.id}`} alt="" width={32} height={32} className="size-8 rounded bg-white object-cover" />
           ) : (
-            <span aria-hidden className="flex size-10 shrink-0 items-center justify-center rounded-sm bg-white font-mono text-headline font-[600] text-black">
-              {current.name.slice(0, 1).toUpperCase()}
+            <span aria-hidden className="flex size-8 shrink-0 items-center justify-center rounded bg-white">
+              <span className="font-mono text-[15px] font-[600] text-black">{current.name.slice(0, 1).toUpperCase()}</span>
             </span>
           )}
           <div className="flex min-w-0 flex-col">
-            <span className="truncate text-title font-strong text-white">{current.name}</span>
+            <span className="truncate text-footnote font-strong text-white">{current.name}</span>
             <Link href="/console" className="text-label text-[rgba(255,255,255,0.6)] hover:text-white">
               서비스 변경하기
             </Link>

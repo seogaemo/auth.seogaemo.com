@@ -22,20 +22,20 @@ type ButtonSize = "md" | "lg";
  */
 const BUTTON_VARIANT: Record<ButtonVariant, string> = {
   primary:
-    "border-[3px] border-[rgba(0,0,0,0.2)] bg-[#2c73f4] text-white shadow-[0_4px_0_0_#2551a2] hover:bg-[#2667dc] active:translate-y-[4px] active:shadow-none",
+    "border-2 border-[rgba(0,0,0,0.2)] bg-[#2c73f4] text-white shadow-[0_3px_0_0_#2551a2] hover:bg-[#2667dc] active:translate-y-[3px] active:shadow-none",
   secondary:
     "border border-base bg-base-elevated text-primary shadow-[0_2px_0_0_var(--border-base)] hover:bg-base active:translate-y-[2px] active:shadow-none",
   danger:
-    "border-[3px] border-[rgba(0,0,0,0.2)] bg-[#ff3b30] text-white shadow-[0_4px_0_0_#b2231a] hover:bg-[#e8362c] active:translate-y-[4px] active:shadow-none",
+    "border-2 border-[rgba(0,0,0,0.2)] bg-[#ff3b30] text-white shadow-[0_3px_0_0_#b2231a] hover:bg-[#e8362c] active:translate-y-[3px] active:shadow-none",
 };
 
 const BUTTON_SIZE: Record<ButtonSize, string> = {
-  md: "h-12 px-5 text-title",
-  lg: "h-16 px-8 text-heading",
+  md: "h-10 px-4 text-footnote",
+  lg: "h-11 px-5 text-body",
 };
 
 function buttonClass(variant: ButtonVariant, size: ButtonSize, extra = "") {
-  return `inline-flex shrink-0 items-center justify-center gap-2 rounded-lg font-strong transition-[background-color,transform,box-shadow] duration-75 disabled:pointer-events-none disabled:opacity-50 ${BUTTON_VARIANT[variant]} ${BUTTON_SIZE[size]} ${focusRing} ${extra}`;
+  return `inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg font-strong transition-[background-color,transform,box-shadow] duration-75 disabled:pointer-events-none disabled:opacity-50 ${BUTTON_VARIANT[variant]} ${BUTTON_SIZE[size]} ${focusRing} ${extra}`;
 }
 
 export function Button({
@@ -91,7 +91,7 @@ export function Input(props: InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
       {...props}
-      className={`h-12 w-full rounded-lg border border-base bg-base-elevated px-3 text-body text-primary placeholder:text-unselected ${focusRing} ${props.className ?? ""}`}
+      className={`h-10 w-full rounded-lg border border-base bg-base-elevated px-3 text-footnote text-primary placeholder:text-unselected ${focusRing} ${props.className ?? ""}`}
     />
   );
 }
@@ -100,7 +100,7 @@ export function Textarea(props: TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return (
     <textarea
       {...props}
-      className={`w-full rounded-lg border border-base bg-base-elevated px-3 py-3 font-mono text-footnote text-primary placeholder:text-unselected ${focusRing} ${props.className ?? ""}`}
+      className={`w-full rounded-lg border border-base bg-base-elevated px-3 py-2.5 font-mono text-footnote text-primary placeholder:text-unselected ${focusRing} ${props.className ?? ""}`}
     />
   );
 }
@@ -118,10 +118,10 @@ export function FormRow({
   children: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-2 sm:flex-row">
+    <div className="flex flex-col gap-1.5 sm:flex-row sm:gap-3">
       <label
         htmlFor={htmlFor}
-        className="shrink-0 text-footnote text-quaternary sm:w-24 sm:pt-[14px]"
+        className="shrink-0 text-footnote text-tertiary sm:w-28 sm:pt-[10px]"
       >
         {label}
       </label>
@@ -136,7 +136,7 @@ export function FormRow({
 /** 콘텐츠 영역. 기본 640px, wide면 넓게 (미리보기가 있는 화면) */
 export function Page({ wide = false, children }: { wide?: boolean; children: ReactNode }) {
   return (
-    <div className={`mx-auto flex w-full flex-col gap-16 pb-24 ${wide ? "max-w-[1184px]" : "max-w-[640px]"}`}>
+    <div className={`mx-auto flex w-full flex-col gap-8 pb-16 ${wide ? "max-w-[1080px]" : "max-w-[680px]"}`}>
       {children}
     </div>
   );
@@ -144,12 +144,12 @@ export function Page({ wide = false, children }: { wide?: boolean; children: Rea
 
 /** 뒤로가기(20px 화살표 + body tertiary). 없으면 같은 높이를 비워 둔다. */
 export function BackLink({ href, label }: { href?: string; label?: string }) {
-  if (!href) return <span aria-hidden className="block h-[22px]" />;
+  if (!href) return null;
   return (
     <Link href={href} className={`flex w-fit items-center rounded ${focusRing}`}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/icons/arrow_back.svg" alt="" width={20} height={20} />
-      <span className="text-body text-tertiary hover:text-primary">{label}</span>
+      <img src="/icons/arrow_back.svg" alt="" width={16} height={16} />
+      <span className="text-footnote text-tertiary hover:text-primary">{label}</span>
     </Link>
   );
 }
@@ -157,7 +157,7 @@ export function BackLink({ href, label }: { href?: string; label?: string }) {
 export function PageTitle({ children, action }: { children: ReactNode; action?: ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-4">
-      <h1 className="text-display font-strong text-primary">{children}</h1>
+      <h1 className="text-headline font-strong text-primary">{children}</h1>
       {action}
     </div>
   );
@@ -177,7 +177,7 @@ export function Block({
     <section className="flex flex-col gap-2">
       {title && (
         <div className="flex flex-col gap-0.5 pb-1">
-          <h2 className="text-heading font-strong text-primary">{title}</h2>
+          <h2 className="text-title font-strong text-primary">{title}</h2>
           {description && <p className="text-footnote text-tertiary">{description}</p>}
         </div>
       )}
@@ -197,9 +197,9 @@ export function InfoRow({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-1 rounded-lg border border-base bg-base-elevated p-4 sm:flex-row sm:items-center sm:gap-2.5">
-      <span className="shrink-0 text-title font-strong text-primary sm:w-40">{label}</span>
-      <div className="min-w-0 flex-1 text-body text-primary">{children}</div>
+    <div className="flex min-h-12 flex-col gap-1 rounded-lg border border-base bg-base-elevated px-4 py-3 sm:flex-row sm:items-center sm:gap-3">
+      <span className="shrink-0 text-footnote text-tertiary sm:w-28">{label}</span>
+      <div className="min-w-0 flex-1 text-footnote text-primary">{children}</div>
       {action}
     </div>
   );
@@ -209,8 +209,8 @@ export function InfoRow({
 export function Card({ children, tone = "default" }: { children: ReactNode; tone?: "default" | "danger" }) {
   return (
     <div
-      className={`flex flex-col gap-8 rounded-lg border p-6 ${
-        tone === "danger" ? "border-negative bg-base-elevated" : "border-base bg-base-elevated"
+      className={`flex flex-col gap-5 rounded-lg border p-5 ${
+        tone === "danger" ? "border-red-100 bg-base-elevated" : "border-base bg-base-elevated"
       }`}
     >
       {children}

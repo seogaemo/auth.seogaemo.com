@@ -16,24 +16,24 @@ export default async function ConsoleLoginPage({
   const { error } = await searchParams;
 
   return (
-    <main className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-base px-4">
-      <div className="flex flex-col items-center gap-2">
+    <main className="flex min-h-dvh flex-col items-center justify-center gap-7 bg-base px-4">
+      <div className="flex flex-col items-center gap-3">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/brand/seogaemo-symbol.svg" alt="" width={56} height={56} />
+        <img src="/brand/seogaemo-symbol.svg" alt="" width={40} height={40} />
         {/* DS가 폰트와 글자색을 모든 요소에 직접 걸어서, 글자를 가진 span마다 지정한다 */}
         <h1 className="flex gap-1">
-          <span className="font-mono text-[28px] font-[500] tracking-[-0.04em] text-primary">Seogaemo</span>
-          <span className="font-mono text-[28px] font-[500] tracking-[-0.04em] text-secondary">SSO</span>
+          <span className="font-mono text-[22px] font-[500] tracking-[-0.04em] text-primary">Seogaemo</span>
+          <span className="font-mono text-[22px] font-[500] tracking-[-0.04em] text-secondary">SSO</span>
         </h1>
       </div>
 
       <a
         href="/console/login/start"
-        className="flex h-16 w-full max-w-[360px] items-center justify-center gap-2.5 rounded border-[3px] border-[rgba(0,0,0,0.2)] bg-[#2c73f3] shadow-[0_6px_0_0_#2551a2] transition-[transform,box-shadow,background-color] duration-75 hover:bg-[#2667dc] active:translate-y-[6px] active:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2c73f3] focus-visible:ring-offset-4"
+        className="flex h-12 w-full max-w-[300px] items-center justify-center gap-2 rounded border-2 border-[rgba(0,0,0,0.2)] bg-[#2c73f3] shadow-[0_4px_0_0_#2551a2] transition-[transform,box-shadow,background-color] duration-75 hover:bg-[#2667dc] active:translate-y-[4px] active:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2c73f3] focus-visible:ring-offset-4"
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/brand/seogaemo-symbol-white.svg" alt="" width={20} height={20} />
-        <span className="font-mono text-[17px] font-[600] tracking-[-0.04em] text-white">
+        <img src="/brand/seogaemo-symbol-white.svg" alt="" width={16} height={16} />
+        <span className="font-mono text-[15px] font-[600] tracking-[-0.04em] text-white">
           Seogaemo로 로그인
         </span>
       </a>

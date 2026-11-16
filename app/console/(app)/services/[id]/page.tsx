@@ -27,8 +27,8 @@ export default async function ServiceSettingsPage({
     <Page>
       <BackLink href="/console" label="서비스 목록" />
 
-      <div className="flex flex-col gap-10">
-        <ServiceHeader id={service.id} name={service.name} hasLogo={!!service.logoKey} />
+      <div className="flex flex-col gap-8">
+        <ServiceHeader id={service.id} name={service.name} hasLogo={!!service.logoKey} subtitle="설정" />
         {created && <Notice tone="positive">서비스를 만들었어요.</Notice>}
 
         <Block title="연동 정보" description="OIDC를 지원하는 라이브러리에 Discovery URL과 Client ID를 넣으면 돼요.">
@@ -36,7 +36,7 @@ export default async function ServiceSettingsPage({
           <CopyField label="Client ID" value={service.clientId} />
           {publicClient ? (
             <InfoRow label="Client Secret">
-              <span className="text-footnote text-tertiary">public client라 쓰지 않아요 (PKCE만 사용)</span>
+              <span className="text-footnote text-quaternary">public client라 쓰지 않아요 (PKCE만 사용)</span>
             </InfoRow>
           ) : (
             <RotateSecret serviceId={service.id} />
