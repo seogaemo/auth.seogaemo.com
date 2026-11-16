@@ -1,22 +1,9 @@
-import type { SocialProvider } from "@/lib/config";
+import { socialMeta, type SocialProvider } from "@/lib/config";
 
 /**
  * 높이 48, 각진 모서리, 2px 테두리, 아래 3px 단단한 그림자 (누르면 내려앉음).
- * 아이콘 20 + 간격 8, 모노 15px.
+ * 아이콘 20 + 간격 8, 모노 15px. 수단별 이름, 로고, 배경은 lib/provider-meta.ts.
  */
-const STYLES: Record<SocialProvider, { label: string; icon: string; className: string }> = {
-  google: {
-    label: "Google로 로그인",
-    icon: "/brand/google.svg",
-    className: "bg-white hover:bg-[#f7f7f8]",
-  },
-  kakao: {
-    label: "카카오로 로그인",
-    icon: "/brand/kakao.svg",
-    className: "bg-kakao hover:brightness-[0.97]",
-  },
-};
-
 const PRESS =
   "border-2 border-[rgba(0,0,0,0.12)] shadow-[0_3px_0_0_rgba(0,0,0,0.12)] transition-[transform,box-shadow,filter,background-color] duration-75 active:translate-y-[3px] active:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-login-brand focus-visible:ring-offset-2";
 
@@ -25,7 +12,7 @@ const PRESS =
  * 이름은 aria-label과 title로 알린다.
  */
 export function ProviderIconButton({ provider, preview = false }: { provider: SocialProvider; preview?: boolean }) {
-  const { label, icon, className } = STYLES[provider];
+  const { loginLabel: label, logo: icon, buttonClass: className } = socialMeta(provider);
   const Root = preview ? "span" : "a";
 
   return (
@@ -42,7 +29,7 @@ export function ProviderIconButton({ provider, preview = false }: { provider: So
 }
 
 export function ProviderButton({ provider, preview = false }: { provider: SocialProvider; preview?: boolean }) {
-  const { label, icon, className } = STYLES[provider];
+  const { loginLabel: label, logo: icon, buttonClass: className } = socialMeta(provider);
   const Root = preview ? "span" : "a";
 
   return (

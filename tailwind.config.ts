@@ -6,6 +6,8 @@ const config: Config = {
   content: [
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
+    // provider-meta.ts의 로그인 버튼 배경 클래스
+    "./lib/provider-meta.ts",
   ],
   theme: {
     extend: {

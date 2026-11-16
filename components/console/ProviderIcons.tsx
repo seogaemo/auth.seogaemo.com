@@ -1,4 +1,4 @@
-import { PROVIDER_LABELS as LABEL, PROVIDERS, type Provider } from "@/lib/config";
+import { PROVIDER_LABELS as LABEL, PROVIDERS, providerIcon, type Provider } from "@/lib/config";
 
 /**
  * 인증 방식 상태 (DESIGN.md 5.3). 켜짐은 브랜드 색, 꺼짐은 회색에 사선을 그어
@@ -12,7 +12,7 @@ export function ProviderIcons({ enabled, size = 20 }: { enabled: Provider[]; siz
         return (
           <li key={provider} className="relative flex">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={`/icons/${provider}-${on ? "on" : "off"}.svg`} alt="" width={size} height={size} />
+            <img src={providerIcon(provider, on)} alt="" width={size} height={size} />
             {!on && (
               <span
                 aria-hidden

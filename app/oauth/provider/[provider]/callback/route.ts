@@ -11,6 +11,20 @@ import { upsertUserFromProfile } from "@/lib/oauth/users";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * response_mode=form_post 제공자(Apple 등)는 결과를 POST로 보낸다. 다른 사이트에서 온 POST에는
+ * SameSite=Lax인 로그인 쿠키가 실리지 않으므로, 같은 값을 쿼리로 옮겨 GET으로 다시 보낸다.
+ * 최상위 GET 이동에는 Lax 쿠키가 실려서 아래 GET이 평소처럼 state와 쿠키를 함께 확인한다.
+ */
+export async function POST(request: Request) {
+  const url = new URL(request.url);
+  const form = await request.formData().catch(() => null);
+  for (const [key, value] of form?.entries() ?? []) {
+    if (typeof value === "string" && !url.searchParams.has(key)) url.searchParams.set(key, value);
+  }
+  return NextResponse.redirect(url, 303);
+}
+
 /** 외부 제공자 로그인이 끝나면 돌아오는 곳. 사용자를 확정하고 서비스에 code를 넘긴다. */
 export async function GET(
   request: Request,

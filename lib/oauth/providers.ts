@@ -15,12 +15,27 @@ export interface ProviderProfile {
 interface ProviderCredentials {
   clientId: string;
   clientSecret?: string;
+  /**
+   * 고정 secret 말고 다른 값이 필요한 제공자용 (예: Apple은 팀 ID, 키 ID, 개인 키로
+   * exchangeCode 안에서 client secret JWT를 그때그때 서명한다)
+   */
+  extra?: Record<string, string>;
 }
 
+/** 토큰 교환 결과. OIDC 제공자는 id_token에 사용자 정보가 들어 있다 (Apple은 여기에만 있다) */
+export interface ProviderTokens {
+  accessToken: string;
+  idToken?: string;
+}
+
+/**
+ * 외부 OAuth 제공자 하나. 이름, 로고, 버튼 모양은 lib/provider-meta.ts에 둔다.
+ * 콜백은 GET과 POST(response_mode=form_post) 둘 다 받는다.
+ */
 interface ProviderDefinition {
-  label: string;
   /** 외부 제공자가 PKCE를 지원하면 true */
   pkce: boolean;
+  /** 서버에 키가 없으면 null (그 수단은 화면과 콘솔에서 꺼진다) */
   credentials(env: CloudflareEnv): ProviderCredentials | null;
   authorizeUrl(params: {
     credentials: ProviderCredentials;
@@ -33,8 +48,8 @@ interface ProviderDefinition {
     redirectUri: string;
     code: string;
     codeVerifier?: string;
-  }): Promise<string>;
-  fetchProfile(accessToken: string): Promise<ProviderProfile>;
+  }): Promise<ProviderTokens>;
+  fetchProfile(tokens: ProviderTokens, credentials: ProviderCredentials): Promise<ProviderProfile>;
 }
 
 async function postForm(url: string, body: Record<string, string | undefined>) {
@@ -53,7 +68,10 @@ async function postForm(url: string, body: Record<string, string | undefined>) {
   if (!res.ok || typeof json.access_token !== "string") {
     throw new ProviderError(`token exchange failed (${res.status}): ${JSON.stringify(json)}`);
   }
-  return json.access_token;
+  return {
+    accessToken: json.access_token,
+    idToken: typeof json.id_token === "string" ? json.id_token : undefined,
+  } satisfies ProviderTokens;
 }
 
 async function getJson<T>(url: string, accessToken: string) {
@@ -67,7 +85,6 @@ async function getJson<T>(url: string, accessToken: string) {
 export class ProviderError extends Error {}
 
 const google: ProviderDefinition = {
-  label: "Google",
   pkce: true,
   credentials(env) {
     if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) return null;
@@ -97,7 +114,7 @@ const google: ProviderDefinition = {
       code_verifier: codeVerifier,
     });
   },
-  async fetchProfile(accessToken) {
+  async fetchProfile({ accessToken }) {
     const profile = await getJson<{
       sub: string;
       email?: string;
@@ -117,7 +134,6 @@ const google: ProviderDefinition = {
 };
 
 const kakao: ProviderDefinition = {
-  label: "카카오",
   pkce: false,
   credentials(env) {
     if (!env.KAKAO_CLIENT_ID) return null;
@@ -141,7 +157,7 @@ const kakao: ProviderDefinition = {
       code,
     });
   },
-  async fetchProfile(accessToken) {
+  async fetchProfile({ accessToken }) {
     const profile = await getJson<{
       id: number;
       kakao_account?: {
@@ -163,11 +179,8 @@ const kakao: ProviderDefinition = {
   },
 };
 
+/** provider-meta.ts의 소셜 수단마다 구현이 있어야 한다 (빠지면 타입 오류) */
 const definitions: Record<SocialProvider, ProviderDefinition> = { google, kakao };
-
-export function providerLabel(provider: SocialProvider) {
-  return definitions[provider].label;
-}
 
 export function providerCallbackUrl(provider: SocialProvider) {
   return endpoint(`/oauth/provider/${provider}/callback`);
@@ -213,11 +226,11 @@ export async function completeProviderLogin(
   const credentials = credentialsOf(provider);
   if (!credentials) throw new ProviderError(`${provider} is not configured`);
 
-  const accessToken = await def.exchangeCode({
+  const tokens = await def.exchangeCode({
     credentials,
     redirectUri: providerCallbackUrl(provider),
     code,
     codeVerifier: codeVerifier ?? undefined,
   });
-  return def.fetchProfile(accessToken);
+  return def.fetchProfile(tokens, credentials);
 }

@@ -1,19 +1,17 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 
-/** 로그인 수단. 화면과 목록에는 이 순서로 보여준다 (DESIGN.md 5.1). */
-export const PROVIDERS = ["password", "email", "google", "kakao"] as const;
-export type Provider = (typeof PROVIDERS)[number];
+import { PROVIDERS, SOCIAL_PROVIDERS, type Provider, type SocialProvider } from "./provider-meta";
 
-/** 외부 OAuth 제공자 */
-export const SOCIAL_PROVIDERS = ["google", "kakao"] as const;
-export type SocialProvider = (typeof SOCIAL_PROVIDERS)[number];
-
-export const PROVIDER_LABELS: Record<Provider, string> = {
-  password: "이메일/비밀번호",
-  email: "이메일 코드",
-  google: "Google",
-  kakao: "카카오",
-};
+/** 로그인 수단 목록과 이름, 아이콘은 provider-meta.ts 한 곳에서 정한다 */
+export {
+  PROVIDER_LABELS,
+  PROVIDERS,
+  SOCIAL_PROVIDERS,
+  providerIcon,
+  socialMeta,
+  type Provider,
+  type SocialProvider,
+} from "./provider-meta";
 
 export const SUPPORTED_SCOPES = ["openid", "email", "profile"] as const;
 
@@ -52,11 +50,11 @@ export const CONSOLE_SESSION_COOKIE = "sg_console";
 export const CONSOLE_LOGIN_COOKIE = "sg_console_login";
 
 export function isProvider(value: string): value is Provider {
-  return (PROVIDERS as readonly string[]).includes(value);
+  return (PROVIDERS as string[]).includes(value);
 }
 
 export function isSocialProvider(value: string): value is SocialProvider {
-  return (SOCIAL_PROVIDERS as readonly string[]).includes(value);
+  return (SOCIAL_PROVIDERS as string[]).includes(value);
 }
 
 /** OIDC issuer. 모든 엔드포인트 주소의 기준이기도 하다. */

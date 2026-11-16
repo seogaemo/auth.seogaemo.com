@@ -11,6 +11,7 @@ import {
   parseServiceName,
 } from "@/lib/console/validation";
 import { hashSecret, randomToken } from "@/lib/crypto";
+import { PROVIDERS } from "@/lib/config";
 
 export type ActionState = {
   error?: string;
@@ -55,7 +56,7 @@ export async function createService(_prev: ActionState, form: FormData): Promise
       clientId: `sg_${randomToken(12)}`,
       clientSecretHash: secret ? await hashSecret(secret) : "",
       redirectUris: parsedUris.uris,
-      providers: ["password", "email", "google", "kakao"],
+      providers: [...PROVIDERS],
       ownerId: developer.id,
     },
   });

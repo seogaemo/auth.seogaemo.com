@@ -30,6 +30,25 @@ Seogaemo SSO. 누구나 가입해서 자기 서비스를 등록하고 "Seogaemo�
 - 확인된 이메일이 같으면 로그인 방식이 달라도 같은 사용자로 합친다.
 - 메일은 smtp2go SMTP로 보낸다 (`lib/smtp.ts`, Workers TCP 소켓). `SMTP_*`, `MAIL_FROM`이 비어 있으면 이메일 계열 로그인은 꺼진다.
 
+### 로그인 수단 추가하기
+
+외부 OAuth 제공자(예: 네이버, GitHub, Apple)를 붙이는 순서. DB 마이그레이션과 새 경로는 필요 없다.
+
+1. `lib/provider-meta.ts`의 `PROVIDER_META`에 항목을 넣는다. 이름, 콘솔 아이콘 이름, 로그인 버튼 이름, 로고, 배경 클래스. 키 순서가 화면 순서다.
+2. 아이콘을 넣는다. 콘솔 상태 아이콘 `public/icons/{icon}-on.svg`, `{icon}-off.svg`, 로그인 버튼 로고(`social.logo`).
+3. `lib/oauth/providers.ts`에 `ProviderDefinition`을 만들고 `definitions`에 넣는다. 빠뜨리면 타입 검사가 실패한다.
+   - `credentials(env)`: 키가 없으면 `null`. 그 수단은 화면과 콘솔에서 "준비 중"이 된다.
+   - `exchangeCode`: `{ accessToken, idToken }`을 돌려준다. 공통 `postForm`이 `id_token`도 받아 둔다.
+   - `fetchProfile(tokens, credentials)`: `emailVerified`는 제공자가 확인했다고 할 때만 `true`. 이 값이 `true`일 때만 이메일로 기존 사용자와 합친다.
+4. 키를 등록한다. 공개 값은 `wrangler.jsonc`의 `vars`, secret은 `wrangler secret put`, 타입은 `cloudflare-env.d.ts`(`{PROVIDER}_CLIENT_ID` 이름 규칙), 로컬은 `.dev.vars`.
+5. 제공자 콘솔에 콜백 주소 `https://auth.seogaemo.com/oauth/provider/{provider}/callback`을 등록한다.
+6. `pnpm check:providers`로 아이콘, 로고, 키 타입이 다 있는지 확인한다. CI도 배포 전에 돌린다.
+
+제공자별 주의:
+
+- **Apple**: 결과를 `response_mode=form_post`로 보낸다. 콜백의 `POST`가 받아서 GET으로 다시 보내 주니 따로 할 일은 없다. client secret은 매번 서명하는 JWT라서 팀 ID, 키 ID, 개인 키를 `credentials.extra`에 넣고 `exchangeCode` 안에서 만든다. 사용자 정보는 `tokens.idToken`에만 있으니 Apple JWKS로 서명을 확인한 뒤 읽는다. 이름은 첫 로그인 POST의 `user` 값에만 오고, GET으로 옮길 때 쿼리 `user`로 남는다. 쓰려면 콜백에서 `completeProviderLogin`으로 넘겨 준다.
+- **GitHub**: 이메일이 비공개면 프로필에 없어서 `fetchProfile`에서 `/user/emails`를 한 번 더 불러 `primary`, `verified`인 것을 쓴다.
+
 ## 서비스에 붙이기
 
 표준 OIDC라서 Auth.js, `oidc-client-ts` 같은 기존 라이브러리에 discovery 주소만 넣으면 된다.

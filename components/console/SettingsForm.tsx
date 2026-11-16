@@ -3,7 +3,7 @@
 import { useActionState } from "react";
 
 import { updateSettings, type ActionState } from "@/actions/services";
-import { PROVIDERS, type Provider } from "@/lib/config";
+import { PROVIDERS, providerIcon, type Provider } from "@/lib/config";
 import { PROVIDER_LABEL } from "./ProviderIcons";
 import { Button, Card, CheckMark, FormFeedback, FormRow, Input, Textarea } from "./ui";
 
@@ -67,7 +67,7 @@ export function SettingsForm({ serviceId, name, redirectUris, providers, availab
                     />
                     <CheckMark />
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={`/icons/${provider}-on.svg`} alt="" width={18} height={18} />
+                    <img src={providerIcon(provider, true)} alt="" width={18} height={18} />
                     <span className="text-footnote font-strong text-primary">{PROVIDER_LABEL[provider]}</span>
                     {!ready && <span className="text-label text-quaternary">준비 중</span>}
                   </label>

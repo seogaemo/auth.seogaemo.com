@@ -31,6 +31,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Check login providers
+        run: pnpm run check:providers
+
       - name: Apply D1 migrations
         run: pnpm run db:migrate:remote
 
