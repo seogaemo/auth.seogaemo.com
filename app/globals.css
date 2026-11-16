@@ -1,3 +1,43 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* SeogaemoMono = Monoplex KR 서브셋 (SIL OFL 1.1, public/fonts/LICENSE.md) */
+@font-face {
+  font-family: "SeogaemoMono";
+  src: url("/fonts/SeogaemoMono-Text.woff2") format("woff2");
+  font-weight: 450;
+  font-display: swap;
+}
+@font-face {
+  font-family: "SeogaemoMono";
+  src: url("/fonts/SeogaemoMono-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: "SeogaemoMono";
+  src: url("/fonts/SeogaemoMono-SemiBold.woff2") format("woff2");
+  font-weight: 600;
+  font-display: swap;
+}
+
+/* Hosted Login 전용 토큰 (DESIGN.md 3.3). 서비스 브랜딩이 --login-brand, --login-background를 덮어쓴다. */
+:root {
+  --login-brand: #2c73f4;
+  --login-stroke: rgba(0, 0, 0, 0.1);
+  --login-stroke-strong: rgba(0, 0, 0, 0.2);
+  --kakao: #fee500;
+}
+
+@layer components {
+  .login-grid {
+    /* 파생 색은 브랜딩을 덮어쓴 이 요소에서 계산해야 서비스 색을 따라간다 */
+    --login-brand-strong: color-mix(in srgb, var(--login-brand) 80%, black);
+    background-color: var(--login-background, var(--login-brand));
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+}

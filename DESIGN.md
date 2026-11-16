@@ -107,7 +107,7 @@ Hosted Login에만 쓴다. `tailwind.config.ts`의 `theme.extend`나 `globals.cs
 |---|---|---|
 | Pretendard | 전체 기본 (DS가 자동 적용) | 준비됨 |
 | SUITE | `font-special`. 쓸 곳이 정해지지 않음 | 준비됨 |
-| Monoplex KR | Hosted Login의 제목, 버튼, 라벨. 워드마크 "Seogaemo" | 출처 확인됨, 웹폰트 변환 필요 (아래) |
+| SeogaemoMono (Monoplex KR 서브셋) | Hosted Login의 제목, 버튼, 라벨. Tailwind `font-mono` | 준비됨 (아래) |
 
 - `app/layout.tsx`의 Geist 폰트는 지운다.
 - **Monoplex KR**: https://github.com/y-kim/monoplex (IBM Plex Mono + IBM Plex Sans KR). SIL OFL 1.1이라 웹에 넣어 써도 된다.
@@ -288,8 +288,8 @@ Hosted Login에만 쓴다. `tailwind.config.ts`의 `theme.extend`나 `globals.cs
 ## 9. 아직 정하지 않은 것
 
 - [x] Monoplex KR 출처와 라이선스 확인 (OFL 1.1)
-- [ ] Monoplex KR woff2 서브셋 만들기
-- [ ] 로그인 배경 그리드 패턴 에셋 (시안은 PNG 두 장을 겹쳐 씀). CSS 그라디언트로 그릴 수 있으면 그렇게 한다.
+- [x] Monoplex KR woff2 서브셋 (`public/fonts/SeogaemoMono-*.woff2`, `scripts/build-font.py`)
+- [x] 로그인 배경 그리드: PNG 대신 CSS 그라디언트로 그림 (`.login-grid`)
 - [x] Branding 범위: 브랜드 색(`--login-brand`, `--login-brand-strong`)과 배경까지. 폰트는 고정
 - [x] Group: 만들지 않음
 - [x] 사용자 엑셀 내보내기: MVP에서 뺌
