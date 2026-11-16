@@ -1,9 +1,9 @@
-import { deleteService } from "@/actions/services";
 import { CopyField } from "@/components/console/CopyField";
+import { DeleteServiceForm } from "@/components/console/DeleteServiceForm";
 import { RotateSecret } from "@/components/console/RotateSecret";
 import { ServiceHeader } from "@/components/console/ServiceHeader";
 import { SettingsForm } from "@/components/console/SettingsForm";
-import { BackLink, Block, Button, Card, FormRow, InfoRow, Input, Notice, Page } from "@/components/console/ui";
+import { BackLink, Block, InfoRow, Notice, Page } from "@/components/console/ui";
 import { endpoint, PROVIDERS } from "@/lib/config";
 import { requireOwnedService } from "@/lib/console/session";
 import { isProviderConfigured } from "@/lib/oauth/providers";
@@ -16,10 +16,10 @@ export default async function ServiceSettingsPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ created?: string; deleteError?: string }>;
+  searchParams: Promise<{ created?: string }>;
 }) {
   const { id } = await params;
-  const { created, deleteError } = await searchParams;
+  const { created } = await searchParams;
   const { service } = await requireOwnedService(id);
   const publicClient = isPublicClient(service);
 
@@ -54,19 +54,7 @@ export default async function ServiceSettingsPage({
         </Block>
 
         <Block title="서비스 삭제" description="이 서비스의 사용자와 토큰이 모두 지워지고 되돌릴 수 없어요.">
-          {deleteError && <Notice tone="negative">서비스 이름이 맞지 않아요.</Notice>}
-          <form action={deleteService.bind(null, service.id)}>
-            <Card tone="danger">
-              <FormRow label="확인" htmlFor="confirm" hint={`지우려면 "${service.name}"을 입력하세요.`}>
-                <div className="flex flex-col gap-3 sm:flex-row">
-                  <Input id="confirm" name="confirm" autoComplete="off" required placeholder={service.name} />
-                  <Button type="submit" variant="danger">
-                    삭제
-                  </Button>
-                </div>
-              </FormRow>
-            </Card>
-          </form>
+          <DeleteServiceForm serviceId={service.id} name={service.name} />
         </Block>
       </div>
     </Page>

@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 
 import { getPrisma, getR2 } from "@/cloudflare";
 import { requireDeveloper, requireOwnedService } from "@/lib/console/session";
@@ -15,6 +14,8 @@ import { hashSecret, randomToken } from "@/lib/crypto";
 
 export type ActionState = {
   error?: string;
+  /** 브라우저가 이동할 주소 (서버 액션 안의 redirect()는 OpenNext에서 404가 난다) */
+  redirectTo?: string;
   message?: string;
   /** 새로 만든 client secret. 이 응답에서 한 번만 보여준다. */
   secret?: string;
@@ -54,13 +55,13 @@ export async function createService(_prev: ActionState, form: FormData): Promise
       clientId: `sg_${randomToken(12)}`,
       clientSecretHash: secret ? await hashSecret(secret) : "",
       redirectUris: parsedUris.uris,
-      providers: ["google", "kakao"],
+      providers: ["password", "email", "google", "kakao"],
       ownerId: developer.id,
     },
   });
 
   revalidatePath("/console");
-  if (!secret) redirect(`/console/services/${service.id}?created=1`);
+  if (!secret) return { redirectTo: `/console/services/${service.id}?created=1` };
   return { secret, serviceId: service.id, clientId: service.clientId };
 }
 
@@ -105,18 +106,23 @@ export async function rotateClientSecret(serviceId: string): Promise<ActionState
   return { secret };
 }
 
-export async function deleteService(serviceId: string, form: FormData) {
+export async function deleteService(
+  serviceId: string,
+  _prev: ActionState,
+  form: FormData,
+): Promise<ActionState> {
   const { service } = await requireOwnedService(serviceId);
   if (String(form.get("confirm") ?? "").trim() !== service.name) {
-    redirect(`/console/services/${serviceId}?deleteError=1`);
+    return { error: "서비스 이름이 맞지 않아요." };
   }
 
   if (service.logoKey) await getR2().delete(service.logoKey);
   // User, Identity, 토큰은 onDelete: Cascade로 같이 지워진다
   await getPrisma().service.delete({ where: { id: serviceId } });
 
-  revalidatePath("/console");
-  redirect("/console");
+  // revalidatePath를 하면 Next가 지금 페이지(이미 지운 서비스)를 다시 그리다 404를 먼저 띄운다.
+  // 목록은 이동하면서 새로 그려지니 필요 없다.
+  return { redirectTo: "/console" };
 }
 
 export async function updateBranding(

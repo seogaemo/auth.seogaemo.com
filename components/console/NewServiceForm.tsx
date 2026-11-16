@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 
 import { createService, type ActionState } from "@/actions/services";
 import { CopyField } from "./CopyField";
@@ -21,6 +21,9 @@ const CLIENT_TYPES = [
 
 export function NewServiceForm() {
   const [state, action, pending] = useActionState<ActionState, FormData>(createService, null);
+  useEffect(() => {
+    if (state?.redirectTo) window.location.assign(state.redirectTo);
+  }, [state]);
 
   if (state?.secret && state.serviceId && state.clientId) {
     return (

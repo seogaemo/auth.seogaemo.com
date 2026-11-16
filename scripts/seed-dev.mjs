@@ -7,7 +7,7 @@ import { execFileSync } from "node:child_process";
 
 const sha256 = (v) => createHash("sha256").update(v).digest("hex");
 const redirectUris = JSON.stringify(["http://localhost:5173/callback"]);
-const providers = JSON.stringify(["google", "kakao"]);
+const providers = JSON.stringify(["password", "email", "google", "kakao"]);
 const now = new Date().toISOString();
 
 const row = (id, clientId, secretHash, name) =>

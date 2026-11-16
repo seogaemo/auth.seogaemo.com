@@ -1,9 +1,7 @@
 import { BrandingForm } from "@/components/console/BrandingForm";
 import { ServiceHeader } from "@/components/console/ServiceHeader";
 import { BackLink, Block, Page } from "@/components/console/ui";
-import { LoginShell } from "@/components/login/LoginShell";
-import { ProviderButton } from "@/components/login/ProviderButton";
-import { ServiceHeading } from "@/components/login/ServiceHeading";
+import { LoginPreview } from "@/components/login/LoginPreview";
 import { requireOwnedService } from "@/lib/console/session";
 import { getProviders } from "@/lib/service";
 
@@ -37,16 +35,7 @@ export default async function BrandingPage({ params }: { params: Promise<{ id: s
 
         <section aria-label="로그인 화면 미리보기" className="flex flex-col gap-2 xl:sticky xl:top-4">
           <span className="text-footnote text-quaternary">미리보기</span>
-          <LoginShell branding={service} preview>
-            <ServiceHeading name={service.name} logoUrl={logoUrl} />
-            <div className="flex flex-col gap-3">
-              {providers.length === 0 ? (
-                <p className="text-footnote text-quaternary">켜진 인증 방식이 없어요.</p>
-              ) : (
-                providers.map((provider) => <ProviderButton key={provider} provider={provider} preview />)
-              )}
-            </div>
-          </LoginShell>
+          <LoginPreview name={service.name} logoUrl={logoUrl} branding={service} providers={providers} />
         </section>
       </div>
     </Page>

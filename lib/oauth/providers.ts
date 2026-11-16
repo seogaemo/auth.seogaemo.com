@@ -1,6 +1,7 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 
-import { endpoint, type Provider } from "../config";
+import { endpoint, type Provider, type SocialProvider } from "../config";
+import { isMailConfigured } from "../mail";
 import { pkceChallenge } from "../crypto";
 
 export interface ProviderProfile {
@@ -162,27 +163,28 @@ const kakao: ProviderDefinition = {
   },
 };
 
-const definitions: Record<Provider, ProviderDefinition> = { google, kakao };
+const definitions: Record<SocialProvider, ProviderDefinition> = { google, kakao };
 
-export function providerLabel(provider: Provider) {
+export function providerLabel(provider: SocialProvider) {
   return definitions[provider].label;
 }
 
-export function providerCallbackUrl(provider: Provider) {
+export function providerCallbackUrl(provider: SocialProvider) {
   return endpoint(`/oauth/provider/${provider}/callback`);
 }
 
-function credentialsOf(provider: Provider) {
+function credentialsOf(provider: SocialProvider) {
   return definitions[provider].credentials(getCloudflareContext().env);
 }
 
-/** 서버에 키가 설정된 로그인 수단인지 */
+/** 서버에 키가 설정된 로그인 수단인지. 이메일 계열은 메일 발송이 설정돼 있어야 한다. */
 export function isProviderConfigured(provider: Provider) {
+  if (provider === "password" || provider === "email") return isMailConfigured();
   return credentialsOf(provider) !== null;
 }
 
 export async function buildProviderAuthorizeUrl(
-  provider: Provider,
+  provider: SocialProvider,
   state: string,
   codeVerifier: string | null,
 ) {
@@ -198,12 +200,12 @@ export async function buildProviderAuthorizeUrl(
   });
 }
 
-export function providerUsesPkce(provider: Provider) {
+export function providerUsesPkce(provider: SocialProvider) {
   return definitions[provider].pkce;
 }
 
 export async function completeProviderLogin(
-  provider: Provider,
+  provider: SocialProvider,
   code: string,
   codeVerifier: string | null,
 ) {

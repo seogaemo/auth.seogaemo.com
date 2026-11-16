@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 import { getPrisma } from "@/cloudflare";
-import { isProvider, LOGIN_TX_COOKIE } from "@/lib/config";
+import { isSocialProvider, LOGIN_TX_COOKIE } from "@/lib/config";
 import { randomToken } from "@/lib/crypto";
 import { loginErrorUrl } from "@/lib/oauth/errors";
 import {
@@ -27,7 +27,7 @@ export async function GET(
   if (!transaction) return NextResponse.redirect(loginErrorUrl("expired"), 302);
 
   if (
-    !isProvider(provider) ||
+    !isSocialProvider(provider) ||
     !getProviders(transaction.service).includes(provider) ||
     !isProviderConfigured(provider)
   ) {

@@ -56,10 +56,14 @@
 	"vars": {
 		"ISSUER": "https://auth.seogaemo.com",
 		"GOOGLE_CLIENT_ID": "247451597886-t3595mbr1n6rk137sncl3hjf5hqbh43i.apps.googleusercontent.com",
-		"KAKAO_CLIENT_ID": "17ed27df4cc38c84fff31b8fde04cb86"
+		"KAKAO_CLIENT_ID": "17ed27df4cc38c84fff31b8fde04cb86",
+		"SMTP_HOST": "mail.smtp2go.com",
+		"SMTP_PORT": "2525",
+		"SMTP_USERNAME": "seogaemo",
+		"MAIL_FROM": "Seogaemo <no-reply@seogaemo.com>"
 	},
 	// 비밀값은 여기 두지 않는다. 로컬은 .dev.vars, 배포 환경은 `wrangler secret put <NAME>`.
-	// 필요한 시크릿: JWT_PRIVATE_JWK, GOOGLE_CLIENT_SECRET, (선택) KAKAO_CLIENT_SECRET
+	// 필요한 시크릿: JWT_PRIVATE_JWK, GOOGLE_CLIENT_SECRET, SMTP_PASSWORD, (선택) KAKAO_CLIENT_SECRET
 	/**
 	 * Note: Use secrets to store sensitive data.
 	 * https://developers.cloudflare.com/workers/configuration/secrets/

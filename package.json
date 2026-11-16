@@ -13,7 +13,7 @@
 		"postinstall": "prisma generate",
 		"db:migrate:local": "wrangler d1 migrations apply db.auth.seogaemo.com --local",
 		"db:migrate:remote": "wrangler d1 migrations apply db.auth.seogaemo.com --remote",
-		"db:diff": "prisma migrate diff --from-local-d1 --to-schema-datamodel ./prisma/schema.prisma --script",
+		"db:diff": "node scripts/db-diff.mjs",
 		"db:seed:local": "node scripts/seed-dev.mjs"
 	},
 	"packageManager": "pnpm@9.15.9",

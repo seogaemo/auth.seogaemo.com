@@ -15,4 +15,14 @@ interface CloudflareEnv {
   KAKAO_CLIENT_ID?: string;
   /** 카카오 콘솔에서 Client Secret을 켠 경우에만 */
   KAKAO_CLIENT_SECRET?: string;
+
+  /** 메일 발송 (smtp2go). 비어 있으면 이메일/비밀번호, 이메일 코드 로그인이 꺼진다. */
+  SMTP_HOST?: string;
+  SMTP_PORT?: string;
+  SMTP_USERNAME?: string;
+  SMTP_PASSWORD?: string;
+  /** 보내는 사람. 예: Seogaemo <no-reply@seogaemo.com> */
+  MAIL_FROM?: string;
+  /** "1"이면 메일 대신 로그에 남긴다. ISSUER가 http://localhost일 때만 동작한다. */
+  MAIL_DEV_LOG?: string;
 }

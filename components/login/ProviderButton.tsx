@@ -1,10 +1,10 @@
-import type { Provider } from "@/lib/config";
+import type { SocialProvider } from "@/lib/config";
 
 /**
  * 높이 48, 각진 모서리, 2px 테두리, 아래 3px 단단한 그림자 (누르면 내려앉음).
  * 아이콘 20 + 간격 8, 모노 15px.
  */
-const STYLES: Record<Provider, { label: string; icon: string; className: string }> = {
+const STYLES: Record<SocialProvider, { label: string; icon: string; className: string }> = {
   google: {
     label: "Google로 로그인",
     icon: "/brand/google.svg",
@@ -17,7 +17,7 @@ const STYLES: Record<Provider, { label: string; icon: string; className: string 
   },
 };
 
-export function ProviderButton({ provider, preview = false }: { provider: Provider; preview?: boolean }) {
+export function ProviderButton({ provider, preview = false }: { provider: SocialProvider; preview?: boolean }) {
   const { label, icon, className } = STYLES[provider];
   const Root = preview ? "span" : "a";
 

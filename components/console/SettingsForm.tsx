@@ -3,7 +3,7 @@
 import { useActionState } from "react";
 
 import { updateSettings, type ActionState } from "@/actions/services";
-import type { Provider } from "@/lib/config";
+import { PROVIDERS, type Provider } from "@/lib/config";
 import { PROVIDER_LABEL } from "./ProviderIcons";
 import { Button, Card, FormRow, Input, Notice, Textarea } from "./ui";
 
@@ -52,7 +52,7 @@ export function SettingsForm({ serviceId, name, redirectUris, providers, availab
             인증 방식
           </span>
           <div className="flex flex-1 flex-wrap gap-2">
-            {(["google", "kakao"] as const).map((provider) => {
+            {PROVIDERS.map((provider) => {
               const ready = available.includes(provider);
               return (
                 <label

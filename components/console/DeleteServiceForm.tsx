@@ -1,0 +1,32 @@
+"use client";
+
+import { useActionState, useEffect } from "react";
+
+import { deleteService, type ActionState } from "@/actions/services";
+import { Button, Card, FormRow, Input, Notice } from "./ui";
+
+export function DeleteServiceForm({ serviceId, name }: { serviceId: string; name: string }) {
+  const [state, action, pending] = useActionState<ActionState, FormData>(
+    deleteService.bind(null, serviceId),
+    null,
+  );
+  useEffect(() => {
+    if (state?.redirectTo) window.location.assign(state.redirectTo);
+  }, [state]);
+
+  return (
+    <form action={action} className="flex flex-col gap-2">
+      {state?.error && <Notice tone="negative">{state.error}</Notice>}
+      <Card tone="danger">
+        <FormRow label="확인" htmlFor="confirm" hint={`지우려면 "${name}"을 입력하세요.`}>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <Input id="confirm" name="confirm" autoComplete="off" required placeholder={name} />
+            <Button type="submit" variant="danger" disabled={pending || Boolean(state?.redirectTo)}>
+              삭제
+            </Button>
+          </div>
+        </FormRow>
+      </Card>
+    </form>
+  );
+}

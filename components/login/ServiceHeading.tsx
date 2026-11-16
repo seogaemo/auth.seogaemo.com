@@ -1,5 +1,16 @@
-/** 로고 48 + "{서비스}에 / 로그인하기" (모노 24px, 행간 1.35, 자간 -0.04em) */
-export function ServiceHeading({ name, logoUrl }: { name: string; logoUrl?: string | null }) {
+/** 로고 48 + 두 줄 제목 (모노 24px, 행간 1.35, 자간 -0.04em). 기본은 "{서비스}에 / 로그인하기" */
+export function ServiceHeading({
+  name,
+  logoUrl,
+  action = "로그인하기",
+  description,
+}: {
+  name: string;
+  logoUrl?: string | null;
+  /** 두 번째 줄 */
+  action?: string;
+  description?: React.ReactNode;
+}) {
   return (
     <header className="flex flex-col gap-3">
       {logoUrl ? (
@@ -13,8 +24,9 @@ export function ServiceHeading({ name, logoUrl }: { name: string; logoUrl?: stri
       <h1 className="font-mono text-[24px] font-[450] leading-[1.35] tracking-[-0.04em] text-black">
         {name}에
         <br />
-        로그인하기
+        {action}
       </h1>
+      {description && <p className="text-footnote text-secondary">{description}</p>}
     </header>
   );
 }

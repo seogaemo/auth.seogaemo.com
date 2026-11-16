@@ -16,6 +16,20 @@ Seogaemo SSO. 누구나 가입해서 자기 서비스를 등록하고 "Seogaemo�
 - Branding: 로고(R2), 브랜드 색, 배경 색, 로그인 화면 미리보기
 - User Management: 서비스 사용자 목록, 삭제
 
+## 로그인 방식
+
+서비스마다 콘솔에서 켜고 끈다.
+
+| 방식 | 설명 |
+|---|---|
+| 이메일/비밀번호 | 회원가입은 메일로 받은 6자리 코드로 이메일을 확인한 뒤 끝난다. 비밀번호 재설정도 코드로 한다. 비밀번호는 PBKDF2-SHA256(10만 번)으로 저장하고, 5번 연속 틀리면 15분 잠근다. |
+| 이메일 코드 | 비밀번호 없이 메일로 받은 6자리 코드로 로그인한다. 처음이면 바로 가입된다. |
+| Google, 카카오 | OAuth |
+
+- 인증 코드는 10분 동안 5번까지 입력할 수 있고, 같은 이메일로는 30초에 한 번, 한 시간에 5번까지 보낸다.
+- 확인된 이메일이 같으면 로그인 방식이 달라도 같은 사용자로 합친다.
+- 메일은 smtp2go SMTP로 보낸다 (`lib/smtp.ts`, Workers TCP 소켓). `SMTP_*`, `MAIL_FROM`이 비어 있으면 이메일 계열 로그인은 꺼진다.
+
 ## 서비스에 붙이기
 
 표준 OIDC라서 Auth.js, `oidc-client-ts` 같은 기존 라이브러리에 discovery 주소만 넣으면 된다.
@@ -52,6 +66,8 @@ GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 KAKAO_CLIENT_ID=          # 카카오 REST API 키
 KAKAO_CLIENT_SECRET=      # 카카오에서 Client Secret을 켰을 때만
+SMTP_PASSWORD=            # smtp2go
+MAIL_DEV_LOG=1            # 메일을 보내지 않고 로그(제목에 코드 포함)로 남긴다. localhost에서만 동작
 ```
 
 외부 제공자 콜백 주소는 `{ISSUER}/oauth/provider/{google|kakao}/callback`이다. Google Cloud Console, Kakao Developers에 등록한다.
@@ -65,8 +81,8 @@ KAKAO_CLIENT_SECRET=      # 카카오에서 Client Secret을 켰을 때만
 `prisma/schema.prisma`를 고친 뒤:
 
 ```bash
-npx wrangler d1 migrations create db.auth.seogaemo.com <이름>   # 빈 0003_<이름>.sql 생성
-pnpm db:diff > migrations/0003_<이름>.sql                       # 로컬 DB와 스키마 차이를 SQL로
+npx wrangler d1 migrations create db.auth.seogaemo.com <이름>   # 빈 0004_<이름>.sql 생성
+pnpm db:diff > migrations/0004_<이름>.sql                       # 로컬 DB와 스키마 차이를 SQL로
 pnpm db:migrate:local
 ```
 
@@ -80,6 +96,7 @@ main에 push하면 GitHub Actions가 D1 마이그레이션, 빌드, 배포를 �
 node scripts/generate-jwk.mjs | npx wrangler secret put JWT_PRIVATE_JWK
 npx wrangler secret put GOOGLE_CLIENT_SECRET
 npx wrangler secret put KAKAO_CLIENT_SECRET     # 쓰는 경우만
+npx wrangler secret put SMTP_PASSWORD
 ```
 
 `GOOGLE_CLIENT_ID`, `KAKAO_CLIENT_ID`는 비밀값이 아니라서 `wrangler.jsonc`의 `vars`에 넣는다.

@@ -1,6 +1,4 @@
-import { PROVIDERS, type Provider } from "@/lib/config";
-
-const LABEL: Record<Provider, string> = { google: "Google", kakao: "카카오" };
+import { PROVIDER_LABELS as LABEL, PROVIDERS, type Provider } from "@/lib/config";
 
 /** 인증 방식 상태 (DESIGN.md 5.3). 켜짐은 브랜드 색, 꺼짐은 회색. 상태는 aria-label로도 알린다. */
 export function ProviderIcons({ enabled, size = 20 }: { enabled: Provider[]; size?: 20 | 24 }) {

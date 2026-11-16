@@ -1,16 +1,15 @@
 import type { Metadata } from "next";
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 
+import { LoginDivider, LoginLinkButton } from "@/components/login/fields";
+import { PasswordLoginForm } from "@/components/login/forms";
 import { LoginShell } from "@/components/login/LoginShell";
 import { ProviderButton } from "@/components/login/ProviderButton";
 import { ServiceHeading } from "@/components/login/ServiceHeading";
-import { LOGIN_TX_COOKIE } from "@/lib/config";
-import { isProviderConfigured } from "@/lib/oauth/providers";
-import { findActiveTransaction } from "@/lib/oauth/transaction";
-import { getProviders } from "@/lib/service";
+import { isSocialProvider } from "@/lib/config";
+import { loadLoginContext } from "@/lib/login-context";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = { title: "로그인" };
 
 /** 서비스에 전달되는 정보 (scope 기준) */
 function sharedInfo(scope: string) {
@@ -22,35 +21,34 @@ function sharedInfo(scope: string) {
   return items.length > 0 ? items.join(", ") : "사용자 식별 번호";
 }
 
-async function currentTransaction() {
-  return findActiveTransaction((await cookies()).get(LOGIN_TX_COOKIE)?.value);
-}
-
-export async function generateMetadata(): Promise<Metadata> {
-  const transaction = await currentTransaction();
-  return { title: transaction ? `${transaction.service.name} 로그인` : "로그인" };
-}
-
 export default async function LoginPage() {
-  const transaction = await currentTransaction();
-  if (!transaction) redirect("/login/error?code=expired");
-
-  const { service } = transaction;
-  const providers = getProviders(service).filter(isProviderConfigured);
-  if (providers.length === 0) redirect("/login/error?code=no_provider");
+  const { transaction, service, providers, logoUrl } = await loadLoginContext();
+  const password = providers.includes("password");
+  const emailCode = providers.includes("email");
+  const socials = providers.filter(isSocialProvider);
+  const hasOthers = emailCode || socials.length > 0;
 
   return (
     <LoginShell branding={service}>
-      <ServiceHeading
-        name={service.name}
-        logoUrl={service.logoKey ? `/service-logo/${service.id}` : null}
-      />
-      <div className="flex flex-col gap-4">
-        <nav aria-label="로그인 방식" className="flex flex-col gap-2.5">
-          {providers.map((provider) => (
-            <ProviderButton key={provider} provider={provider} />
-          ))}
-        </nav>
+      <ServiceHeading name={service.name} logoUrl={logoUrl} />
+
+      <div className="flex flex-col gap-5">
+        {password && <PasswordLoginForm canSignup />}
+        {password && hasOthers && <LoginDivider />}
+
+        {hasOthers && (
+          <nav aria-label="다른 로그인 방식" className="flex flex-col gap-2.5">
+            {emailCode && (
+              <LoginLinkButton href="/login/email" icon="/icons/mail.svg">
+                이메일 코드로 로그인
+              </LoginLinkButton>
+            )}
+            {socials.map((provider) => (
+              <ProviderButton key={provider} provider={provider} />
+            ))}
+          </nav>
+        )}
+
         <p className="text-label text-quaternary">
           {service.name}에 전달되는 정보: {sharedInfo(transaction.scope)}
         </p>

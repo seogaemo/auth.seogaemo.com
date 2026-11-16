@@ -196,7 +196,8 @@ Hosted Login에만 쓴다. `tailwind.config.ts`의 `theme.extend`나 `globals.cs
 
 | 순서 | 수단 | 아이콘 | 버튼 문구 |
 |---|---|---|---|
-| 1 | 이메일/비밀번호 | 자물쇠 | 로그인 |
+| 1 | 이메일/비밀번호 | 자물쇠 | 로그인 (폼) |
+| 1-1 | 이메일 코드 | 편지 봉투 | 이메일 코드로 로그인 |
 | 2 | Google | Google G 로고 | Google로 로그인 |
 | 3 | Apple | Apple 로고 | Apple로 로그인 |
 | 4 | 카카오 | 말풍선 | 카카오로 로그인 |

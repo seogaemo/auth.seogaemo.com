@@ -2,11 +2,11 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 import { getPrisma } from "@/cloudflare";
-import { getIssuer, isProvider, LOGIN_TX_COOKIE, TTL } from "@/lib/config";
-import { hashSecret, randomToken } from "@/lib/crypto";
+import { isSocialProvider, LOGIN_TX_COOKIE } from "@/lib/config";
 import { loginErrorUrl } from "@/lib/oauth/errors";
 import { completeProviderLogin } from "@/lib/oauth/providers";
-import { redirectToClient } from "@/lib/oauth/transaction";
+import { clientRedirectUrl, finishLogin } from "@/lib/oauth/complete";
+import { redirectToClientUrl } from "@/lib/oauth/transaction";
 import { upsertUserFromProfile } from "@/lib/oauth/users";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +19,7 @@ export async function GET(
   const { provider } = await params;
   const query = new URL(request.url).searchParams;
   const providerState = query.get("state");
-  if (!isProvider(provider) || !providerState) {
+  if (!isSocialProvider(provider) || !providerState) {
     return NextResponse.redirect(loginErrorUrl("expired"), 302);
   }
 
@@ -39,47 +39,30 @@ export async function GET(
     return NextResponse.redirect(loginErrorUrl("expired"), 302);
   }
 
-  // 한 번 쓰면 끝이다
-  await prisma.loginTransaction.delete({ where: { id: transaction.id } });
-  const issuer = getIssuer();
-
   const code = query.get("code");
   if (!code) {
     // 사용자가 동의 화면에서 취소한 경우 등
-    return redirectToClient(
-      transaction,
-      { error: "access_denied", error_description: "login was cancelled" },
-      issuer,
+    await prisma.loginTransaction.delete({ where: { id: transaction.id } });
+    return redirectToClientUrl(
+      clientRedirectUrl(transaction, { error: "access_denied", error_description: "login was cancelled" }),
     );
   }
+
+  // 같은 state로 다시 들어오지 못하게 먼저 소비한다
+  await prisma.loginTransaction.update({
+    where: { id: transaction.id },
+    data: { providerState: null },
+  });
 
   let user;
   try {
-    const profile = await completeProviderLogin(
-      provider,
-      code,
-      transaction.providerCodeVerifier,
-    );
+    const profile = await completeProviderLogin(provider, code, transaction.providerCodeVerifier);
     user = await upsertUserFromProfile(transaction.serviceId, provider, profile);
   } catch (error) {
     console.error("provider login failed", provider, error);
+    await prisma.loginTransaction.deleteMany({ where: { id: transaction.id } });
     return NextResponse.redirect(loginErrorUrl("provider_failed"), 302);
   }
 
-  const authorizationCode = randomToken();
-  await prisma.authorizationCode.create({
-    data: {
-      codeHash: await hashSecret(authorizationCode),
-      serviceId: transaction.serviceId,
-      userId: user.id,
-      redirectUri: transaction.redirectUri,
-      scope: transaction.scope,
-      nonce: transaction.nonce,
-      codeChallenge: transaction.codeChallenge,
-      codeChallengeMethod: transaction.codeChallengeMethod,
-      expiresAt: new Date(Date.now() + TTL.authorizationCodeMs),
-    },
-  });
-
-  return redirectToClient(transaction, { code: authorizationCode }, issuer);
+  return redirectToClientUrl(await finishLogin(transaction, user.id));
 }
