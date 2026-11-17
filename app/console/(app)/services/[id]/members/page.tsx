@@ -5,7 +5,7 @@ import { ServiceHeader } from "@/components/console/ServiceHeader";
 import { BackLink, Block, Page } from "@/components/console/ui";
 import { requireServiceAccess } from "@/lib/console/session";
 
-export const metadata = { title: "Admins" };
+export const metadata = { title: "관리자" };
 
 function Badge({ children, tone = "default" }: { children: React.ReactNode; tone?: "default" | "accent" }) {
   return (
@@ -54,11 +54,11 @@ export default async function MembersPage({ params }: { params: Promise<{ id: st
     <Page>
       <BackLink href={`/console/services/${service.id}`} label={service.name} />
       <div className="flex flex-col gap-8">
-        <ServiceHeader id={service.id} name={service.name} hasLogo={!!service.logoKey} subtitle="Admins" />
+        <ServiceHeader id={service.id} name={service.name} hasLogo={!!service.logoKey} subtitle="관리자" />
 
         <Block
           title="관리자"
-          description="관리자는 설정, 브랜딩, 사용자 관리를 할 수 있어요. Application 삭제와 관리자 추가는 소유자만 해요."
+          description="관리자는 설정, 브랜딩, 사용자 관리를 할 수 있어요. 앱 삭제와 관리자 추가는 소유자만 해요."
         >
           <ul className="flex flex-col gap-2">
             <MemberRow

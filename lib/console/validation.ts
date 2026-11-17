@@ -36,8 +36,8 @@ export function parseProviders(values: FormDataEntryValue[]): Provider[] {
 
 export function parseServiceName(value: FormDataEntryValue | null): { name: string } | { error: string } {
   const name = String(value ?? "").trim();
-  if (!name) return { error: "Application 이름을 입력하세요." };
-  if (name.length > 40) return { error: "Application 이름은 40자까지 쓸 수 있어요." };
+  if (!name) return { error: "앱 이름을 입력하세요." };
+  if (name.length > 40) return { error: "앱 이름은 40자까지 쓸 수 있어요." };
   return { name };
 }
 

@@ -7,7 +7,7 @@ import { PROVIDER_LABELS, providerIcon, type Provider } from "@/lib/config";
 import { manageableServices, requireDeveloper } from "@/lib/console/session";
 import { getProviders, isPublicClient } from "@/lib/service";
 
-export const metadata: Metadata = { title: "Applications" };
+export const metadata: Metadata = { title: "앱 목록" };
 
 const dateFormat = new Intl.DateTimeFormat("ko-KR", { dateStyle: "medium", timeZone: "Asia/Seoul" });
 
@@ -42,8 +42,8 @@ function EnabledProviders({ providers }: { providers: Provider[] }) {
 }
 
 /**
- * Application 목록. 장식 없는 목록 한 장: 이름, Client ID, 켜진 인증 방식, 사용자 수, 만든 날.
- * 줄 전체가 눌리지만 링크 이름은 Application 이름만 (나머지는 칸마다 읽힌다).
+ * 앱 목록. 장식 없는 목록 한 장: 이름, Client ID, 켜진 인증 방식, 사용자 수, 만든 날.
+ * 줄 전체가 눌리지만 링크 이름은 앱 이름만 (나머지는 칸마다 읽힌다).
  */
 export default async function ApplicationListPage() {
   const developer = await requireDeveloper();
@@ -59,10 +59,10 @@ export default async function ApplicationListPage() {
     <div className="mx-auto flex w-full max-w-[1080px] flex-col gap-6 pb-16">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="flex items-baseline gap-2 font-mono text-[24px] font-[500] leading-[1.35] tracking-[-0.04em] text-primary">
-          Applications
+          앱 목록
           <span className="text-[15px] text-tertiary">{services.length}</span>
         </h1>
-        <ButtonLink href="/console/services/new">새 Application</ButtonLink>
+        <ButtonLink href="/console/services/new">새 앱</ButtonLink>
       </header>
 
       <div className="border-t-2 border-[#101016]">
@@ -92,7 +92,7 @@ export default async function ApplicationListPage() {
                       {service.name}
                     </Link>
                     <span className="text-label text-tertiary">
-                      {isPublicClient(service) ? "SPA, 앱" : "웹 서버"}
+                      {isPublicClient(service) ? "SPA, 모바일" : "웹 서버"}
                       {shared && " / 관리자로 참여"}
                     </span>
                   </div>
@@ -132,20 +132,20 @@ export default async function ApplicationListPage() {
   );
 }
 
-/** Application이 하나도 없을 때. 무엇을 하는 곳인지와 첫 행동 하나. */
+/** 앱이 하나도 없을 때. 무엇을 하는 곳인지와 첫 행동 하나. */
 function EmptyState() {
   return (
     <div className="mx-auto flex w-full max-w-[560px] flex-col items-start gap-6 pb-16 pt-10">
       <div className="flex flex-col gap-2">
         <h1 className="font-mono text-[24px] font-[500] leading-[1.35] tracking-[-0.04em] text-primary">
-          아직 Application이 없어요
+          아직 앱이 없어요
         </h1>
         <p className="break-keep text-pretty text-footnote text-secondary">
-          Application을 만들면 Client ID를 받아요. 내 앱이나 웹사이트의 OIDC 라이브러리에 넣으면 &quot;Seogaemo로
+          앱을 만들면 Client ID를 받아요. 웹사이트나 모바일 앱의 OIDC 라이브러리에 넣으면 &quot;Seogaemo로
           로그인&quot;을 쓸 수 있어요.
         </p>
       </div>
-      <ButtonLink href="/console/services/new">Application 만들기</ButtonLink>
+      <ButtonLink href="/console/services/new">앱 만들기</ButtonLink>
     </div>
   );
 }

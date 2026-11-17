@@ -96,7 +96,7 @@ export async function updateSettings(
 export async function rotateClientSecret(serviceId: string): Promise<ActionState> {
   const { service } = await requireServiceAccess(serviceId);
   if (service.clientSecretHash === "") {
-    return { error: "public client는 client secret을 쓰지 않아요." };
+    return { error: "SPA, 모바일 앱은 Client Secret을 쓰지 않아요." };
   }
 
   const secret = newClientSecret();
@@ -113,9 +113,9 @@ export async function deleteService(
   form: FormData,
 ): Promise<ActionState> {
   const { service, isOwner } = await requireServiceAccess(serviceId);
-  if (!isOwner) return { error: "Application은 소유자만 지울 수 있어요." };
+  if (!isOwner) return { error: "앱은 소유자만 지울 수 있어요." };
   if (String(form.get("confirm") ?? "").trim() !== service.name) {
-    return { error: "Application 이름이 맞지 않아요. 띄어쓰기와 대소문자까지 똑같이 입력하세요." };
+    return { error: "앱 이름이 맞지 않아요. 띄어쓰기와 대소문자까지 똑같이 입력하세요." };
   }
 
   if (service.logoKey) await getR2().delete(service.logoKey);

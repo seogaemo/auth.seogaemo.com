@@ -5,7 +5,7 @@ import { LoginPreview } from "@/components/login/LoginPreview";
 import { requireServiceAccess } from "@/lib/console/session";
 import { getProviders } from "@/lib/service";
 
-export const metadata = { title: "Branding" };
+export const metadata = { title: "브랜딩" };
 
 /** Page 1 0:1072: 왼쪽 설정, 오른쪽 로그인 화면 미리보기 */
 export default async function BrandingPage({ params }: { params: Promise<{ id: string }> }) {
@@ -22,7 +22,7 @@ export default async function BrandingPage({ params }: { params: Promise<{ id: s
 
       <div className="grid items-start gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <div className="flex flex-col gap-8">
-          <ServiceHeader id={service.id} name={service.name} hasLogo={!!service.logoKey} subtitle="Branding" />
+          <ServiceHeader id={service.id} name={service.name} hasLogo={!!service.logoKey} subtitle="브랜딩" />
           <Block title="로그인 화면" description="저장하면 오른쪽 미리보기와 실제 로그인 화면에 바로 반영돼요.">
             <BrandingForm
               serviceId={service.id}

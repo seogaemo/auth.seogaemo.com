@@ -7,7 +7,7 @@ import { getPrisma } from "@/cloudflare";
 import { isProvider } from "@/lib/config";
 import { requireServiceAccess } from "@/lib/console/session";
 
-export const metadata = { title: "User Management" };
+export const metadata = { title: "사용자 관리" };
 
 const PAGE_SIZE = 50;
 const dateFormat = new Intl.DateTimeFormat("ko-KR", {
@@ -48,7 +48,7 @@ export default async function UsersPage({
           id={service.id}
           name={service.name}
           hasLogo={!!service.logoKey}
-          subtitle={`User Management / 사용자 ${total.toLocaleString("ko-KR")}명`}
+          subtitle={`사용자 관리 / 사용자 ${total.toLocaleString("ko-KR")}명`}
         />
 
         {users.length === 0 ? (

@@ -61,8 +61,8 @@ function Menu({ label, items }: { label: string; items: MenuItem[] }) {
 
 /**
  * 검은 사이드바 (Wireframe 15:224): px 8, py 16, 블록 간격 24, 메뉴 p 8 + 20px 아이콘.
- * 서비스 밖(목록, 새로 만들기)에서는 콘솔 메뉴와 내 Application 바로가기,
- * 서비스 안에서는 그 Application의 메뉴만 보여준다.
+ * 서비스 밖(목록, 새로 만들기)에서는 콘솔 메뉴와 내 앱 바로가기,
+ * 서비스 안에서는 그 앱의 메뉴만 보여준다.
  *
  * md 이상은 왼쪽에 고정. 폰에서는 위에 얇은 바(로고 + 메뉴 버튼)만 두고,
  * 버튼을 누르면 같은 내용을 왼쪽 서랍(<dialog>)으로 연다.
@@ -176,7 +176,7 @@ function HomeSection({ services, pathname }: { services: SidebarService[]; pathn
           {
             href: "/console",
             icon: "captive_portal",
-            label: "Applications",
+            label: "앱 목록",
             active: pathname === "/console" || pathname === "/console/services/new",
           },
         ]}
@@ -184,7 +184,7 @@ function HomeSection({ services, pathname }: { services: SidebarService[]; pathn
       {services.length > 0 && (
         <nav aria-labelledby={headingId} className="flex min-h-0 flex-col gap-1">
           <h2 id={headingId} className="px-2 pb-1 text-label text-[rgba(255,255,255,0.5)]">
-            내 Application
+            내 앱
           </h2>
           <div className="flex min-h-0 flex-col gap-0.5 overflow-y-auto overscroll-contain">
             {services.map((service) => (
@@ -207,10 +207,10 @@ function HomeSection({ services, pathname }: { services: SidebarService[]; pathn
 function ServiceSection({ current, pathname }: { current: SidebarService; pathname: string }) {
   const base = `/console/services/${current.id}`;
   const items = [
-    { href: base, icon: "captive_portal", label: "Application" },
-    { href: `${base}/branding`, icon: "shapes", label: "Branding" },
-    { href: `${base}/users`, icon: "group", label: "User Management" },
-    { href: `${base}/members`, icon: "admin", label: "Admins" },
+    { href: base, icon: "captive_portal", label: "설정" },
+    { href: `${base}/branding`, icon: "shapes", label: "브랜딩" },
+    { href: `${base}/users`, icon: "group", label: "사용자 관리" },
+    { href: `${base}/members`, icon: "admin", label: "관리자" },
   ].map((item) => ({ ...item, active: pathname === item.href }));
 
   return (
@@ -220,11 +220,11 @@ function ServiceSection({ current, pathname }: { current: SidebarService; pathna
         <div className="flex min-w-0 flex-col">
           <span className="truncate text-footnote font-strong text-white">{current.name}</span>
           <Link href="/console" className="w-fit rounded text-label text-[rgba(255,255,255,0.6)] hover:text-white">
-            Application 변경하기
+            다른 앱 고르기
           </Link>
         </div>
       </div>
-      <Menu label="Application 메뉴" items={items} />
+      <Menu label="앱 메뉴" items={items} />
     </>
   );
 }

@@ -24,7 +24,7 @@ export async function addMember(serviceId: string, _prev: ActionState, form: For
   const email = normalizeEmail(form.get("email"));
   const fields = { email: String(form.get("email") ?? "") };
   if (!email) return { error: "name@example.com 형식으로 이메일을 입력하세요.", fields };
-  if (email === developer.email) return { error: "소유자는 이미 이 Application을 관리하고 있어요.", fields };
+  if (email === developer.email) return { error: "소유자는 이미 이 앱을 관리하고 있어요.", fields };
 
   const prisma = getPrisma();
   const count = await prisma.serviceMember.count({ where: { serviceId } });

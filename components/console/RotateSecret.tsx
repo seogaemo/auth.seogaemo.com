@@ -16,7 +16,7 @@ export function RotateSecret({ serviceId }: { serviceId: string }) {
     return (
       <>
         <CopyField label="Client Secret" value={secret} secret />
-        <Notice tone="warning">지금 한 번만 보여줘요. 이전 secret은 바로 쓸 수 없게 됐어요.</Notice>
+        <Notice tone="warning">지금 한 번만 보여줘요. 이전 Client Secret은 바로 쓸 수 없게 됐어요.</Notice>
       </>
     );
   }
@@ -30,7 +30,7 @@ export function RotateSecret({ serviceId }: { serviceId: string }) {
             arrow
             disabled={pending}
             onClick={() => {
-              if (!confirm("새 secret을 발급하면 지금 secret은 바로 쓸 수 없게 돼요. 계속할까요?")) return;
+              if (!confirm("새 Client Secret을 발급하면 지금 Client Secret은 바로 쓸 수 없게 돼요. 계속할까요?")) return;
               startTransition(async () => {
                 const result = await rotateClientSecret(serviceId);
                 if (result?.secret) setSecret(result.secret);

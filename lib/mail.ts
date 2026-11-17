@@ -96,7 +96,7 @@ export function emailCodeMessage(purpose: EmailCodePurpose, serviceName: string,
 /** 서비스 관리자로 추가됐다는 알림 */
 export function memberAddedMessage(serviceName: string, inviter: string, consoleUrl: string) {
   const subject = `[Seogaemo SSO] ${serviceName} 관리자로 추가됐어요`;
-  const lead = `${inviter}님이 ${serviceName} Application의 관리자로 추가했어요. 이 이메일로 콘솔에 로그인하면 바로 관리할 수 있어요.`;
+  const lead = `${inviter}님이 ${serviceName} 앱의 관리자로 추가했어요. 이 이메일로 콘솔에 로그인하면 바로 관리할 수 있어요.`;
   const text = [subject, "", lead, "", consoleUrl, "", "Seogaemo SSO"].join("\n");
 
   const html = `<!doctype html><html lang="ko"><body style="margin:0;padding:32px 16px;background:#f4f4f6;font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Pretendard',sans-serif;color:#101016">
