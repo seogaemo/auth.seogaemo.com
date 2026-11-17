@@ -47,11 +47,13 @@
     }
   ],
 	/**
-	 * Smart Placement
-	 * Docs: https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
+	 * Placement
+	 * Docs: https://developers.cloudflare.com/workers/configuration/placement/
 	 */
-	// 한국 요청이 LAX 같은 먼 곳에서 처리될 때가 있어 D1(APAC) 가까이에서 Worker를 돌린다
-	"placement": { "mode": "smart" },
+	// 한국 요청이 LAX 같은 먼 곳으로 들어온다. Smart Placement는 분석을 끝내고도 그 자리(local-LAX)에서 돌려서
+	// 요청마다 D1까지 태평양을 여러 번 오갔다. D1 primary가 싱가포르(SIN)라 Worker를 그 옆에 고정한다.
+	// DB를 옮기면 이 값도 같이 바꾼다 (wrangler d1 execute DB --remote --json 의 meta.served_by_colo).
+	"placement": { "region": "aws:ap-southeast-1" },
 
 	/**
 	 * Bindings
