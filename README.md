@@ -120,3 +120,24 @@ npx wrangler secret put SMTP_PASSWORD
 ```
 
 `GOOGLE_CLIENT_ID`, `KAKAO_CLIENT_ID`는 비밀값이 아니라서 `wrangler.jsonc`의 `vars`에 넣는다.
+
+### GitHub Actions 토큰
+
+CI는 저장소 시크릿 `CLOUDFLARE_API_TOKEN` 하나를 쓴다. 계정은 워크플로에 Seogaemo 계정 ID로 고정돼 있다.
+
+1. Cloudflare 대시보드 > 내 프로필 > API 토큰 > 토큰 생성 > 사용자 지정 토큰
+2. 권한
+   - 계정 / Workers 스크립트 / 편집
+   - 계정 / D1 / 편집
+   - 계정 / Workers R2 저장소 / 편집
+   - 계정 / 계정 설정 / 읽기
+   - 영역 / Workers 경로 / 편집
+   - 영역 / DNS / 편집 (커스텀 도메인 `auth.seogaemo.com`)
+3. 계정 리소스: Seogaemo 계정만. 영역 리소스: `seogaemo.com`만
+4. 저장소에 넣는다 (값은 프롬프트로 입력돼서 셸 기록에 남지 않는다)
+
+```bash
+gh secret set CLOUDFLARE_API_TOKEN --repo seogaemo/auth.seogaemo.com
+```
+
+`The given account is not valid or is not authorized` (7403)이 나오면 토큰이 다른 계정에서 만들어졌거나 D1 권한이 없는 것이다.

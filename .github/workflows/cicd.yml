@@ -15,15 +15,18 @@ jobs:
     name: Deploy
 
     env:
+      # Seogaemo 계정에서 만든 토큰 (권한: README "배포" 참고)
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      # 토큰이 여러 계정에 걸려 있어도 Seogaemo 계정을 쓰게 고정한다
+      CLOUDFLARE_ACCOUNT_ID: 1b8407512618dbd73ee7e9f657246591
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # pnpm 버전은 package.json의 packageManager를 따른다
       - uses: pnpm/action-setup@v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: pnpm
