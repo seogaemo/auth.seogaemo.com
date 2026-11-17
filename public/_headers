@@ -1,0 +1,12 @@
+# Cloudflare Workers Static Assets 캐시 규칙 (빌드 때 .open-next/assets로 복사된다)
+# 해시가 붙은 Next 빌드 파일은 내용이 바뀌면 이름도 바뀌니 1년 캐시
+/_next/static/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# 이름이 고정된 공개 파일은 하루 캐시, 그 뒤에는 쓰면서 뒤에서 새로 받는다
+/fonts/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+/brand/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+/icons/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
