@@ -3,6 +3,8 @@ import scrollbarHide from "tailwind-scrollbar-hide";
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  // 터치 기기에서 탭한 뒤 hover 상태가 남지 않게 hover:를 (hover: hover) 안에서만 쓴다
+  future: { hoverOnlyWhenSupported: true },
   content: [
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",

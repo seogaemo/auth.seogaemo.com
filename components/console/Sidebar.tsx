@@ -111,7 +111,7 @@ function HomeSection({ services, pathname }: { services: SidebarService[]; pathn
           <h2 id="sidebar-services" className="px-2 pb-1 text-label text-[rgba(255,255,255,0.5)]">
             내 서비스
           </h2>
-          <div className="flex min-h-0 flex-col gap-0.5 overflow-y-auto">
+          <div className="flex min-h-0 flex-col gap-0.5 overflow-y-auto overscroll-contain">
             {services.map((service) => (
               <Link
                 key={service.id}

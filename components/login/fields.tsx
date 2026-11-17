@@ -51,7 +51,7 @@ export function LoginButton({
   return (
     <button
       {...props}
-      className={`flex h-12 w-full items-center justify-center gap-2 border-2 transition-[transform,box-shadow,filter,background-color] duration-75 active:translate-y-[3px] active:shadow-none disabled:pointer-events-none disabled:opacity-60 ${BUTTON[variant]} ${ring}`}
+      className={`flex h-12 w-full items-center justify-center gap-2 border-2 transition-[transform,box-shadow,filter,background-color] duration-75 motion-reduce:transition-none active:translate-y-[3px] active:shadow-none disabled:pointer-events-none disabled:opacity-60 ${BUTTON[variant]} ${ring}`}
     >
       {icon && (
         // eslint-disable-next-line @next/next/no-img-element
@@ -68,7 +68,7 @@ export function LoginLinkButton({ href, icon, children }: { href: string; icon?:
   return (
     <Link
       href={href}
-      className={`flex h-12 w-full items-center justify-center gap-2 border-2 border-[rgba(0,0,0,0.12)] bg-white pr-2 shadow-[0_3px_0_0_rgba(0,0,0,0.12)] transition-[transform,box-shadow,background-color] duration-75 hover:bg-[#f7f7f8] active:translate-y-[3px] active:shadow-none ${ring}`}
+      className={`flex h-12 w-full items-center justify-center gap-2 border-2 border-[rgba(0,0,0,0.12)] bg-white pr-2 shadow-[0_3px_0_0_rgba(0,0,0,0.12)] transition-[transform,box-shadow,background-color] duration-75 motion-reduce:transition-none hover:bg-[#f7f7f8] active:translate-y-[3px] active:shadow-none ${ring}`}
     >
       {icon && (
         // eslint-disable-next-line @next/next/no-img-element

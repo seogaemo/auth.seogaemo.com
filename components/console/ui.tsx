@@ -35,7 +35,7 @@ const BUTTON_SIZE: Record<ButtonSize, string> = {
 };
 
 function buttonClass(variant: ButtonVariant, size: ButtonSize, extra = "") {
-  return `inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg font-strong transition-[background-color,transform,box-shadow] duration-75 disabled:pointer-events-none disabled:opacity-50 ${BUTTON_VARIANT[variant]} ${BUTTON_SIZE[size]} ${focusRing} ${extra}`;
+  return `inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg font-strong transition-[background-color,transform,box-shadow] duration-75 motion-reduce:transition-none disabled:pointer-events-none disabled:opacity-50 ${BUTTON_VARIANT[variant]} ${BUTTON_SIZE[size]} ${focusRing} ${extra}`;
 }
 
 export function Button({

@@ -31,6 +31,15 @@
   --kakao: #f4ed2c;
 }
 
+@layer base {
+  /* 입체 버튼이 눌림을 직접 그리니 모바일 기본 회색 탭 표시는 끈다 */
+  a,
+  button,
+  label {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
 @layer components {
   /* 로그인 배경 (Figma 0:632): 패턴 이미지 두 장을 브랜드 색 위에 겹친다 */
   .login-grid {
