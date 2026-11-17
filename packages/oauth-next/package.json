@@ -1,0 +1,32 @@
+{
+	"name": "@seogaemo/oauth-next",
+	"version": "0.0.0",
+	"private": true,
+	"description": "Next.js integration for Seogaemo SSO. Built on @seogaemo/oauth.",
+	"license": "MIT",
+	"type": "module",
+	"sideEffects": false,
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		}
+	},
+	"files": [
+		"dist",
+		"src"
+	],
+	"scripts": {
+		"build": "rm -rf dist && tsc -p tsconfig.json",
+		"typecheck": "tsc -p tsconfig.json --noEmit"
+	},
+	"dependencies": {
+		"@seogaemo/oauth": "workspace:*"
+	},
+	"devDependencies": {
+		"typescript": "^5"
+	},
+	"peerDependencies": {
+		"next": ">=14"
+	}
+}

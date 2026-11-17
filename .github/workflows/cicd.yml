@@ -34,6 +34,13 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # SDK(packages/*)가 깨졌으면 서버를 배포하기 전에 멈춘다
+      - name: Test SDK packages
+        run: |
+          pnpm -r --filter "./packages/**" typecheck
+          pnpm -r --filter "./packages/**" --if-present run test
+          pnpm -r --filter "./packages/**" build
+
       - name: Check login providers
         working-directory: apps/auth
         run: pnpm run check:providers

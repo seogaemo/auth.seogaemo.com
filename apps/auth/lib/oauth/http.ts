@@ -43,9 +43,11 @@ function parseBasicAuth(header: string | null) {
     const decoded = atob(header.slice(6));
     const index = decoded.indexOf(":");
     if (index < 0) return null;
+    // RFC 6749 2.3.1: id와 secret은 form-urlencode된 값이다 (공백이 +로 온다)
+    const formDecode = (value: string) => decodeURIComponent(value.replace(/\+/g, " "));
     return {
-      clientId: decodeURIComponent(decoded.slice(0, index)),
-      clientSecret: decodeURIComponent(decoded.slice(index + 1)),
+      clientId: formDecode(decoded.slice(0, index)),
+      clientSecret: formDecode(decoded.slice(index + 1)),
     };
   } catch {
     return null;

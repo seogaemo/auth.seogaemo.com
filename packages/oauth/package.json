@@ -1,0 +1,36 @@
+{
+	"name": "@seogaemo/oauth",
+	"version": "0.1.0",
+	"description": "Standards-based OAuth 2.0 / OpenID Connect client for Seogaemo SSO. No dependencies, runs anywhere with fetch and WebCrypto.",
+	"license": "MIT",
+	"type": "module",
+	"sideEffects": false,
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		}
+	},
+	"files": [
+		"dist",
+		"src"
+	],
+	"engines": {
+		"node": ">=20"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/seogaemo/auth.seogaemo.com.git",
+		"directory": "packages/oauth"
+	},
+	"scripts": {
+		"build": "rm -rf dist && tsc -p tsconfig.json",
+		"typecheck": "tsc -p tsconfig.json --noEmit && tsc -p test/tsconfig.json --noEmit",
+		"test": "vitest run"
+	},
+	"devDependencies": {
+		"typescript": "^5",
+		"vitest": "^3",
+		"@types/node": "^22"
+	}
+}
