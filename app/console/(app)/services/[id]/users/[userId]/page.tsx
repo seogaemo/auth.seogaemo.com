@@ -4,7 +4,8 @@ import { ServiceHeader } from "@/components/console/ServiceHeader";
 import { UserActions } from "@/components/console/UserActions";
 import { BackLink, Block, InfoRow, Page } from "@/components/console/ui";
 import { getPrisma } from "@/cloudflare";
-import { isProvider, PROVIDER_LABELS } from "@/lib/config";
+import { isLoginMethod, LOGIN_METHOD_LABELS } from "@/lib/config";
+import { listPasskeys } from "@/lib/passkey";
 import { requireServiceAccess } from "@/lib/console/session";
 import { describeUserAgent } from "@/lib/request";
 
@@ -13,7 +14,7 @@ export const metadata = { title: "사용자 상세" };
 const dateTime = new Intl.DateTimeFormat("ko-KR", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Seoul" });
 
 const EVENT_LABEL: Record<string, string> = { login: "로그인", signup: "가입", failure: "실패" };
-const METHOD_LABEL: Record<string, string> = { ...PROVIDER_LABELS, session: "로그인 유지" };
+const METHOD_LABEL: Record<string, string> = { ...LOGIN_METHOD_LABELS, session: "로그인 유지" };
 const REASON_LABEL: Record<string, string> = {
   wrong_password: "비밀번호 틀림",
   locked: "잠김",
@@ -21,6 +22,8 @@ const REASON_LABEL: Record<string, string> = {
   disabled: "정지된 계정",
   rate_limited: "요청 과다",
   signup_closed: "가입 막힘",
+  wrong_passkey: "패스키 확인 실패",
+  unknown_passkey: "서버에 없는 패스키",
 };
 
 export default async function UserDetailPage({ params }: { params: Promise<{ id: string; userId: string }> }) {
@@ -31,7 +34,7 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
   const user = await prisma.user.findFirst({ where: { id: userId, serviceId: service.id } });
   if (!user) notFound();
 
-  const [identities, sessions, events, activeTokens] = await Promise.all([
+  const [identities, sessions, events, activeTokens, passkeys] = await Promise.all([
     prisma.identity.findMany({ where: { userId: user.id }, orderBy: { createdAt: "asc" } }),
     prisma.session.findMany({ where: { userId: user.id, expiresAt: { gt: new Date() } }, orderBy: { lastSeenAt: "desc" } }),
     prisma.loginEvent.findMany({
@@ -40,6 +43,7 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
       take: 30,
     }),
     prisma.refreshToken.count({ where: { userId: user.id, revokedAt: null, expiresAt: { gt: new Date() } } }),
+    listPasskeys(user.email),
   ]);
   const label = user.email ?? user.name ?? user.id;
 
@@ -58,8 +62,8 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
           <InfoRow label="로그인 수단">
             {identities
               .map((i) => i.provider)
-              .filter(isProvider)
-              .map((p) => PROVIDER_LABELS[p])
+              .filter(isLoginMethod)
+              .map((p) => LOGIN_METHOD_LABELS[p])
               .join(", ") || "없음"}
           </InfoRow>
           <InfoRow label="가입">{dateTime.format(user.createdAt)}</InfoRow>
@@ -90,6 +94,18 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
                   마지막 사용 {dateTime.format(s.lastSeenAt)}
                   {s.ip && ` / ${s.ip}`}
                 </span>
+              </InfoRow>
+            ))
+          )}
+        </Block>
+
+        <Block title="패스키" description="이메일에 붙은 패스키라 다른 서비스와 같이 쓰여요. 삭제는 사용자 본인이 계정 화면에서 해요.">
+          {passkeys.length === 0 ? (
+            <p className="rounded-lg border border-base p-4 text-footnote text-tertiary">저장한 패스키가 없어요.</p>
+          ) : (
+            passkeys.map((p) => (
+              <InfoRow key={p.id} label={`${dateTime.format(p.createdAt)} 저장`}>
+                <span className="text-tertiary">{p.lastUsedAt ? `마지막 사용 ${dateTime.format(p.lastUsedAt)}` : "사용한 적 없음"}</span>
               </InfoRow>
             ))
           )}

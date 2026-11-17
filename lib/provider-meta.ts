@@ -63,6 +63,18 @@ export const PROVIDER_LABELS = Object.fromEntries(
   PROVIDERS.map((provider) => [provider, PROVIDER_META[provider].label]),
 ) as Record<Provider, string>;
 
+/**
+ * 로그인 기록, 세션, 연결된 수단(Identity)에 남는 방식. 콘솔에서 고르는 Provider에 패스키를 더한 것이다.
+ * 패스키는 서비스마다 켜고 끄지 않고, 이메일/비밀번호/이메일 코드가 켜져 있으면 같이 켜진다 (lib/passkey.ts).
+ */
+export type LoginMethod = Provider | "passkey";
+
+export const LOGIN_METHOD_LABELS: Record<LoginMethod, string> = { ...PROVIDER_LABELS, passkey: "패스키" };
+
+export function isLoginMethod(value: string): value is LoginMethod {
+  return value === "passkey" || (PROVIDERS as string[]).includes(value);
+}
+
 export function socialMeta(provider: SocialProvider): SocialButtonMeta {
   return PROVIDER_META[provider].social;
 }

@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { getPrisma } from "@/cloudflare";
 import { checkPasswordRule } from "@/lib/email-auth";
 import { currentBrowserKey, endAllSessions, findSession } from "@/lib/oauth/session";
+import { deletePasskey } from "@/lib/passkey";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import { isRateLimited, RATE_LIMITED_MESSAGE } from "@/lib/rate-limit";
 import { findServiceByClientId, getProviders } from "@/lib/service";
@@ -81,6 +82,19 @@ export async function signOutOtherDevices(clientId: string): Promise<AccountStat
   await endAllSessions(current.service.id, current.user.id, current.session.id);
   revalidatePath("/account");
   return { message: "다른 기기의 로그인을 모두 끊었어요." };
+}
+
+/**
+ * 패스키 삭제. 패스키는 이메일에 붙어 있어서 모든 Seogaemo 서비스에서 같이 지워진다.
+ * 로그인한 사용자의 이메일 소유가 아닌 패스키는 지울 수 없다.
+ */
+export async function removePasskey(clientId: string, passkeyId: string): Promise<AccountState> {
+  const current = await account(clientId);
+  if (!current) return loginAgain(clientId);
+  if (!current.user.email) return { error: "확인된 이메일이 없는 계정이에요." };
+  if (!(await deletePasskey(current.user.email, passkeyId))) return { error: "이미 지워졌거나 찾을 수 없는 패스키예요." };
+  revalidatePath("/account");
+  return { message: "패스키를 삭제했어요." };
 }
 
 /** 탈퇴. 확인으로 이메일(없으면 "탈퇴")을 그대로 입력받는다. 사용자, 로그인 수단, 토큰, 세션이 모두 지워진다. */

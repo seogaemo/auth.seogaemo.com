@@ -21,6 +21,8 @@
 	"dependencies": {
 		"@prisma/adapter-d1": "^6.7.0",
 		"@prisma/client": "^6.7.0",
+		"@simplewebauthn/browser": "^14.0.0",
+		"@simplewebauthn/server": "^14.1.0",
 		"dotenv": "^16.5.0",
 		"jose": "^6",
 		"next": "15.5.28",
@@ -37,6 +39,7 @@
 		"@types/react-dom": "^19",
 		"eslint": "^9",
 		"eslint-config-next": "15.5.28",
+		"playwright-core": "^1.65.1",
 		"postcss": "^8.5.3",
 		"prettier": "^3.5.3",
 		"prettier-plugin-tailwindcss": "^0.6.11",

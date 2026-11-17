@@ -30,11 +30,22 @@ Seogaemo SSO. 누구나 가입해서 자기 서비스를 등록하고 "Seogaemo�
 |---|---|
 | 이메일/비밀번호 | 회원가입은 메일로 받은 6자리 코드로 이메일을 확인한 뒤 끝난다. 비밀번호 재설정도 코드로 한다. 비밀번호는 PBKDF2-SHA256(10만 번)으로 저장하고, 5번 연속 틀리면 15분 잠근다. |
 | 이메일 코드 | 비밀번호 없이 메일로 받은 6자리 코드로 로그인한다. 처음이면 바로 가입된다. |
+| 패스키 | 지문, 얼굴, 화면 잠금으로 로그인한다 (WebAuthn). 이메일/비밀번호나 이메일 코드가 켜진 서비스는 자동으로 같이 켜지고, 콘솔에서 따로 고르지 않는다. |
 | Google, 카카오 | OAuth |
 
 - 인증 코드는 10분 동안 5번까지 입력할 수 있고, 같은 이메일로는 30초에 한 번, 한 시간에 5번까지 보낸다.
 - 확인된 이메일이 같으면 로그인 방식이 달라도 같은 사용자로 합친다.
 - 정지된 사용자는 로그인, 토큰 발급과 갱신, userinfo가 모두 막힌다.
+
+### 패스키
+
+- **이메일 하나에 붙는다.** 사용자(`User`)는 서비스마다 따로지만 패스키(`Passkey`)는 이메일(`PasskeyOwner`)에 붙어서, 한 번 저장하면 모든 Seogaemo 서비스에서 쓸 수 있다. RP는 `ISSUER`의 호스트 하나 (`auth.seogaemo.com`, 로컬은 `localhost`)다. `PasskeyOwner.id`가 WebAuthn user.id이고, 이미 저장한 기기에는 `excludeCredentials`로 중복 저장을 막는다.
+- **패스키로 로그인하면 그 이메일의 주인이 확인된 것**으로 본다 (이메일 코드와 같다). 그 서비스에 같은 이메일의 사용자가 있으면 그 사용자로 로그인하고, 없으면 이메일 코드가 켜진 서비스에서만 가입 설정(가입 받기, 허용 목록)을 따라 새로 만든다. 비밀번호만 켠 서비스에서는 거절한다. 연결은 `Identity(provider=passkey)`, 로그인 기록과 세션의 방식은 `passkey`다. 허용 목록, 정지된 사용자, IP별 시도 제한은 그대로 적용된다.
+- **로그인 화면**: 이메일 칸이 `autocomplete="username webauthn"`이라서 칸을 누르면 저장한 패스키가 자동완성으로 뜬다 (Conditional UI). 고르면 바로 로그인한다. 버튼은 따로 없다.
+- **저장 제안** (`/login/passkey`): 이메일 코드 로그인, 비밀번호 로그인, 비밀번호 회원가입 코드 확인 직후에 "저장하기 / 건너뛰기"를 보여준다. 비밀번호 재설정과 소셜 로그인 뒤에는 보여주지 않는다. 확인된 이메일이 없는 사용자는 묻지 않는다. 취소하거나 패스키를 못 쓰는 브라우저면 저장 없이 로그인을 마친다. 이 단계 동안 확인된 사용자는 `LoginTransaction.verifiedUserId`, `verifiedMethod`에 적어 두고, authorization code(5분)는 저장 제안이 끝난 뒤에 만든다.
+- **관리**: `/account`에서 자기 이메일의 패스키를 보고 삭제한다 (모든 서비스에 적용). 콘솔 사용자 상세에는 목록만 보이고 삭제는 못 한다. 탈퇴해도 패스키는 지우지 않는다.
+- **청소**: 매일 Cron이 어느 서비스에도 그 이메일의 사용자가 없는 `PasskeyOwner`(와 `Passkey`)를 지운다. 저장 도중 그만둬 패스키 없이 남은 소유자도 하루 뒤 지운다. WebAuthn challenge는 `LoginTransaction.webauthnChallenge`에 두고 한 번 쓰면 지운다.
+- 라이브러리는 `@simplewebauthn/server`, `@simplewebauthn/browser`. 서버 코드는 `lib/passkey.ts`, 액션은 `actions/login.ts`(passkey*), 화면은 `components/login/PasskeyPrompt.tsx`.
 
 ### 로그인 유지와 로그아웃
 
@@ -50,7 +61,7 @@ Seogaemo SSO. 누구나 가입해서 자기 서비스를 등록하고 "Seogaemo�
 
 ### 계정 화면
 
-`/account?client_id=...`. 사용자가 직접 비밀번호를 바꾸거나 만들고, 로그인된 기기를 보고 다른 기기를 로그아웃시키고, 탈퇴한다. 세션이 없으면 로그인부터 하고 돌아온다 (`LoginTransaction.returnTo`). 앱은 설정 메뉴에 이 주소를 링크로 걸면 된다.
+`/account?client_id=...`. 사용자가 직접 비밀번호를 바꾸거나 만들고, 패스키를 보고 삭제하고, 로그인된 기기를 보고 다른 기기를 로그아웃시키고, 탈퇴한다. 세션이 없으면 로그인부터 하고 돌아온다 (`LoginTransaction.returnTo`). 앱은 설정 메뉴에 이 주소를 링크로 걸면 된다.
 
 ### 가입 설정
 
@@ -132,6 +143,8 @@ MAIL_DEV_LOG=1            # 메일을 보내지 않고 로그(제목에 코드 �
 
 전체 흐름 테스트: 위처럼 띄운 뒤 `node scripts/e2e-local.mjs` (스크립트 상단 주석 참고). 로그인 유지, prompt, 로그아웃, 정지, 계정 화면은 `node scripts/e2e-session-local.mjs`.
 
+패스키는 진짜 Chrome과 가상 인증기(CDP)로 확인한다: `node scripts/e2e-passkey-local.mjs` (스크립트 상단 주석 참고). `ISSUER`가 `.dev.vars`와 같은 주소로 떠 있어야 하고(기본 `http://localhost:8788`, 다르면 `E2E_BASE`), WebAuthn은 `localhost`에서만 `http`로 동작한다.
+
 ## DB 마이그레이션
 
 `prisma/schema.prisma`를 고친 뒤:
@@ -162,6 +175,7 @@ npx wrangler secret put SMTP_PASSWORD
 매일 03:17(KST)에 Cron이 `worker.ts`의 `scheduled`를 불러 `lib/cleanup.ts`를 돌린다.
 
 - 만료되고 하루 지난 로그인 중간 기록, 인증 코드, 이메일 코드, 세션, refresh token을 지운다.
+- 어느 서비스에도 사용자가 없는 이메일의 패스키 소유자(`PasskeyOwner`, 패스키는 cascade)를 지운다.
 - 로그인 기록은 90일, 콘솔 활동 기록은 1년만 남긴다.
 
 결과는 Workers 로그에 `cleanup {...}`로 남는다. 로컬에서는 `npx wrangler dev --test-scheduled`로 띄운 뒤 `curl "http://localhost:8787/__scheduled?cron=17+18+*+*+*"`로 돌려 본다.

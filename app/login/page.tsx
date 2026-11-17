@@ -8,6 +8,7 @@ import { ServiceHeading } from "@/components/login/ServiceHeading";
 import { isSocialProvider } from "@/lib/config";
 import { LegalLinks } from "@/components/login/LegalLinks";
 import { loadLoginContext, loadLoginEmail } from "@/lib/login-context";
+import { passkeyAvailable } from "@/lib/passkey";
 import { turnstileSiteKey } from "@/lib/turnstile";
 
 export const dynamic = "force-dynamic";
@@ -42,6 +43,7 @@ export default async function LoginPage() {
           <EmailStartForm
             defaultEmail={await loadLoginEmail(transaction.loginHint)}
             canSignup={password && service.signupEnabled}
+            passkey={passkeyAvailable(providers)}
             turnstileKey={turnstileSiteKey()}
           />
         )}

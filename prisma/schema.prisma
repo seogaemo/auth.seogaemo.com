@@ -99,8 +99,8 @@ model User {
   @@unique([serviceId, email])
 }
 
-/// 사용자에 연결된 로그인 수단 (password, email, google, kakao).
-/// password, email은 providerUserId가 소문자 이메일이다.
+/// 사용자에 연결된 로그인 수단 (password, email, google, kakao, passkey).
+/// password, email, passkey는 providerUserId가 소문자 이메일이다.
 model Identity {
   id             String  @id @default(cuid())
   provider       String
@@ -150,6 +150,12 @@ model LoginTransaction {
   loginHint String?
   /// 서비스로 code를 보내지 않고 우리 화면(/account)으로 돌아가는 로그인. 이때 PKCE 값은 빈 문자열이다.
   returnTo  String?
+
+  /// 로그인은 확인됐지만 패스키 저장 제안(/login/passkey)을 거치느라 아직 code를 내주지 않은 사용자와 그 수단
+  verifiedUserId String?
+  verifiedMethod String?
+  /// 진행 중인 WebAuthn 요청(등록, 로그인)의 challenge. 한 번 쓰면 지운다.
+  webauthnChallenge String?
 
   expiresAt DateTime
   createdAt DateTime @default(now())
@@ -210,7 +216,7 @@ model Session {
   userId    String
   user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  /// 마지막으로 직접 인증한 시각과 수단 (password, email, google, kakao)
+  /// 마지막으로 직접 인증한 시각과 수단 (password, email, google, kakao, passkey)
   authTime  DateTime
   method    String
   userAgent String?
@@ -236,7 +242,7 @@ model LoginEvent {
 
   /// login | signup | failure
   type      String
-  /// password | email | google | kakao | session
+  /// password | email | google | kakao | passkey | session
   method    String?
   /// 실패 이유 (wrong_password, locked, wrong_code, disabled, rate_limited ...)
   reason    String?
@@ -293,4 +299,40 @@ model EmailCode {
   createdAt  DateTime  @default(now())
 
   @@index([serviceId, email, createdAt])
+}
+
+/// 패스키 소유자. 서비스가 아니라 이메일 하나에 붙는다 (RP는 auth.seogaemo.com 하나).
+/// id가 WebAuthn user.id(userHandle)다. 이메일을 쓰는 사용자가 어느 서비스에도 없으면 청소로 지운다.
+model PasskeyOwner {
+  /// 랜덤 userHandle (base64url)
+  id    String @id
+  /// 소문자
+  email String @unique
+
+  passkeys Passkey[]
+
+  createdAt DateTime @default(now())
+}
+
+model Passkey {
+  /// credentialId (base64url)
+  id String @id
+
+  ownerId String
+  owner   PasskeyOwner @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  /// COSE 공개키 (base64url)
+  publicKey  String
+  counter    Int     @default(0)
+  /// JSON string[] (internal, hybrid, ...)
+  transports String?
+  aaguid     String?
+  /// singleDevice | multiDevice
+  deviceType String
+  backedUp   Boolean @default(false)
+
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime?
+
+  @@index([ownerId])
 }
