@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 
 import { updateSignupSettings, type ActionState } from "@/actions/services";
+import { useLoginDraft } from "./LoginDraft";
 import { Button, Card, FormFeedback, FormRow, Input } from "./ui";
 
 interface Props {
@@ -14,11 +15,20 @@ interface Props {
 
 export function SignupSettingsForm({ serviceId, signupEnabled, termsUrl, privacyUrl }: Props) {
   const [state, action, pending] = useActionState<ActionState, FormData>(updateSignupSettings.bind(null, serviceId), null);
+  const draft = useLoginDraft();
 
   return (
     <div className="flex flex-col gap-4">
       <FormFeedback error={state?.error} message={state?.message} />
-      <form key={JSON.stringify(state?.fields ?? {})} action={action} className="flex flex-col gap-4">
+      <form
+        key={JSON.stringify(state?.fields ?? {})}
+        action={action}
+        onChange={(e) => {
+          const data = new FormData(e.currentTarget);
+          draft({ termsUrl: String(data.get("termsUrl") ?? ""), privacyUrl: String(data.get("privacyUrl") ?? "") });
+        }}
+        className="flex flex-col gap-4"
+      >
         <Card>
           <label className="group flex cursor-pointer items-start gap-3 rounded-lg has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[var(--content-accent)] has-[:focus-visible]:ring-offset-2">
             <input type="checkbox" name="signupEnabled" defaultChecked={signupEnabled} className="sr-only" />

@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 
 import { updateBranding, type ActionState } from "@/actions/services";
+import { useLoginDraft } from "./LoginDraft";
 import { Button, Card, FormFeedback, FormRow, Input } from "./ui";
 
 interface Props {
@@ -68,6 +69,25 @@ export function BrandingForm({ serviceId, brandColor, brandBackground, logoUrl }
   const fileRef = useRef<HTMLInputElement>(null);
 
   const shownLogo = removeLogo ? null : (picked?.url ?? logoUrl);
+  const logoChanged = removeLogo || picked !== null;
+
+  // 저장이 끝나면 고른 파일을 비운다. 이제 저장된 로고(logoUrl)가 같은 그림이다.
+  const [savedState, setSavedState] = useState(state);
+  if (state !== savedState) {
+    setSavedState(state);
+    if (state?.message) {
+      setPicked(null);
+      setRemoveLogo(false);
+    }
+  }
+  useEffect(() => {
+    if (state?.message && fileRef.current) fileRef.current.value = "";
+  }, [state]);
+
+  const draft = useLoginDraft();
+  useEffect(() => {
+    draft({ brandColor: brand, brandBackground: background, logoUrl: shownLogo, logoChanged });
+  }, [draft, brand, background, shownLogo, logoChanged]);
 
   return (
     <form action={action} className="flex flex-col gap-4">

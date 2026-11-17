@@ -66,7 +66,9 @@
 }
 
 @layer components {
-  /* 로그인 배경 (Figma 0:632): 패턴 이미지 두 장을 브랜드 색 위에 겹친다 */
+  /* 로그인 배경 (Figma 0:632): 배경 색 위에 40px 격자.
+     예전에는 시안을 PNG로 깔았는데, 파란색이 칠해진 그림이라 서비스가 정한 색을 덮어 버렸다.
+     선을 반투명 검정으로 그려야 어떤 배경 색이든 그 위에 격자가 보인다. */
   .login-grid {
     /* 파생 색은 브랜딩을 덮어쓴 이 요소에서 계산해야 서비스 색을 따라간다.
        기본 #276eef 기준으로 계산하면 시안의 #235cc3과 거의 같다. */
@@ -74,10 +76,10 @@
     /* 흰 카드 위 링크 글자. 밝은 브랜드 색이면 LoginShell이 검정으로 덮어쓴다 */
     --login-brand-text: var(--login-brand-strong);
     background-color: var(--login-background, var(--login-brand));
-    background-image: url("/brand/login-bg-1.png"), url("/brand/login-bg-2.png");
-    background-size:
-      400.5px 400.5px,
-      576px 345.6px;
+    background-image:
+      linear-gradient(to right, rgba(0, 0, 0, 0.1) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(0, 0, 0, 0.1) 1px, transparent 1px);
+    background-size: 40px 40px;
     background-position: top left;
   }
 }

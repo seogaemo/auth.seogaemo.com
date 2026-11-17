@@ -4,17 +4,20 @@ import { LoginShell, type Branding } from "./LoginShell";
 import { ProviderButton, ProviderIconButton } from "./ProviderButton";
 import { ServiceHeading } from "./ServiceHeading";
 
-/** 콘솔 Branding의 미리보기. 실제 로그인 화면(app/login/page.tsx)과 같은 모양, 동작은 없다. */
+/** 콘솔 로그인 화면 메뉴의 미리보기. 실제 로그인 화면(app/login/page.tsx)과 같은 모양, 동작은 없다. */
 export function LoginPreview({
   name,
   logoUrl,
   branding,
   providers,
+  footer,
 }: {
   name: string;
   logoUrl: string | null;
   branding: Branding;
   providers: Provider[];
+  /** 약관 링크처럼 카드 맨 아래에 붙일 것 */
+  footer?: React.ReactNode;
 }) {
   const emailFirst = providers.includes("password") || providers.includes("email");
   const socials = providers.filter(isSocialProvider);
@@ -59,6 +62,7 @@ export function LoginPreview({
           ))}
         {providers.length === 0 && <p className="text-footnote text-quaternary">켜진 로그인 방식이 없어요.</p>}
       </div>
+      {footer}
     </LoginShell>
   );
 }

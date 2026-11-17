@@ -4,6 +4,7 @@ import { useActionState } from "react";
 
 import { updateLoginMethods, type ActionState } from "@/actions/services";
 import { PROVIDERS, providerIcon, type Provider } from "@/lib/config";
+import { useLoginDraft } from "./LoginDraft";
 import { PROVIDER_LABEL } from "./ProviderIcons";
 import { Button, Card, CheckMark, FormFeedback, FormRow, Input } from "./ui";
 
@@ -18,11 +19,20 @@ interface Props {
 /** 로그인 화면에 보이는 앱 이름과 로그인 버튼(로그인 방식) */
 export function LoginMethodsForm({ serviceId, name, providers, available }: Props) {
   const [state, action, pending] = useActionState<ActionState, FormData>(updateLoginMethods.bind(null, serviceId), null);
+  const draft = useLoginDraft();
 
   return (
     <div className="flex flex-col gap-4">
       <FormFeedback error={state?.error} message={state?.message} />
-      <form key={JSON.stringify(state?.fields ?? {})} action={action} className="flex flex-col gap-4">
+      <form
+        key={JSON.stringify(state?.fields ?? {})}
+        action={action}
+        onChange={(e) => {
+          const data = new FormData(e.currentTarget);
+          draft({ name: String(data.get("name") ?? ""), providers: data.getAll("providers") as Provider[] });
+        }}
+        className="flex flex-col gap-4"
+      >
         <Card>
           <FormRow label="이름" htmlFor="name" hint='로그인 화면에 "{이름}에 로그인하기"로 보여요.'>
             <Input id="name" name="name" required maxLength={40} defaultValue={state?.fields?.name ?? name} />
