@@ -3,10 +3,12 @@ import type { AuditLog } from "@prisma/client";
 const dateTime = new Intl.DateTimeFormat("ko-KR", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Seoul" });
 
 const ACTION_LABEL: Record<string, string> = {
-  "settings.update": "기본 설정을 바꿈",
+  "settings.update": "앱 설정을 바꿈",
+  "redirects.update": "Redirect URI를 바꿈",
+  "login.update": "이름과 로그인 방식을 바꿈",
   "signup.update": "가입과 약관 설정을 바꿈",
   "access.update": "접근 제한을 바꿈",
-  "branding.update": "브랜딩을 바꿈",
+  "branding.update": "로고와 색을 바꿈",
   "secret.rotate": "Client Secret을 새로 발급함",
   "member.add": "관리자를 추가함",
   "member.remove": "관리자를 뺌",
@@ -22,7 +24,7 @@ export function ActivityList({ logs }: { logs: AuditLog[] }) {
   if (logs.length === 0) {
     return (
       <p className="rounded-lg border border-base p-5 text-footnote text-tertiary">
-        아직 기록이 없어요. 설정, 브랜딩, 관리자, 사용자를 바꾸면 여기에 남아요.
+        아직 기록이 없어요. 연동, 로그인 화면, 사용자, 관리자를 바꾸면 여기에 남아요.
       </p>
     );
   }

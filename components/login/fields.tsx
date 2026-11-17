@@ -84,7 +84,7 @@ export function LoginTextLink({ href, children }: { href: string; children: Reac
   return (
     <Link
       href={href}
-      className={`rounded-sm font-mono text-[13px] font-[500] tracking-[-0.04em] text-[var(--login-brand-text)] underline decoration-1 underline-offset-[3px] hover:text-login-brand ${ring}`}
+      className={`rounded-sm font-mono text-[13px] font-[500] tracking-[-0.04em] text-[var(--login-brand-text)] underline decoration-1 underline-offset-[3px] hover:decoration-2 ${ring}`}
     >
       {children}
     </Link>

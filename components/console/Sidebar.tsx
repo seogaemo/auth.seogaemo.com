@@ -13,6 +13,8 @@ interface SidebarService {
 interface Props {
   email: string | null;
   name: string | null;
+  /** 콘솔 계정의 계정 화면 (/account?client_id=seogaemo-console) */
+  accountHref: string;
   services: SidebarService[];
 }
 
@@ -67,7 +69,7 @@ function Menu({ label, items }: { label: string; items: MenuItem[] }) {
  * md 이상은 왼쪽에 고정. 폰에서는 위에 얇은 바(로고 + 메뉴 버튼)만 두고,
  * 버튼을 누르면 같은 내용을 왼쪽 서랍(<dialog>)으로 연다.
  */
-export function Sidebar({ email, name, services }: Props) {
+export function Sidebar({ email, name, accountHref, services }: Props) {
   const pathname = usePathname();
   const match = pathname.match(/^\/console\/services\/([^/]+)/);
   const current = match ? services.find((s) => s.id === match[1]) : undefined;
@@ -82,7 +84,7 @@ export function Sidebar({ email, name, services }: Props) {
     <>
       {current ? <ServiceSection current={current} pathname={pathname} /> : <HomeSection services={services} pathname={pathname} />}
       <div className="flex-1" />
-      <Account email={email} name={name} />
+      <Account email={email} name={name} accountHref={accountHref} />
     </>
   );
 
@@ -151,12 +153,18 @@ function Wordmark() {
   );
 }
 
-function Account({ email, name }: { email: string | null; name: string | null }) {
+/** 내 이메일을 누르면 계정 화면(비밀번호, 기기, 탈퇴). 옆 버튼은 로그아웃 */
+function Account({ email, name, accountHref }: { email: string | null; name: string | null; accountHref: string }) {
   return (
     <form action="/console/logout" method="post" className="flex items-center gap-1 px-1">
-      <span className="min-w-0 flex-1 truncate text-footnote text-white" title={email ?? undefined}>
-        {email ?? name ?? "로그인됨"}
-      </span>
+      <a
+        href={accountHref}
+        title="내 계정"
+        className="flex min-w-0 flex-1 flex-col rounded px-1 py-0.5 hover:bg-[rgba(255,255,255,0.06)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+      >
+        <span className="truncate text-footnote text-white">{email ?? name ?? "로그인됨"}</span>
+        <span className="text-label text-[rgba(255,255,255,0.6)]">내 계정</span>
+      </a>
       <button type="submit" aria-label="로그아웃" title="로그아웃" className="rounded p-0.5 hover:bg-[rgba(255,255,255,0.1)]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/icons/logout-white.svg" alt="" width={20} height={20} />
@@ -208,13 +216,13 @@ function ServiceSection({ current, pathname }: { current: SidebarService; pathna
   const base = `/console/services/${current.id}`;
   const items = [
     { href: base, icon: "stats", label: "개요" },
+    { href: `${base}/integration`, icon: "code", label: "연동" },
+    { href: `${base}/branding`, icon: "shapes", label: "로그인 화면" },
     { href: `${base}/users`, icon: "group", label: "사용자" },
-    { href: `${base}/settings`, icon: "captive_portal", label: "설정" },
-    { href: `${base}/branding`, icon: "shapes", label: "브랜딩" },
     { href: `${base}/members`, icon: "admin", label: "관리자" },
   ].map((item) => ({
     ...item,
-    // 사용자 상세(/users/[id]), 활동 기록(/members/activity)에서도 위 메뉴를 켠다
+    // 사용자 상세(/users/[id]), 접근 제한(/users/access), 활동 기록(/members/activity)에서도 위 메뉴를 켠다
     active: pathname === item.href || (item.href !== base && pathname.startsWith(`${item.href}/`)),
   }));
 

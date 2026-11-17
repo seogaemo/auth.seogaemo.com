@@ -4,7 +4,7 @@ import { ProviderIcons } from "@/components/console/ProviderIcons";
 import { ServiceHeader } from "@/components/console/ServiceHeader";
 import { BackLink, Page } from "@/components/console/ui";
 import { getPrisma } from "@/cloudflare";
-import { isEmailAllowed } from "@/lib/allowlist";
+import { getAllowlist, isEmailAllowed } from "@/lib/allowlist";
 import { isProvider } from "@/lib/config";
 import { requireServiceAccess } from "@/lib/console/session";
 
@@ -61,6 +61,22 @@ export default async function UsersPage({
           hasLogo={!!service.logoKey}
           subtitle={`${q ? "찾은" : "전체"} 사용자 ${total.toLocaleString("ko-KR")}명`}
         />
+
+        {/* 누가 들어올 수 있는지 한 줄로. 바꾸는 곳은 바로 옆 링크 */}
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-base bg-base-elevated px-4 py-3">
+          <span className="text-footnote font-strong text-primary">접근 제한</span>
+          <span className="min-w-0 flex-1 text-footnote text-secondary">
+            {service.restrictLogin
+              ? `켜짐. 허용 목록 ${getAllowlist(service).length.toLocaleString("ko-KR")}개 항목에 맞는 이메일만 로그인할 수 있어요.`
+              : "꺼짐. 누구나 로그인하고 가입할 수 있어요."}
+          </span>
+          <Link
+            href={`${base}/access`}
+            className="flex min-h-6 items-center rounded text-label font-strong text-content-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--content-accent)] focus-visible:ring-offset-2"
+          >
+            접근 제한 바꾸기
+          </Link>
+        </div>
 
         <form role="search" action={base} className="flex gap-2">
           <label htmlFor="q" className="sr-only">

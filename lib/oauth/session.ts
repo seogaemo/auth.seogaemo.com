@@ -126,6 +126,17 @@ export async function endAllSessions(serviceId: string, userId: string, except?:
   await prisma.session.deleteMany({ where: { serviceId, userId, ...(except ? { NOT: { id: except } } : {}) } });
 }
 
+/** 이 브라우저에서 로그인 유지 중인 계정들 (계정 화면에서 앱을 고를 때). 만료, 정지, 허용 목록 밖은 뺀다. */
+export async function browserAccounts(browserKey: string | null | undefined) {
+  if (!browserKey) return [];
+  const sessions = await getPrisma().session.findMany({
+    where: { browserHash: await hashSecret(browserKey), expiresAt: { gt: new Date() } },
+    include: { user: true, service: true },
+    orderBy: { lastSeenAt: "desc" },
+  });
+  return sessions.filter((s) => !s.user.disabledAt && isEmailAllowed(s.service, s.user.email));
+}
+
 /** 이 브라우저의 모든 서비스 로그아웃 (어느 서비스인지 모를 때) */
 export async function endBrowserSessions(browserKey: string | null | undefined) {
   if (!browserKey) return;

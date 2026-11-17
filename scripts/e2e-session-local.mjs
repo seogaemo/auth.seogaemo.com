@@ -123,8 +123,14 @@ sql(`INSERT INTO "Session" (id, browserHash, serviceId, userId, authTime, method
 r = await get("/account?client_id=dev-client", { cookie: bc });
 const acc = (await r.text()).replace(/<!-- -->/g, "");
 check("account page", r.status === 200 && acc.includes("내 계정") && acc.includes("이 기기") && acc.includes("탈퇴"), `${r.status}`);
+// 콘솔 계정도 계정 화면이 있다. 이 브라우저에 콘솔 세션이 없으면 로그인부터
 r = await get("/account?client_id=seogaemo-console", { cookie: bc });
-check("no account page for console", r.status === 307 && loc(r).includes("invalid_client"), loc(r));
+check("console account needs login", r.status === 307 && loc(r).includes("/account/login?client_id=seogaemo-console"), loc(r));
+// client_id 없이 오면 이 브라우저에 로그인된 앱이 하나뿐이니 바로 그 계정으로
+r = await get("/account", { cookie: bc });
+check("account chooser jumps to the only app", r.status === 307 && loc(r).includes("/account?client_id=dev-client"), loc(r));
+r = await get("/account");
+check("account chooser without sessions", r.status === 200 && (await r.text()).includes("로그인된 앱이 없어요"));
 
 // 가입 설정
 sql(`UPDATE "Service" SET signupEnabled = 0 WHERE id = 'svc_dev';`);

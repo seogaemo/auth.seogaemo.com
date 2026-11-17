@@ -70,33 +70,47 @@ export async function createService(_prev: ActionState, form: FormData): Promise
   return { secret, serviceId: service.id, clientId: service.clientId };
 }
 
-export async function updateSettings(
+/** 앱 화면 전체(개요, 연동, 로그인 화면, 사이드바의 앱 이름)를 다시 그린다 */
+function revalidateService(serviceId: string) {
+  revalidatePath(`/console/services/${serviceId}`, "layout");
+}
+
+/** 연동: Redirect URI */
+export async function updateRedirectUris(
   serviceId: string,
   _prev: ActionState,
   form: FormData,
 ): Promise<ActionState> {
   const { developer } = await requireServiceAccess(serviceId);
-  const fields = echo(form, "name", "redirectUris");
-
-  const parsedName = parseServiceName(form.get("name"));
-  if ("error" in parsedName) return { error: parsedName.error, fields };
+  const fields = echo(form, "redirectUris");
 
   const parsedUris = parseRedirectUris(String(form.get("redirectUris") ?? ""));
   if ("error" in parsedUris) return { error: parsedUris.error, fields };
 
+  await getPrisma().service.update({ where: { id: serviceId }, data: { redirectUris: parsedUris.uris } });
+  await recordAudit(serviceId, developer, "redirects.update");
+  revalidateService(serviceId);
+  return { message: "저장했어요." };
+}
+
+/** 로그인 화면: 앱 이름과 로그인 방식 */
+export async function updateLoginMethods(
+  serviceId: string,
+  _prev: ActionState,
+  form: FormData,
+): Promise<ActionState> {
+  const { developer } = await requireServiceAccess(serviceId);
+  const fields = echo(form, "name");
+
+  const parsedName = parseServiceName(form.get("name"));
+  if ("error" in parsedName) return { error: parsedName.error, fields };
+
   await getPrisma().service.update({
     where: { id: serviceId },
-    data: {
-      name: parsedName.name,
-      redirectUris: parsedUris.uris,
-      providers: parseProviders(form.getAll("providers")),
-    },
+    data: { name: parsedName.name, providers: parseProviders(form.getAll("providers")) },
   });
-  await recordAudit(serviceId, developer, "settings.update");
-
-  revalidatePath(`/console/services/${serviceId}/settings`);
-  // 이름과 Redirect URI는 개요(예시 코드)에도 보인다
-  revalidatePath(`/console/services/${serviceId}`);
+  await recordAudit(serviceId, developer, "login.update");
+  revalidateService(serviceId);
   return { message: "저장했어요." };
 }
 
@@ -172,7 +186,7 @@ export async function updateBranding(
   });
   await recordAudit(serviceId, developer, "branding.update");
 
-  revalidatePath(`/console/services/${serviceId}/branding`);
+  revalidateService(serviceId);
   return { message: "저장했어요." };
 }
 
@@ -213,7 +227,7 @@ export async function updateAllowlist(
 
   await recordAudit(serviceId, developer, "access.update");
 
-  revalidatePath(`/console/services/${serviceId}/settings`);
+  revalidateService(serviceId);
   return {
     message: restrict
       ? `저장했어요. 이제 허용 목록의 ${parsed.entries.length}개 항목만 로그인할 수 있어요.`
@@ -270,6 +284,6 @@ export async function updateSignupSettings(serviceId: string, _prev: ActionState
     },
   });
   await recordAudit(serviceId, developer, "signup.update");
-  revalidatePath(`/console/services/${serviceId}/settings`);
+  revalidateService(serviceId);
   return { message: "저장했어요." };
 }

@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 
 import { getPrisma } from "@/cloudflare";
 import { Sidebar } from "@/components/console/Sidebar";
+import { CONSOLE_CLIENT_ID } from "@/lib/config";
 import { manageableServices, requireDeveloper } from "@/lib/console/session";
 
 export const dynamic = "force-dynamic";
@@ -27,6 +28,7 @@ export default async function ConsoleLayout({ children }: { children: ReactNode 
       <Sidebar
         email={developer.email}
         name={developer.name}
+        accountHref={`/account?client_id=${CONSOLE_CLIENT_ID}`}
         services={services.map((s) => ({ id: s.id, name: s.name, hasLogo: !!s.logoKey }))}
       />
       <main id="content" tabIndex={-1} className="min-w-0 flex-1 px-5 py-6 outline-none md:px-10 md:py-10">{children}</main>

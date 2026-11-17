@@ -1,14 +1,21 @@
 import { BrandingForm } from "@/components/console/BrandingForm";
+import { LoginMethodsForm } from "@/components/console/LoginMethodsForm";
 import { ServiceHeader } from "@/components/console/ServiceHeader";
+import { SignupSettingsForm } from "@/components/console/SignupSettingsForm";
 import { BackLink, Block, Page } from "@/components/console/ui";
 import { LoginPreview } from "@/components/login/LoginPreview";
+import { PROVIDERS } from "@/lib/config";
 import { requireServiceAccess } from "@/lib/console/session";
+import { isProviderConfigured } from "@/lib/oauth/providers";
 import { getProviders } from "@/lib/service";
 
-export const metadata = { title: "브랜딩" };
+export const metadata = { title: "로그인 화면" };
 
-/** Page 1 0:1072: 왼쪽 설정, 오른쪽 로그인 화면 미리보기 */
-export default async function BrandingPage({ params }: { params: Promise<{ id: string }> }) {
+/**
+ * 사용자에게 보이는 로그인 화면에 관한 것 전부. 왼쪽에서 바꾸고 저장하면 오른쪽 미리보기에 바로 보인다.
+ * 위에서 아래로: 이름과 로그인 버튼, 로고와 색, 가입과 약관 링크.
+ */
+export default async function LoginScreenPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const { service } = await requireServiceAccess(id);
   const logoUrl = service.logoKey
@@ -22,8 +29,18 @@ export default async function BrandingPage({ params }: { params: Promise<{ id: s
 
       <div className="grid items-start gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <div className="flex flex-col gap-8">
-          <ServiceHeader id={service.id} name={service.name} hasLogo={!!service.logoKey} subtitle="브랜딩" />
-          <Block title="로그인 화면" description="저장하면 오른쪽 미리보기와 실제 로그인 화면에 바로 반영돼요.">
+          <ServiceHeader id={service.id} name={service.name} hasLogo={!!service.logoKey} subtitle="로그인 화면" />
+
+          <Block title="이름과 로그인 방식" description="화면 제목과 보여줄 로그인 버튼이에요.">
+            <LoginMethodsForm
+              serviceId={service.id}
+              name={service.name}
+              providers={providers}
+              available={PROVIDERS.filter(isProviderConfigured)}
+            />
+          </Block>
+
+          <Block title="로고와 색">
             <BrandingForm
               serviceId={service.id}
               brandColor={service.brandColor}
@@ -31,10 +48,19 @@ export default async function BrandingPage({ params }: { params: Promise<{ id: s
               logoUrl={logoUrl}
             />
           </Block>
+
+          <Block title="가입과 약관" description="새 가입을 받을지, 화면 아래에 걸 약관 링크를 정해요.">
+            <SignupSettingsForm
+              serviceId={service.id}
+              signupEnabled={service.signupEnabled}
+              termsUrl={service.termsUrl}
+              privacyUrl={service.privacyUrl}
+            />
+          </Block>
         </div>
 
         <section aria-label="로그인 화면 미리보기" className="flex flex-col gap-2 xl:sticky xl:top-4">
-          <span className="text-footnote text-quaternary">미리보기</span>
+          <span className="text-footnote text-tertiary">미리보기 (저장하면 바뀌어요)</span>
           <LoginPreview name={service.name} logoUrl={logoUrl} branding={service} providers={providers} />
         </section>
       </div>

@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 
 import { CodeBlock } from "@/components/console/CodeBlock";
 import { CopyField } from "@/components/console/CopyField";
+import { RedirectUrisForm } from "@/components/console/RedirectUrisForm";
 import { RotateSecret } from "@/components/console/RotateSecret";
 import { Block, InfoRow } from "@/components/console/ui";
 import { getIssuer } from "@/lib/config";
@@ -27,7 +28,7 @@ function Example({ title, description, open, children }: { title: string; descri
 
 /**
  * 앱을 붙이는 데 필요한 값과, 이 앱의 실제 값(issuer, Client ID, 등록된 Redirect URI)을 채운 복붙용 예제.
- * 막 만든 앱(firstRun)이면 첫 예제를 펼쳐 둔다.
+ * 연동 화면 전체: 연동 정보, Redirect URI, 예시 코드. 아직 사용자가 없으면(firstRun) 첫 예제를 펼쳐 둔다.
  */
 export function Integration({ service, firstRun }: { service: Service; firstRun: boolean }) {
   const issuer = getIssuer();
@@ -107,6 +108,10 @@ ${issuer}/oauth/authorize?...&login_hint=user@example.com`;
           <RotateSecret serviceId={service.id} />
         )}
         <CopyField label="계정 화면" value={accountUrl} />
+      </Block>
+
+      <Block title="Redirect URI" description="로그인이 끝나면 돌아갈 앱의 주소예요. 아래 예시 코드도 첫 번째 주소로 채워져요.">
+        <RedirectUrisForm serviceId={service.id} redirectUris={getRedirectUris(service)} />
       </Block>
 
       <Block title="예시 코드" description="이 앱의 값을 채워 뒀어요. 복사해서 그대로 쓰면 돼요.">

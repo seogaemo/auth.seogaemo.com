@@ -30,7 +30,10 @@ export default async function ContinuePage() {
       <div className="flex flex-col gap-5">
         <ContinueAsForm label={label} />
         <LoginDivider />
-        <LoginTextLink href="/login">다른 계정으로 로그인 →</LoginTextLink>
+        <div className="flex flex-wrap justify-between gap-x-4 gap-y-2">
+          <LoginTextLink href="/login">다른 계정으로 로그인 →</LoginTextLink>
+          <LoginTextLink href={`/account?client_id=${encodeURIComponent(service.clientId)}`}>계정 관리</LoginTextLink>
+        </div>
       </div>
     </LoginShell>
   );

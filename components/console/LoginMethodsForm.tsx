@@ -2,44 +2,30 @@
 
 import { useActionState } from "react";
 
-import { updateSettings, type ActionState } from "@/actions/services";
+import { updateLoginMethods, type ActionState } from "@/actions/services";
 import { PROVIDERS, providerIcon, type Provider } from "@/lib/config";
 import { PROVIDER_LABEL } from "./ProviderIcons";
-import { Button, Card, CheckMark, FormFeedback, FormRow, Input, Textarea } from "./ui";
+import { Button, Card, CheckMark, FormFeedback, FormRow, Input } from "./ui";
 
 interface Props {
   serviceId: string;
   name: string;
-  redirectUris: string[];
   providers: Provider[];
   /** 서버에 키가 설정된 제공자 */
   available: Provider[];
 }
 
-export function SettingsForm({ serviceId, name, redirectUris, providers, available }: Props) {
-  const [state, action, pending] = useActionState<ActionState, FormData>(updateSettings.bind(null, serviceId), null);
+/** 로그인 화면에 보이는 앱 이름과 로그인 버튼(로그인 방식) */
+export function LoginMethodsForm({ serviceId, name, providers, available }: Props) {
+  const [state, action, pending] = useActionState<ActionState, FormData>(updateLoginMethods.bind(null, serviceId), null);
 
   return (
     <div className="flex flex-col gap-4">
       <FormFeedback error={state?.error} message={state?.message} />
       <form key={JSON.stringify(state?.fields ?? {})} action={action} className="flex flex-col gap-4">
         <Card>
-          <FormRow label="이름" htmlFor="name">
+          <FormRow label="이름" htmlFor="name" hint='로그인 화면에 "{이름}에 로그인하기"로 보여요.'>
             <Input id="name" name="name" required maxLength={40} defaultValue={state?.fields?.name ?? name} />
-          </FormRow>
-
-          <FormRow
-            label="Redirect URI"
-            htmlFor="redirectUris"
-            hint="한 줄에 하나씩. 요청한 redirect_uri가 여기 있는 값과 글자 하나까지 같아야 해요."
-          >
-            <Textarea
-              id="redirectUris"
-              name="redirectUris"
-              rows={Math.max(3, redirectUris.length + 1)}
-              defaultValue={state?.fields?.redirectUris ?? redirectUris.join("\n")}
-              placeholder="https://example.com/auth/callback"
-            />
           </FormRow>
 
           <fieldset className="flex flex-col gap-1.5 sm:flex-row sm:gap-3">

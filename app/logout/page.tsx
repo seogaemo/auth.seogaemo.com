@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { LoginTextLink } from "@/components/login/fields";
 import { LoginShell } from "@/components/login/LoginShell";
+import { browserAccounts, currentBrowserKey } from "@/lib/oauth/session";
 import { findServiceByClientId, serviceHomeUrl } from "@/lib/service";
 
 export const dynamic = "force-dynamic";
@@ -22,6 +23,8 @@ export default async function LogoutPage({
   const service = clientId ? await findServiceByClientId(clientId) : null;
   const home = service ? serviceHomeUrl(service) : null;
   const failed = error === "invalid_hint" || error === "invalid_client";
+  // 이 브라우저에 아직 로그인된 다른 앱이 있으면 그 계정 관리로 갈 수 있게
+  const others = (await browserAccounts(await currentBrowserKey())).length;
 
   return (
     <LoginShell branding={service ?? undefined}>
@@ -36,11 +39,12 @@ export default async function LogoutPage({
               ? `이 브라우저에서 ${service.name} 로그인이 끝났어요. 다음에는 다시 로그인해야 해요.`
               : "이 브라우저의 Seogaemo 로그인이 모두 끝났어요."}
         </p>
-        {home && service && (
-          <div className="pt-2">
-            <LoginTextLink href={home}>{service.name} 열기 →</LoginTextLink>
+        {(home && service) || others > 0 ? (
+          <div className="flex flex-wrap justify-between gap-x-4 gap-y-2 pt-2">
+            {home && service && <LoginTextLink href={home}>{service.name} 열기 →</LoginTextLink>}
+            {others > 0 && <LoginTextLink href="/account">다른 앱 계정 관리</LoginTextLink>}
           </div>
-        )}
+        ) : null}
       </div>
     </LoginShell>
   );

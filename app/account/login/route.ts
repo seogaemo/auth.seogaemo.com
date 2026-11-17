@@ -15,7 +15,7 @@ export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const clientId = requestUrl.searchParams.get("client_id");
   const service = clientId ? await findServiceByClientId(clientId) : null;
-  if (!service || service.isSystem) return NextResponse.redirect(loginErrorUrl("invalid_client"), 302);
+  if (!service) return NextResponse.redirect(loginErrorUrl("invalid_client"), 302);
   if (getProviders(service).length === 0) return NextResponse.redirect(loginErrorUrl("no_provider"), 302);
 
   const returnTo = endpoint(`/account?client_id=${encodeURIComponent(service.clientId)}`);

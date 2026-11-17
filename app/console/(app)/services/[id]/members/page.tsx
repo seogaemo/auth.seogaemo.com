@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getPrisma } from "@/cloudflare";
 import { ActivityList } from "@/components/console/ActivityList";
 import { AddMemberForm } from "@/components/console/AddMemberForm";
+import { DeleteServiceForm } from "@/components/console/DeleteServiceForm";
 import { RemoveMemberButton } from "@/components/console/RemoveMemberButton";
 import { ServiceHeader } from "@/components/console/ServiceHeader";
 import { BackLink, Block, Page } from "@/components/console/ui";
@@ -62,7 +63,7 @@ export default async function MembersPage({ params }: { params: Promise<{ id: st
 
         <Block
           title="관리자"
-          description="관리자는 사용자, 설정, 브랜딩을 관리할 수 있어요. 앱 삭제와 관리자 추가는 소유자만 해요."
+          description="관리자는 연동, 로그인 화면, 사용자를 관리할 수 있어요. 관리자 추가와 앱 삭제는 소유자만 해요."
         >
           <ul className="flex flex-col gap-2">
             <MemberRow
@@ -118,6 +119,12 @@ export default async function MembersPage({ params }: { params: Promise<{ id: st
             </Link>
           )}
         </Block>
+
+        {isOwner && (
+          <Block title="앱 삭제" description="이 앱의 사용자와 토큰이 모두 지워지고 되돌릴 수 없어요. 소유자만 할 수 있어요.">
+            <DeleteServiceForm serviceId={service.id} name={service.name} />
+          </Block>
+        )}
       </div>
     </Page>
   );

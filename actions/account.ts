@@ -15,7 +15,7 @@ export type AccountState = { error?: string; message?: string; redirectTo?: stri
 /** 액션에서는 redirect()를 못 쓰니(OpenNext 404) 세션이 없으면 null */
 async function account(clientId: string) {
   const service = await findServiceByClientId(clientId);
-  if (!service || service.isSystem) return null;
+  if (!service) return null;
   const session = await findSession(await currentBrowserKey(), service.id);
   return session ? { service, session, user: session.user } : null;
 }
@@ -103,12 +103,21 @@ export async function deleteAccount(clientId: string, _prev: AccountState, form:
   if (!current) return loginAgain(clientId);
   const { service, user } = current;
 
+  // 콘솔 계정: 소유한 앱이 있으면 앱이 주인 없이 남으니 먼저 지워야 한다
+  if (service.isSystem) {
+    const owned = await getPrisma().service.count({ where: { ownerId: user.id } });
+    if (owned > 0) return { error: `소유한 앱이 ${owned}개 있어요. 콘솔에서 앱을 먼저 지운 뒤 탈퇴하세요.` };
+  }
+
   const expected = user.email ?? "탈퇴";
   if (String(form.get("confirm") ?? "").trim().toLowerCase() !== expected.toLowerCase()) {
     return { error: `확인 칸에 다음을 그대로 입력하세요: ${expected}` };
   }
 
-  await getPrisma().user.delete({ where: { id: user.id } });
+  const prisma = getPrisma();
+  // 콘솔 계정이면 관리자로 참여한 앱에서도 뺀다 (같은 이메일로 다시 가입해도 자동으로 돌아오지 않게)
+  if (service.isSystem && user.email) await prisma.serviceMember.deleteMany({ where: { email: user.email } });
+  await prisma.user.delete({ where: { id: user.id } });
   // revalidatePath를 하면 지금 화면(이미 지운 사용자)을 다시 그리다 로그인으로 튄다. 이동만 한다.
   return { redirectTo: `/account/deleted?client_id=${encodeURIComponent(service.clientId)}` };
 }

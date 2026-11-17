@@ -33,7 +33,7 @@ export function SignupSettingsForm({ serviceId, signupEnabled, termsUrl, privacy
             </span>
             <span className="flex flex-col gap-0.5">
               <span className="text-footnote font-strong text-primary">새 사용자 가입 받기</span>
-              <span className="text-label text-tertiary">끄면 이미 가입한 사용자만 로그인할 수 있어요. 이메일, 도메인으로 고르려면 접근 제한을 쓰세요.</span>
+              <span className="text-label text-tertiary">끄면 이미 가입한 사용자만 로그인할 수 있어요. 이메일, 도메인으로 고르려면 사용자 메뉴의 접근 제한을 쓰세요.</span>
             </span>
           </label>
 
