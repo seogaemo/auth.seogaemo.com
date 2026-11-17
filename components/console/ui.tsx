@@ -1,9 +1,12 @@
 import Link from "next/link";
-import type {
-  ButtonHTMLAttributes,
-  InputHTMLAttributes,
-  ReactNode,
-  TextareaHTMLAttributes,
+import {
+  Children,
+  cloneElement,
+  isValidElement,
+  type ButtonHTMLAttributes,
+  type InputHTMLAttributes,
+  type ReactNode,
+  type TextareaHTMLAttributes,
 } from "react";
 
 /**
@@ -74,7 +77,7 @@ export function TextAction({
     <button
       type="button"
       {...props}
-      className={`inline-flex shrink-0 items-center gap-1 rounded text-label font-strong hover:underline ${
+      className={`inline-flex min-h-6 min-w-6 shrink-0 items-center justify-center gap-1 rounded text-label font-strong hover:underline ${
         tone === "accent" ? "text-content-accent" : "text-content-negative"
       } ${focusRing} ${props.className ?? ""}`}
     >
@@ -105,7 +108,25 @@ export function Textarea(props: TextareaHTMLAttributes<HTMLTextAreaElement>) {
   );
 }
 
-/** 왼쪽 라벨(96px) + 오른쪽 입력, 간격 8px (Page 1 로그인 설정) */
+type DescribableProps = { id?: string; "aria-describedby"?: string; children?: ReactNode };
+
+/** children 안에서 id가 htmlFor인 입력을 찾아 aria-describedby에 설명 id를 붙인다 */
+function describe(children: ReactNode, htmlFor: string, hintId: string): ReactNode {
+  return Children.map(children, (child) => {
+    if (!isValidElement<DescribableProps>(child)) return child;
+    if (child.props.id === htmlFor) {
+      const existing = child.props["aria-describedby"];
+      return cloneElement(child, { "aria-describedby": existing ? `${existing} ${hintId}` : hintId });
+    }
+    if (child.props.children === undefined) return child;
+    return cloneElement(child, undefined, describe(child.props.children, htmlFor, hintId));
+  });
+}
+
+/**
+ * 왼쪽 라벨(96px) + 오른쪽 입력, 간격 8px (Page 1 로그인 설정).
+ * hint는 입력의 설명으로 연결해서 스크린 리더가 라벨과 함께 읽는다 (WCAG 1.3.1).
+ */
 export function FormRow({
   label,
   htmlFor,
@@ -126,8 +147,12 @@ export function FormRow({
         {label}
       </label>
       <div className="flex min-w-0 flex-1 flex-col gap-1">
-        {children}
-        {hint && <p className="text-label text-quaternary">{hint}</p>}
+        {hint && htmlFor ? describe(children, htmlFor, `${htmlFor}-hint`) : children}
+        {hint && (
+          <p id={htmlFor ? `${htmlFor}-hint` : undefined} className="text-label text-quaternary">
+            {hint}
+          </p>
+        )}
       </div>
     </div>
   );

@@ -119,6 +119,7 @@ export function BrandingForm({ serviceId, brandColor, brandBackground, logoUrl }
             ref={fileRef}
             name="logo"
             type="file"
+            aria-label="로고 파일"
             accept="image/png,image/jpeg,image/gif,image/webp"
             className="sr-only"
             tabIndex={-1}

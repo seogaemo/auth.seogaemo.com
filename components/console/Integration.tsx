@@ -16,7 +16,7 @@ function Example({ title, description, open, children }: { title: string; descri
           <span className="text-footnote font-strong text-primary">{title}</span>
           <span className="text-label text-tertiary">{description}</span>
         </span>
-        <svg aria-hidden viewBox="0 0 20 20" width={20} height={20} className="shrink-0 transition-transform group-open:rotate-180">
+        <svg aria-hidden viewBox="0 0 20 20" width={20} height={20} className="shrink-0 transition-transform group-open:rotate-180 motion-reduce:transition-none">
           <path d="M5 8l5 5 5-5" fill="none" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" stroke="currentColor" className="text-tertiary" />
         </svg>
       </summary>
