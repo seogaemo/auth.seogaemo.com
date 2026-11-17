@@ -17,7 +17,9 @@
 	},
 	"files": [
 		"dist",
-		"src"
+		"src",
+		"README.md",
+		"LICENSE"
 	],
 	"scripts": {
 		"build": "rm -rf dist && tsc -p tsconfig.json",
@@ -45,5 +47,20 @@
 		"type": "git",
 		"url": "git+https://github.com/seogaemo/auth.seogaemo.com.git",
 		"directory": "packages/oauth-next"
-	}
+	},
+	"publishConfig": {
+		"access": "public",
+		"provenance": false
+	},
+	"homepage": "https://github.com/seogaemo/auth.seogaemo.com/tree/main/packages/oauth-next#readme",
+	"keywords": [
+		"oauth",
+		"oauth2",
+		"openid-connect",
+		"oidc",
+		"pkce",
+		"seogaemo",
+		"sso",
+		"nextjs"
+	]
 }

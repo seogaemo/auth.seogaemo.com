@@ -13,7 +13,9 @@
 	},
 	"files": [
 		"dist",
-		"src"
+		"src",
+		"README.md",
+		"LICENSE"
 	],
 	"engines": {
 		"node": ">=20"
@@ -32,5 +34,19 @@
 		"typescript": "^5",
 		"vitest": "^3",
 		"@types/node": "^22"
-	}
+	},
+	"publishConfig": {
+		"access": "public",
+		"provenance": false
+	},
+	"homepage": "https://github.com/seogaemo/auth.seogaemo.com/tree/main/packages/oauth#readme",
+	"keywords": [
+		"oauth",
+		"oauth2",
+		"openid-connect",
+		"oidc",
+		"pkce",
+		"seogaemo",
+		"sso"
+	]
 }

@@ -13,7 +13,9 @@
 	},
 	"files": [
 		"dist",
-		"src"
+		"src",
+		"README.md",
+		"LICENSE"
 	],
 	"scripts": {
 		"build": "rm -rf dist && tsc -p tsconfig.json",
@@ -35,5 +37,21 @@
 		"type": "git",
 		"url": "git+https://github.com/seogaemo/auth.seogaemo.com.git",
 		"directory": "packages/oauth-browser"
-	}
+	},
+	"publishConfig": {
+		"access": "public",
+		"provenance": false
+	},
+	"homepage": "https://github.com/seogaemo/auth.seogaemo.com/tree/main/packages/oauth-browser#readme",
+	"keywords": [
+		"oauth",
+		"oauth2",
+		"openid-connect",
+		"oidc",
+		"pkce",
+		"seogaemo",
+		"sso",
+		"spa",
+		"browser"
+	]
 }
