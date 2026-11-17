@@ -7,6 +7,8 @@ interface CloudflareEnv {
 
   /** EC P-256 개인키 JWK (kid 포함). `wrangler secret put JWT_PRIVATE_JWK`로 등록한다. */
   JWT_PRIVATE_JWK: string;
+  /** RSA 개인키 JWK (kid 포함). RS256 ID 토큰용. `node scripts/generate-jwk.mjs --rsa | wrangler secret put JWT_RSA_PRIVATE_JWK` */
+  JWT_RSA_PRIVATE_JWK?: string;
   /** 교체 전 서명 키의 공개 JWK 배열 (JSON). 키 교체 뒤 옛 토큰이 만료될 때까지만 둔다. */
   JWT_RETIRED_JWKS?: string;
 

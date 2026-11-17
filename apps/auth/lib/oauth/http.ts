@@ -17,11 +17,25 @@ export function preflight() {
   return new Response(null, { status: 204, headers: CORS_HEADERS });
 }
 
+/** 토큰, 오류 응답. 캐시하면 안 된다 (RFC 6749 5.1: Cache-Control no-store, Pragma no-cache) */
 export function json(body: unknown, status = 200, headers: HeadersInit = {}) {
   return Response.json(body, {
     status,
-    headers: { ...CORS_HEADERS, "Cache-Control": "no-store", ...headers },
+    headers: { ...CORS_HEADERS, "Cache-Control": "no-store", Pragma: "no-cache", ...headers },
   });
+}
+
+/**
+ * 같은 파라미터가 두 번 이상 왔으면 그 이름 (RFC 6749 3.1, 3.2: 요청 파라미터는 한 번만).
+ * 어느 값을 믿을지 모호하면 공격에 쓰일 수 있어서 요청 자체를 거절한다.
+ */
+export function repeatedParam(params: URLSearchParams) {
+  const seen = new Set<string>();
+  for (const key of params.keys()) {
+    if (seen.has(key)) return key;
+    seen.add(key);
+  }
+  return null;
 }
 
 /** RFC 6749 5.2 오류 응답 */

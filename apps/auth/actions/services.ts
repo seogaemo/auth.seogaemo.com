@@ -11,6 +11,7 @@ import {
   parseProviders,
   parseRedirectUris,
   parseServiceName,
+  webOrigins,
 } from "@/lib/console/validation";
 import { hashSecret, randomToken } from "@/lib/crypto";
 import { PROVIDERS } from "@/lib/config";
@@ -60,6 +61,9 @@ export async function createService(_prev: ActionState, form: FormData): Promise
       clientId: `sg_${randomToken(12)}`,
       clientSecretHash: secret ? await hashSecret(secret) : "",
       redirectUris: parsedUris.uris,
+      postLogoutRedirectUris: webOrigins(parsedUris.uris),
+      // OIDC 기본값. RS256만 아는 라이브러리도 그대로 붙는다
+      idTokenSigningAlg: "RS256",
       providers: [...PROVIDERS],
       ownerId: developer.id,
     },
@@ -75,22 +79,39 @@ function revalidateService(serviceId: string) {
   revalidatePath(`/console/services/${serviceId}`, "layout");
 }
 
-/** 연동: Redirect URI */
+/** 연동: Redirect URI와 로그아웃 후 이동 주소 */
 export async function updateRedirectUris(
   serviceId: string,
   _prev: ActionState,
   form: FormData,
 ): Promise<ActionState> {
   const { developer } = await requireServiceAccess(serviceId);
-  const fields = echo(form, "redirectUris");
+  const fields = echo(form, "redirectUris", "postLogoutRedirectUris");
 
   const parsedUris = parseRedirectUris(String(form.get("redirectUris") ?? ""));
   if ("error" in parsedUris) return { error: parsedUris.error, fields };
+  const parsedLogout = parseRedirectUris(String(form.get("postLogoutRedirectUris") ?? ""), "로그아웃 후 이동 주소");
+  if ("error" in parsedLogout) return { error: parsedLogout.error, fields };
 
-  await getPrisma().service.update({ where: { id: serviceId }, data: { redirectUris: parsedUris.uris } });
+  await getPrisma().service.update({
+    where: { id: serviceId },
+    data: { redirectUris: parsedUris.uris, postLogoutRedirectUris: parsedLogout.uris },
+  });
   await recordAudit(serviceId, developer, "redirects.update");
   revalidateService(serviceId);
   return { message: "저장했어요." };
+}
+
+/** 연동: ID 토큰 서명 알고리즘 */
+export async function updateIdTokenAlg(serviceId: string, _prev: ActionState, form: FormData): Promise<ActionState> {
+  const { developer } = await requireServiceAccess(serviceId);
+  const alg = form.get("idTokenSigningAlg");
+  if (alg !== "RS256" && alg !== "ES256") return { error: "RS256이나 ES256 중에서 고르세요." };
+
+  await getPrisma().service.update({ where: { id: serviceId }, data: { idTokenSigningAlg: alg } });
+  await recordAudit(serviceId, developer, "idtoken.update", alg);
+  revalidateService(serviceId);
+  return { message: "저장했어요. 다음 로그인부터 이 방식으로 서명해요." };
 }
 
 /** 로그인 화면: 앱 이름과 로그인 방식 */

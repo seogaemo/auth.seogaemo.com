@@ -5,6 +5,7 @@ import { BROWSER_COOKIE, getIssuer, LOGIN_TX_COOKIE, SUPPORTED_PROMPTS, SUPPORTE
 import { continueWithSession } from "@/lib/oauth/complete";
 import { loginErrorUrl } from "@/lib/oauth/errors";
 import { browserCookieOptions, findSession, isAuthTooOld, newBrowserKey } from "@/lib/oauth/session";
+import { repeatedParam } from "@/lib/oauth/http";
 import { findServiceByClientId, getProviders, isRegisteredRedirectUri } from "@/lib/service";
 
 export const dynamic = "force-dynamic";
@@ -19,11 +20,17 @@ export const dynamic = "force-dynamic";
  * OIDC prompt, max_age로 바꿀 수 있다:
  * - prompt=none: 화면을 띄우지 않는다. 세션이 없으면 error=login_required
  * - prompt=login, 또는 max_age보다 오래된 인증: 다시 로그인
- * - prompt=select_account: "이 계정으로 계속" 화면
+ * - prompt=select_account, prompt=consent: "이 계정으로 계속" 화면 (계속을 눌러야 code를 준다)
+ *
+ * GET과 POST(form) 둘 다 받는다 (OIDC Core 3.1.2.1).
  */
-export async function GET(request: Request) {
+async function authorize(request: Request, params: URLSearchParams) {
   const requestUrl = new URL(request.url);
-  const params = requestUrl.searchParams;
+  // client_id, redirect_uri가 여러 개면 어디로 돌려보낼지 믿을 수 없어서 우리 화면에서 멈춘다
+  const repeated = repeatedParam(params);
+  if (repeated === "client_id" || repeated === "redirect_uri") {
+    return NextResponse.redirect(loginErrorUrl("invalid_request"), 302);
+  }
   const clientId = params.get("client_id");
   const redirectUri = params.get("redirect_uri");
   const state = params.get("state");
@@ -45,8 +52,21 @@ export async function GET(request: Request) {
     return NextResponse.redirect(url.toString(), 302);
   };
 
+  // RFC 6749 3.1: 파라미터는 한 번만
+  if (repeated) return fail("invalid_request", `${repeated} must not be repeated`);
+
+  // OIDC Core 6.1, 6.2: Request Object는 지원하지 않는다 (discovery에도 false로 알린다)
+  if (params.has("request")) return fail("request_not_supported", "request objects are not supported");
+  if (params.has("request_uri")) return fail("request_uri_not_supported", "request_uri is not supported");
+
   if (params.get("response_type") !== "code") {
     return fail("unsupported_response_type", "response_type must be code");
+  }
+
+  // 응답은 query로만 보낸다. 다른 방식을 기다리는 클라이언트가 응답을 놓치지 않게 미리 알린다
+  const responseMode = params.get("response_mode");
+  if (responseMode !== null && responseMode !== "query") {
+    return fail("invalid_request", "only response_mode=query is supported");
   }
 
   const codeChallenge = params.get("code_challenge");
@@ -111,7 +131,9 @@ export async function GET(request: Request) {
     return NextResponse.redirect(await continueWithSession(codeRequest, session), 302);
   }
 
-  if (session && sessionUsable && !forceLogin && !prompts.includes("select_account")) {
+  // consent: 따로 동의 화면이 없어서 "이 계정으로 계속" 화면을 동의로 쓴다. 세션이 없으면 로그인 자체가 동의다
+  const askToContinue = prompts.includes("select_account") || prompts.includes("consent");
+  if (session && sessionUsable && !forceLogin && !askToContinue) {
     return NextResponse.redirect(await continueWithSession(codeRequest, session), 302);
   }
 
@@ -125,7 +147,7 @@ export async function GET(request: Request) {
     },
   });
 
-  const next = sessionUsable && prompts.includes("select_account") ? "/login/continue" : "/login";
+  const next = sessionUsable && askToContinue && !forceLogin ? "/login/continue" : "/login";
   const response = NextResponse.redirect(new URL(next, request.url), 302);
 
   // 로그인 진행은 이 브라우저에 묶는다. 콜백에서 쿠키와 transaction id가 같아야 한다.
@@ -138,4 +160,19 @@ export async function GET(request: Request) {
   });
 
   return withBrowserCookie(response);
+}
+
+export function GET(request: Request) {
+  return authorize(request, new URL(request.url).searchParams);
+}
+
+export async function POST(request: Request) {
+  const type = request.headers.get("content-type") ?? "";
+  if (!type.includes("application/x-www-form-urlencoded")) {
+    return NextResponse.redirect(loginErrorUrl("invalid_request"), 303);
+  }
+  const params = new URLSearchParams(await request.text());
+  const response = await authorize(request, params);
+  // 폼 POST의 결과 이동은 303이어야 브라우저가 GET으로 따라간다
+  return new NextResponse(null, { status: 303, headers: response.headers });
 }

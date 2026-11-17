@@ -12,7 +12,10 @@ import {
 
 import { getIssuer, TTL } from "./config";
 
+/** access token, 콘솔 세션은 항상 ES256. ID 토큰만 앱 설정에 따라 ES256이나 RS256 */
 const ALG = "ES256";
+export type IdTokenAlg = "ES256" | "RS256";
+const ID_TOKEN_ALGS: IdTokenAlg[] = ["ES256", "RS256"];
 
 export interface AccessTokenClaims extends JWTPayload {
   /** 서비스 안에서의 사용자 id */
@@ -40,55 +43,48 @@ export interface IdTokenClaims extends JWTPayload {
 interface SigningKeys {
   kid: string;
   privateKey: CryptoKey;
-  publicKey: CryptoKey;
   publicJwk: JWK;
 }
 
-let cached: { source: string; keys: Promise<SigningKeys> } | undefined;
+const cached = new Map<IdTokenAlg, { source: string; keys: Promise<SigningKeys> }>();
 
 /**
- * 서명 키는 JWT_PRIVATE_JWK 시크릿(EC P-256 개인키 JWK, kid 포함) 하나로 관리한다.
- * 공개키는 개인키 JWK에서 d를 뺀 값이다.
+ * 서명 키는 알고리즘마다 시크릿 하나로 관리한다 (개인키 JWK, kid 포함).
+ * - ES256: JWT_PRIVATE_JWK (EC P-256)
+ * - RS256: JWT_RSA_PRIVATE_JWK (RSA 2048 이상). OIDC Discovery가 RS256 지원을 요구한다
+ * 공개키는 개인키 JWK에서 비밀 부분을 뺀 값이다.
  */
-function getSigningKeys() {
-  const source = getCloudflareContext().env.JWT_PRIVATE_JWK;
+function getSigningKeys(alg: IdTokenAlg = ALG) {
+  const env = getCloudflareContext().env;
+  const source = alg === "RS256" ? env.JWT_RSA_PRIVATE_JWK : env.JWT_PRIVATE_JWK;
   if (!source) {
-    throw new Error("JWT_PRIVATE_JWK is not set");
+    throw new Error(`${alg === "RS256" ? "JWT_RSA_PRIVATE_JWK" : "JWT_PRIVATE_JWK"} is not set`);
   }
 
-  if (cached && cached.source === source) {
-    return cached.keys;
-  }
+  const hit = cached.get(alg);
+  if (hit && hit.source === source) return hit.keys;
 
-  const keys = loadKeys(source);
-  cached = { source, keys };
+  const keys = loadKeys(source, alg);
+  cached.set(alg, { source, keys });
   return keys;
 }
 
-async function loadKeys(source: string): Promise<SigningKeys> {
+/** 개인키 JWK에서 공개 부분만 (실수로 넣은 비밀 값을 내보내지 않게 필요한 필드만 고른다) */
+function publicPart(jwk: JWK, alg: IdTokenAlg): JWK {
+  const base = { kid: jwk.kid, alg, use: "sig" };
+  return jwk.kty === "RSA" ? { kty: "RSA", n: jwk.n, e: jwk.e, ...base } : { kty: "EC", crv: jwk.crv, x: jwk.x, y: jwk.y, ...base };
+}
+
+async function loadKeys(source: string, alg: IdTokenAlg): Promise<SigningKeys> {
   const jwk = JSON.parse(source) as JWK;
   if (!jwk.kid || !jwk.d) {
-    throw new Error("JWT_PRIVATE_JWK must be a private JWK with kid");
+    throw new Error(`${alg} signing key must be a private JWK with kid`);
   }
+  if ((alg === "RS256") !== (jwk.kty === "RSA")) throw new Error(`${alg} signing key has kty ${jwk.kty}`);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { d, ...publicPart } = jwk;
-  const publicJwk: JWK = {
-    kty: publicPart.kty,
-    crv: publicPart.crv,
-    x: publicPart.x,
-    y: publicPart.y,
-    kid: jwk.kid,
-    alg: ALG,
-    use: "sig",
-  };
-
-  const [privateKey, publicKey] = await Promise.all([
-    importJWK(jwk, ALG) as Promise<CryptoKey>,
-    importJWK(publicJwk, ALG) as Promise<CryptoKey>,
-  ]);
-
-  return { kid: jwk.kid, privateKey, publicKey, publicJwk };
+  const publicJwk = publicPart(jwk, alg);
+  const privateKey = (await importJWK(jwk, alg)) as CryptoKey;
+  return { kid: jwk.kid, privateKey, publicJwk };
 }
 
 /**
@@ -103,17 +99,30 @@ function retiredJwks(): JWK[] {
     const keys = Array.isArray(parsed) ? parsed : parsed.keys;
     // 공개 부분만 남긴다 (실수로 개인키를 넣어도 내보내지 않게)
     return keys
-      .filter((k) => k.kid && k.kty === "EC")
-      .map((k) => ({ kty: k.kty, crv: k.crv, x: k.x, y: k.y, kid: k.kid, alg: ALG, use: "sig" }));
+      .filter((k) => k.kid && (k.kty === "EC" || k.kty === "RSA"))
+      .map((k) => publicPart(k, k.kty === "RSA" ? "RS256" : "ES256"));
   } catch {
     console.error("JWT_RETIRED_JWKS is not valid JSON");
     return [];
   }
 }
 
+/** RS256 키는 아직 설정 안 된 환경(로컬)도 있어서 없으면 빼고 내보낸다 */
+async function currentPublicKeys(): Promise<JWK[]> {
+  const keys = [(await getSigningKeys("ES256")).publicJwk];
+  if (getCloudflareContext().env.JWT_RSA_PRIVATE_JWK) keys.push((await getSigningKeys("RS256")).publicJwk);
+  return keys;
+}
+
 async function publicKeys(): Promise<JWK[]> {
-  const { publicJwk } = await getSigningKeys();
-  return [publicJwk, ...retiredJwks().filter((k) => k.kid !== publicJwk.kid)];
+  const current = await currentPublicKeys();
+  const kids = new Set(current.map((k) => k.kid));
+  return [...current, ...retiredJwks().filter((k) => !kids.has(k.kid))];
+}
+
+/** discovery의 id_token_signing_alg_values_supported */
+export function idTokenAlgsSupported(): IdTokenAlg[] {
+  return getCloudflareContext().env.JWT_RSA_PRIVATE_JWK ? ["RS256", "ES256"] : ["ES256"];
 }
 
 async function keyResolver() {
@@ -124,11 +133,12 @@ async function sign(
   { sub, aud, ...rest }: JWTPayload & { sub: string; aud: string },
   typ: string,
   expiresInSec: number = TTL.accessTokenSec,
+  alg: IdTokenAlg = ALG,
 ) {
-  const { kid, privateKey } = await getSigningKeys();
+  const { kid, privateKey } = await getSigningKeys(alg);
 
   return new SignJWT(rest)
-    .setProtectedHeader({ alg: ALG, kid, typ })
+    .setProtectedHeader({ alg, kid, typ })
     .setIssuer(getIssuer())
     .setSubject(sub)
     .setAudience(aud)
@@ -137,12 +147,13 @@ async function sign(
     .sign(privateKey);
 }
 
-export function signAccessToken(claims: AccessTokenClaims) {
-  return sign(claims, "at+jwt");
+/** RFC 9068 JWT access token. jti는 토큰마다 다른 값이어야 한다 (2.2) */
+export function signAccessToken(claims: Pick<AccessTokenClaims, "sub" | "aud" | "scope" | "client_id">) {
+  return sign({ ...claims, jti: crypto.randomUUID() }, "at+jwt");
 }
 
-export function signIdToken(claims: IdTokenClaims) {
-  return sign(claims, "JWT");
+export function signIdToken(claims: IdTokenClaims, alg: IdTokenAlg) {
+  return sign(claims, "JWT", TTL.accessTokenSec, alg);
 }
 
 /** 서명, 만료, 발급자, (주어진 경우) audience를 검증한다. 실패하면 예외를 던진다. */
@@ -190,7 +201,7 @@ export async function verifyIdTokenHint(token: string): Promise<IdTokenClaims | 
   try {
     const { payload } = await jwtVerify<IdTokenClaims>(token, await keyResolver(), {
       issuer: getIssuer(),
-      algorithms: [ALG],
+      algorithms: ID_TOKEN_ALGS,
       typ: "JWT",
     });
     return payload;

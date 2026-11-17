@@ -19,6 +19,10 @@ model Service {
   logoKey          String?
   /// string[]
   redirectUris     Json    @default("[]")
+  /// string[]. 로그아웃 뒤 돌아갈 주소. post_logout_redirect_uri가 이 중 하나와 정확히 같아야 한다 (RP-Initiated Logout 3.1)
+  postLogoutRedirectUris Json @default("[]")
+  /// ID 토큰 서명 알고리즘 ("ES256" | "RS256"). 새 앱은 RS256 (OIDC 기본값), 0008 이전 앱은 ES256
+  idTokenSigningAlg String @default("ES256")
   /// ("google" | "kakao")[]
   providers        Json    @default("[]")
   brandColor       String?
@@ -196,6 +200,8 @@ model RefreshToken {
   scope     String
   /// 로그아웃하면 이 세션에서 나온 토큰을 같이 끊는다
   sessionId String?
+  /// 이 토큰을 처음 받게 한 직접 인증 시각. 회전해도 이어진다 (갱신 ID 토큰의 auth_time, OIDC Core 12.2)
+  authTime  DateTime?
   expiresAt DateTime
   revokedAt DateTime?
   createdAt DateTime  @default(now())

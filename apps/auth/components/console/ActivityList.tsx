@@ -4,7 +4,8 @@ const dateTime = new Intl.DateTimeFormat("ko-KR", { dateStyle: "medium", timeSty
 
 const ACTION_LABEL: Record<string, string> = {
   "settings.update": "앱 설정을 바꿈",
-  "redirects.update": "Redirect URI를 바꿈",
+  "redirects.update": "Redirect URI와 로그아웃 후 이동 주소를 바꿈",
+  "idtoken.update": "ID 토큰 서명 방식을 바꿈",
   "login.update": "이름과 로그인 방식을 바꿈",
   "signup.update": "가입과 약관 설정을 바꿈",
   "access.update": "접근 제한을 바꿈",

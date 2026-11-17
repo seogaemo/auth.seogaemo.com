@@ -51,6 +51,7 @@ Seogaemo SSO. 누구나 가입해서 자기 서비스를 등록하고 "Seogaemo�
 
 - 요청한 `redirect_uri`는 등록된 값과 글자 하나까지 같아야 한다 (RFC 6749 3.1.2). `#`은 받지 않는다.
 - 웹: `https`만. 개발용으로 `localhost`, `127.0.0.1`, `[::1]`은 `http`도 받는다.
+- 루프백 IP(`127.0.0.1`, `[::1]`)로 등록한 주소는 포트만 달라도 받는다. 데스크톱 앱, CLI가 실행할 때마다 빈 포트를 쓰기 때문이다 (RFC 8252 7.3). `localhost`라는 이름은 포트까지 같아야 한다.
 - 네이티브 앱(iOS, Android): 앱 도메인을 뒤집은 스킴만 받는다. 예: `com.example.app:/oauth/callback` (RFC 8252 7.1). 점이 없는 `myapp:`은 다른 앱과 겹치기 쉬워서 받지 않는다. 앱은 public client로 만들고 PKCE만 쓴다.
 - iOS는 `ASWebAuthenticationSession`(AppAuth-iOS가 쓰는 것)으로 연다. `WKWebView`로 열면 Google 로그인과 패스키가 막힌다.
 
@@ -63,7 +64,7 @@ Seogaemo SSO. 누구나 가입해서 자기 서비스를 등록하고 "Seogaemo�
 - `prompt=login`, `max_age`: 다시 로그인시킨다
 - `prompt=select_account`: "이 계정으로 계속 / 다른 계정으로 로그인" 화면
 - `login_hint`: 이메일 칸을 미리 채운다
-- 로그아웃: `GET/POST /oauth/logout` (OIDC RP-Initiated Logout). `id_token_hint`나 `client_id`로 앱을 알면 그 앱 세션만, 모르면 이 브라우저의 모든 세션을 끝낸다. 세션에서 나온 refresh token도 같이 끊긴다. `post_logout_redirect_uri`는 등록된 웹 Redirect URI와 origin이 같거나, 등록된 앱 스킴과 스킴이 같을 때만 따르고, 아니면 우리 로그아웃 화면에 머문다.
+- 로그아웃: `GET/POST /oauth/logout` (OIDC RP-Initiated Logout). `id_token_hint`나 `client_id`로 앱을 알면 그 앱 세션만, 모르면 이 브라우저의 모든 세션을 끝낸다. 세션에서 나온 refresh token도 같이 끊긴다. `post_logout_redirect_uri`는 콘솔에 등록한 "로그아웃 후 이동 주소"와 정확히 같을 때만 따르고(경로 없는 웹 주소의 끝 `/`만 같게 본다), 아니면 우리 로그아웃 화면에 머문다. 유효한 `id_token_hint`가 없으면 "로그아웃할까요?" 화면(`/logout/confirm`)을 먼저 보여준다. 다른 사이트가 이 주소를 심어 몰래 로그아웃시키는 걸 막기 위해서다. 우리 화면에서 보낸 POST(Origin이 같음)는 바로 처리한다.
 - 콘솔 로그아웃도 콘솔 앱의 세션을 같이 끝낸다.
 
 ### 계정 화면
@@ -119,7 +120,7 @@ https://auth.seogaemo.com/.well-known/openid-configuration
 | 흐름 | Authorization Code + PKCE (S256 필수) |
 | scope | `openid`, `email`, `profile` |
 | 클라이언트 인증 | `client_secret_basic`, `client_secret_post`, public client는 `none` |
-| 토큰 | access token, id token 모두 ES256 JWT (1시간). refresh token은 30일, 쓸 때마다 교체 |
+| 토큰 | access token은 ES256 JWT (RFC 9068, 1시간). id token은 앱마다 RS256 또는 ES256 (새 앱은 RS256). refresh token은 30일, 쓸 때마다 교체 |
 | 로그아웃 | `/oauth/logout` (end_session_endpoint). refresh token만 끊으려면 `POST /oauth/revoke` |
 | 로그인 유지 | 30일. `prompt`(none, login, select_account), `max_age`, `login_hint` 지원 |
 | 계정 화면 | `/account?client_id=...` |
@@ -143,6 +144,7 @@ pnpm preview              # 빌드 후 http://localhost:8787
 ```
 ISSUER=http://localhost:8787
 JWT_PRIVATE_JWK=...       # node scripts/generate-jwk.mjs
+JWT_RSA_PRIVATE_JWK=...   # node scripts/generate-jwk.mjs --rsa (RS256 ID 토큰)
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 KAKAO_CLIENT_ID=          # 카카오 REST API 키
@@ -155,7 +157,7 @@ MAIL_DEV_LOG=1            # 메일을 보내지 않고 로그(제목에 코드 �
 
 로컬에서 콘솔에 로그인하려면 위 키를 채우고, 각 제공자 콘솔에 `http://localhost:8787/oauth/provider/{google|kakao}/callback`도 등록해야 한다.
 
-전체 흐름 테스트: 위처럼 띄운 뒤 `node scripts/e2e-local.mjs` (스크립트 상단 주석 참고). SDK(`@seogaemo/oauth`)를 이 서버에 붙여 보는 건 `pnpm --filter @seogaemo/oauth build` 뒤 `node scripts/e2e-sdk-local.mjs`. 로그인 유지, prompt, 로그아웃, 정지, 계정 화면은 `node scripts/e2e-session-local.mjs`.
+전체 흐름 테스트: 위처럼 띄운 뒤 `node scripts/e2e-local.mjs` (스크립트 상단 주석 참고). SDK(`@seogaemo/oauth`)를 이 서버에 붙여 보는 건 `pnpm --filter @seogaemo/oauth build` 뒤 `node scripts/e2e-sdk-local.mjs`. 로그인 유지, prompt, 로그아웃, 정지, 계정 화면은 `node scripts/e2e-session-local.mjs`. 표준 조항별 확인(Discovery, PKCE, 토큰, 폐기, UserInfo, 루프백)은 `node scripts/e2e-standards-local.mjs`.
 
 패스키는 진짜 Chrome과 가상 인증기(CDP)로 확인한다: `node scripts/e2e-passkey-local.mjs` (스크립트 상단 주석 참고). `ISSUER`가 `.dev.vars`와 같은 주소로 떠 있어야 하고(기본 `http://localhost:8788`, 다르면 `E2E_BASE`), WebAuthn은 `localhost`에서만 `http`로 동작한다.
 
@@ -177,6 +179,7 @@ main에 push하면 GitHub Actions가 D1 마이그레이션, 빌드, 배포를 �
 
 ```bash
 node scripts/generate-jwk.mjs | npx wrangler secret put JWT_PRIVATE_JWK
+node scripts/generate-jwk.mjs --rsa | npx wrangler secret put JWT_RSA_PRIVATE_JWK
 npx wrangler secret put GOOGLE_CLIENT_SECRET
 npx wrangler secret put KAKAO_CLIENT_SECRET     # 쓰는 경우만
 npx wrangler secret put SMTP_PASSWORD
@@ -207,7 +210,9 @@ node scripts/generate-jwk.mjs | npx wrangler secret put JWT_PRIVATE_JWK
 npx wrangler secret delete JWT_RETIRED_JWKS
 ```
 
-이 동안 JWKS에는 키가 두 개 보이고, 새 토큰은 새 키로만 서명된다. 개인키가 새어 나간 경우라면 3번을 기다리지 말고 바로 지운다 (옛 토큰이 다 끊긴다).
+RS256 키는 2번에서 `--rsa`로 만들어 `JWT_RSA_PRIVATE_JWK`에 넣으면 된다 (1번은 JWKS의 키를 모두 옮기니 그대로 둔다).
+
+이 동안 JWKS에는 옛 키와 새 키가 같이 보이고, 새 토큰은 새 키로만 서명된다. 개인키가 새어 나간 경우라면 3번을 기다리지 말고 바로 지운다 (옛 토큰이 다 끊긴다).
 
 ### Turnstile
 

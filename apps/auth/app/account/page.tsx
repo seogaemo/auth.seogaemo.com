@@ -11,7 +11,7 @@ import { isLoginMethod, LOGIN_METHOD_LABELS } from "@/lib/config";
 import { browserAccounts, currentBrowserKey } from "@/lib/oauth/session";
 import { listPasskeys, passkeyAvailable } from "@/lib/passkey";
 import { describeUserAgent } from "@/lib/request";
-import { getProviders, serviceHomeUrl } from "@/lib/service";
+import { getProviders, isAllowedPostLogoutUri, serviceHomeUrl } from "@/lib/service";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "내 계정" };
@@ -177,7 +177,9 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
           {/* 콘솔은 콘솔 세션 쿠키도 지워야 해서 콘솔 로그아웃으로 보낸다 */}
           <form action={service.isSystem ? "/console/logout" : "/oauth/logout"} method="post">
             {!service.isSystem && <input type="hidden" name="client_id" value={service.clientId} />}
-            {!service.isSystem && home && <input type="hidden" name="post_logout_redirect_uri" value={home} />}
+            {!service.isSystem && home && isAllowedPostLogoutUri(service, home) && (
+              <input type="hidden" name="post_logout_redirect_uri" value={home} />
+            )}
             <button
               type="submit"
               className="flex h-12 w-full items-center justify-center border-2 border-[rgba(0,0,0,0.12)] bg-white shadow-[0_3px_0_0_rgba(0,0,0,0.12)] transition-[transform,box-shadow] duration-75 active:translate-y-[3px] active:shadow-none motion-reduce:transition-none hover:bg-[#f7f7f8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-login-brand focus-visible:ring-offset-2"

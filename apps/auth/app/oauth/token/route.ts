@@ -4,7 +4,7 @@ import { getPrisma } from "@/cloudflare";
 import { isEmailAllowed } from "@/lib/allowlist";
 import { hashSecret } from "@/lib/crypto";
 import { consumeAuthorizationCode } from "@/lib/oauth/codes";
-import { authenticateClient, json, oauthError, preflight, readForm } from "@/lib/oauth/http";
+import { authenticateClient, json, oauthError, preflight, readForm, repeatedParam } from "@/lib/oauth/http";
 import { issueTokens, revokeAllRefreshTokens } from "@/lib/oauth/tokens";
 
 export const dynamic = "force-dynamic";
@@ -18,10 +18,15 @@ export async function POST(request: Request) {
     return oauthError("invalid_request", "content-type must be application/x-www-form-urlencoded");
   }
 
+  const repeated = repeatedParam(form);
+  if (repeated) return oauthError("invalid_request", `${repeated} must not be repeated`);
+
   const service = await authenticateClient(request, form);
   if (!service) return oauthError("invalid_client", "client authentication failed", 401);
 
   switch (form.get("grant_type")) {
+    case null:
+      return oauthError("invalid_request", "grant_type is required");
     case "authorization_code":
       return exchangeAuthorizationCode(service, form);
     case "refresh_token":
@@ -80,6 +85,15 @@ async function rotateRefreshToken(service: Service, form: URLSearchParams) {
     return oauthError("invalid_grant", "refresh token expired");
   }
   if (record.user.disabledAt) return oauthError("invalid_grant", "user is disabled");
+
+  // scope를 줄여 달라는 요청만 허용한다. 거절할 때 토큰을 소모하면 잘못된 요청 한 번에 로그인이 끊기므로 회전 전에 본다
+  const requested = form.get("scope")?.split(" ").filter(Boolean);
+  const granted = record.scope.split(" ");
+  if (requested?.some((s) => !granted.includes(s))) {
+    return oauthError("invalid_scope", "scope exceeds the original grant");
+  }
+  const scope = requested?.length ? requested.join(" ") : record.scope;
+
   // 허용 목록이 켜지거나 바뀌어 목록 밖이 된 사용자는 더 이어 쓸 수 없다
   if (!isEmailAllowed(service, record.user.email)) {
     await revokeAllRefreshTokens(record.serviceId, record.userId);
@@ -95,13 +109,6 @@ async function rotateRefreshToken(service: Service, form: URLSearchParams) {
     return oauthError("invalid_grant", "refresh token was revoked");
   }
 
-  // scope를 줄여 달라는 요청만 허용한다
-  const requested = form.get("scope")?.split(" ").filter(Boolean);
-  const granted = record.scope.split(" ");
-  if (requested?.some((s) => !granted.includes(s))) {
-    return oauthError("invalid_scope", "scope exceeds the original grant");
-  }
-  const scope = requested?.length ? requested.join(" ") : record.scope;
-
-  return json(await issueTokens({ service, user: record.user, scope, sessionId: record.sessionId }));
+  // 새 ID 토큰의 auth_time은 처음 인증 시각 그대로, nonce는 넣지 않는다 (OIDC Core 12.2)
+  return json(await issueTokens({ service, user: record.user, scope, sessionId: record.sessionId, authTime: record.authTime }));
 }

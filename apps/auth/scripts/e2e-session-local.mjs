@@ -106,8 +106,17 @@ r = await form("/oauth/token", { grant_type: "refresh_token", refresh_token: t2.
 check("logout revoked session refresh token", r.status === 400);
 r = await get(authorizeUrl().url, { cookie: bc });
 check("after logout -> /login", loc(r).endsWith("/login"), loc(r));
-r = await get(`/oauth/logout?client_id=dev-client&post_logout_redirect_uri=${encodeURIComponent("https://evil.example/")}`, { cookie: bc });
+r = await get(`/oauth/logout?id_token_hint=${t2.id_token}&post_logout_redirect_uri=${encodeURIComponent("https://evil.example/")}`, { cookie: bc });
 check("logout bad redirect -> our page", loc(r).includes("/logout?client_id=dev-client&error=invalid_redirect"), loc(r));
+// id_token_hint가 없으면 먼저 묻는다 (다른 사이트가 몰래 로그아웃시키지 못하게)
+r = await get(`/oauth/logout?client_id=dev-client&post_logout_redirect_uri=${encodeURIComponent("http://localhost:5173")}`, { cookie: bc });
+check("logout without hint -> confirm page", loc(r).startsWith(`${B}/logout/confirm?client_id=dev-client`), loc(r));
+r = await get(loc(r));
+check("confirm page asks", r.status === 200 && (await r.text()).includes("로그아웃할까요?"));
+r = await form("/oauth/logout", { client_id: "dev-client", post_logout_redirect_uri: "http://localhost:5173" }, { cookie: bc, origin: "https://evil.example" });
+check("cross-site POST -> confirm page too", loc(r).startsWith(`${B}/logout/confirm`), loc(r));
+r = await form("/oauth/logout", { client_id: "dev-client", post_logout_redirect_uri: "http://localhost:5173" }, { cookie: bc, origin: B });
+check("POST from our confirm page -> logs out and returns", r.status === 303 && loc(r) === "http://localhost:5173/", `${r.status} ${loc(r)}`);
 r = await get(`/oauth/logout?id_token_hint=bad.token.here`, { cookie: bc });
 check("logout bad hint -> error page", loc(r).includes("error=invalid_hint"), loc(r));
 r = await get("/logout?client_id=dev-client");

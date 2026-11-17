@@ -3,12 +3,13 @@ import type { ReactNode } from "react";
 
 import { CodeBlock } from "@/components/console/CodeBlock";
 import { CopyField } from "@/components/console/CopyField";
+import { IdTokenAlgForm } from "@/components/console/IdTokenAlgForm";
 import { RedirectUrisForm } from "@/components/console/RedirectUrisForm";
 import { RotateSecret } from "@/components/console/RotateSecret";
 import { Block, InfoRow } from "@/components/console/ui";
 import { getIssuer } from "@/lib/config";
 import { isAppSchemeUrl, isWebUrl, parseUrl } from "@/lib/redirect-uri";
-import { getRedirectUris, isPublicClient } from "@/lib/service";
+import { getPostLogoutRedirectUris, getRedirectUris, isPublicClient } from "@/lib/service";
 
 function Example({ title, description, open, children }: { title: string; description: string; open?: boolean; children: ReactNode }) {
   return (
@@ -37,7 +38,14 @@ export function Integration({ service, firstRun }: { service: Service; firstRun:
   // 웹 예제는 첫 웹 주소, iOS 예제는 첫 앱 스킴 주소로 채운다
   const uris = getRedirectUris(service).map((uri) => ({ uri, url: parseUrl(uri) }));
   const redirect = uris.find(({ url }) => url && isWebUrl(url))?.uri ?? "https://example.com/callback";
-  const origin = new URL(redirect).origin;
+  const webOrigin = new URL(redirect).origin;
+  const origin = getPostLogoutRedirectUris(service)[0] ?? webOrigin;
+  const es256 = service.idTokenSigningAlg === "ES256";
+  // Auth.js(oauth4webapi)는 ID 토큰 서명을 RS256으로 가정하므로 ES256 앱이면 알려 준다
+  const clientMetadata = [
+    ...(publicClient ? [`token_endpoint_auth_method: "none"`] : []),
+    ...(es256 ? [`id_token_signed_response_alg: "ES256"`] : []),
+  ];
   const appRedirect = uris.find(({ url }) => url && isAppSchemeUrl(url))?.uri;
   const accountUrl = `${issuer}/account?client_id=${service.clientId}`;
 
@@ -52,13 +60,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       type: "oidc",
       issuer: "${issuer}",
       clientId: "${service.clientId}",
-${publicClient ? `      client: { token_endpoint_auth_method: "none" },` : `      clientSecret: process.env.SEOGAEMO_CLIENT_SECRET,`}
-      checks: ["pkce", "state"],
+${[
+  ...(publicClient ? [] : [`      clientSecret: process.env.SEOGAEMO_CLIENT_SECRET,`]),
+  ...(clientMetadata.length ? [`      client: { ${clientMetadata.join(", ")} },`] : []),
+  `      checks: ["pkce", "state"],`,
+].join("\n")}
     },
   ],
 });
 
-// Redirect URI로 등록할 주소: ${origin}/api/auth/callback/seogaemo`;
+// Redirect URI로 등록할 주소: ${webOrigin}/api/auth/callback/seogaemo`;
 
   const spa = `// SPA (oidc-client-ts)
 import { UserManager } from "oidc-client-ts";
@@ -139,10 +150,15 @@ ${issuer}/oauth/authorize?...&login_hint=user@example.com`;
           <RotateSecret serviceId={service.id} />
         )}
         <CopyField label="계정 화면" value={accountUrl} />
+        <IdTokenAlgForm serviceId={service.id} alg={service.idTokenSigningAlg} />
       </Block>
 
-      <Block title="Redirect URI" description="로그인이 끝나면 돌아갈 주소예요. 웹은 https 주소, iOS와 Android 앱은 com.example.app:/oauth/callback 같은 앱 스킴을 등록해요.">
-        <RedirectUrisForm serviceId={service.id} redirectUris={getRedirectUris(service)} />
+      <Block title="주소" description="로그인과 로그아웃이 끝나면 돌아갈 주소예요. 웹은 https 주소, iOS와 Android 앱은 com.example.app:/oauth/callback 같은 앱 스킴을 등록해요.">
+        <RedirectUrisForm
+          serviceId={service.id}
+          redirectUris={getRedirectUris(service)}
+          postLogoutRedirectUris={getPostLogoutRedirectUris(service)}
+        />
       </Block>
 
       <Block title="예시 코드" description="이 앱의 값을 채워 뒀어요. 복사해서 그대로 쓰면 돼요.">

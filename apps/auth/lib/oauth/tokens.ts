@@ -37,7 +37,7 @@ export async function issueTokens(params: {
   nonce?: string | null;
   /** 이 토큰을 만든 로그인 세션. 로그아웃하면 refresh token이 같이 끊긴다. */
   sessionId?: string | null;
-  /** 마지막 직접 인증 시각 (id_token auth_time) */
+  /** 마지막 직접 인증 시각 (id_token auth_time). refresh token에도 남겨 갱신 때 그대로 쓴다 */
   authTime?: Date | null;
 }) {
   const { service, user, scope, nonce, sessionId, authTime } = params;
@@ -50,6 +50,7 @@ export async function issueTokens(params: {
       userId: user.id,
       scope,
       sessionId: sessionId ?? null,
+      authTime: authTime ?? null,
       expiresAt: new Date(Date.now() + TTL.refreshTokenMs),
     },
   });
@@ -69,7 +70,7 @@ export async function issueTokens(params: {
         ...(nonce ? { nonce } : {}),
         ...(sessionId ? { sid: sessionId } : {}),
         ...(authTime ? { auth_time: Math.floor(authTime.getTime() / 1000) } : {}),
-      })
+      }, service.idTokenSigningAlg === "RS256" ? "RS256" : "ES256")
     : undefined;
 
   return {

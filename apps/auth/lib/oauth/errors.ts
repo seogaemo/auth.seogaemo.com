@@ -4,6 +4,7 @@ import { endpoint } from "../config";
 export const LOGIN_ERRORS = {
   invalid_client: "등록되지 않은 서비스예요.",
   invalid_redirect_uri: "서비스에 등록되지 않은 주소로 로그인을 요청했어요.",
+  invalid_request: "로그인 요청이 올바르지 않아요. 서비스에서 다시 시도하세요.",
   no_provider: "이 서비스에 켜진 로그인 방식이 없어요.",
   expired: "로그인 시간이 지났어요. 서비스에서 다시 시도하세요.",
   provider_failed: "로그인 제공자와 연결하지 못했어요. 잠시 후 다시 시도하세요.",

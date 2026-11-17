@@ -83,9 +83,10 @@ for (const [label, options, serviceId, userId] of [
   forged.searchParams.set("iss", "https://evil.example.com");
   check("callback with another iss is refused", await rejects(client.finishLogin(forged, replay.transaction), (e) => e instanceof ValidationError && e.code === "issuer_mismatch"));
 
-  const logout = client.logoutUrl({ idTokenHint: result.tokens.id_token, postLogoutRedirectUri: "http://localhost:5173/" });
+  const logout = client.logoutUrl({ idTokenHint: result.tokens.id_token, postLogoutRedirectUri: "http://localhost:5173", state: "bye" });
   const lr = await fetch(logout, { redirect: "manual" });
-  check("server accepts the SDK's logout URL", lr.status >= 300 && lr.status < 400, `${lr.status}`);
+  check("server accepts the SDK's logout URL and returns", lr.headers.get("location") === "http://localhost:5173/?state=bye", `${lr.status} ${lr.headers.get("location")}`);
+  check(`ID token signed with ${options.clientId === "dev-client" ? "RS256" : "ES256"} (app setting)`, JSON.parse(Buffer.from(result.tokens.id_token.split(".")[0], "base64url")).alg === (options.clientId === "dev-client" ? "RS256" : "ES256"));
 }
 
 const wrong = await createClient({ issuer: B, redirectUri: REDIRECT, clientId: "dev-client", clientSecret: "wrong" });
@@ -101,7 +102,7 @@ const APP = "com.seogaemo.dev:/oauth/callback";
 const savedUris = JSON.parse(
   JSON.parse(execFileSync("npx", ["wrangler", "d1", "execute", "db.auth.seogaemo.com", "--local", "--json", "--command", `SELECT redirectUris FROM "Service" WHERE id='svc_dev_public'`], { stdio: "pipe" }).toString())[0].results[0].redirectUris,
 );
-sql(`UPDATE "Service" SET redirectUris='${JSON.stringify([...savedUris, APP])}' WHERE id='svc_dev_public';`);
+sql(`UPDATE "Service" SET redirectUris='${JSON.stringify([...savedUris, APP])}', postLogoutRedirectUris='${JSON.stringify(["http://localhost:5173", "com.seogaemo.dev:/signed-out"])}' WHERE id='svc_dev_public';`);
 try {
   const app = await createClient({ issuer: B, redirectUri: APP, clientId: "dev-public" });
   const { url, transaction } = await app.startLogin();
@@ -137,15 +138,16 @@ try {
   check("an unregistered app scheme -> error page, not the app", (r.headers.get("location") ?? "").includes("/login/error?code=invalid_redirect_uri"), r.headers.get("location"));
 
   const logoutTo = async (target) => {
-    const res = await fetch(app.logoutUrl({ postLogoutRedirectUri: target }), { redirect: "manual" });
+    const res = await fetch(app.logoutUrl({ idTokenHint: result.tokens.id_token, postLogoutRedirectUri: target }), { redirect: "manual" });
     return res.headers.get("location") ?? "";
   };
-  check("logout returns to the same app scheme", (await logoutTo("com.seogaemo.dev:/signed-out")).startsWith("com.seogaemo.dev:/signed-out"));
-  check("logout refuses another app's scheme", (await logoutTo("com.attacker.app:/signed-out")).includes("/logout?") );
+  check("logout returns to the registered app scheme URI", (await logoutTo("com.seogaemo.dev:/signed-out")) === "com.seogaemo.dev:/signed-out");
+  check("logout refuses another path of the same scheme (exact match)", (await logoutTo("com.seogaemo.dev:/other")).includes("/logout?"));
+  check("logout refuses another app's scheme", (await logoutTo("com.attacker.app:/signed-out")).includes("/logout?"));
   check("logout refuses a site that is not registered", (await logoutTo("https://evil.example.com/")).includes("/logout?"));
-  check("logout still allows the registered web origin", (await logoutTo("http://localhost:5173/bye")).startsWith("http://localhost:5173/bye"));
+  check("logout refuses another path of the registered origin (exact match)", (await logoutTo("http://localhost:5173/bye")).includes("/logout?"));
 } finally {
-  sql(`UPDATE "Service" SET redirectUris='${JSON.stringify(savedUris)}' WHERE id='svc_dev_public';`);
+  sql(`UPDATE "Service" SET redirectUris='${JSON.stringify(savedUris)}', postLogoutRedirectUris='["http://localhost:5173"]' WHERE id='svc_dev_public';`);
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

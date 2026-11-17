@@ -5,8 +5,16 @@ import { useActionState } from "react";
 import { updateRedirectUris, type ActionState } from "@/actions/services";
 import { Button, Card, FormFeedback, FormRow, Textarea } from "./ui";
 
-/** 로그인이 끝나면 돌아갈 주소. 연동 화면에서 예시 코드 바로 위에 둔다 */
-export function RedirectUrisForm({ serviceId, redirectUris }: { serviceId: string; redirectUris: string[] }) {
+/** 로그인이 끝나면 돌아갈 주소와 로그아웃 뒤 돌아갈 주소. 연동 화면에서 예시 코드 바로 위에 둔다 */
+export function RedirectUrisForm({
+  serviceId,
+  redirectUris,
+  postLogoutRedirectUris,
+}: {
+  serviceId: string;
+  redirectUris: string[];
+  postLogoutRedirectUris: string[];
+}) {
   const [state, action, pending] = useActionState<ActionState, FormData>(updateRedirectUris.bind(null, serviceId), null);
 
   return (
@@ -25,6 +33,19 @@ export function RedirectUrisForm({ serviceId, redirectUris }: { serviceId: strin
               rows={Math.max(3, redirectUris.length + 1)}
               defaultValue={state?.fields?.redirectUris ?? redirectUris.join("\n")}
               placeholder="https://example.com/auth/callback"
+            />
+          </FormRow>
+          <FormRow
+            label="로그아웃 후 이동 주소"
+            htmlFor="postLogoutRedirectUris"
+            hint="post_logout_redirect_uri로 보낼 주소. 여기 있는 값과 같아야 앱으로 돌아가고, 아니면 Seogaemo 로그아웃 화면에 머물러요."
+          >
+            <Textarea
+              id="postLogoutRedirectUris"
+              name="postLogoutRedirectUris"
+              rows={Math.max(2, postLogoutRedirectUris.length + 1)}
+              defaultValue={state?.fields?.postLogoutRedirectUris ?? postLogoutRedirectUris.join("\n")}
+              placeholder="https://example.com"
             />
           </FormRow>
         </Card>
