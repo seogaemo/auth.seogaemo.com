@@ -56,8 +56,8 @@ export async function addMember(serviceId: string, _prev: ActionState, form: For
   revalidatePath(membersPath(serviceId));
   return {
     message: mailed
-      ? `${email}을 관리자로 추가하고 알림 메일을 보냈어요.`
-      : `${email}을 관리자로 추가했어요. 이 이메일로 콘솔에 로그인하면 바로 관리할 수 있어요.`,
+      ? `관리자로 추가하고 알림 메일을 보냈어요: ${email}`
+      : `관리자로 추가했어요: ${email}. 이 이메일로 콘솔에 로그인하면 바로 관리할 수 있어요.`,
   };
 }
 

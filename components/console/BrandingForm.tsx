@@ -92,7 +92,7 @@ export function BrandingForm({ serviceId, brandColor, brandBackground, logoUrl }
                   onClick={() => fileRef.current?.click()}
                   className="inline-flex items-center gap-1 text-label font-strong text-content-accent hover:underline"
                 >
-                  사진 변경하기
+                  로고 바꾸기
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src="/icons/arrow_forward.svg" alt="" width={16} height={16} />
                 </button>

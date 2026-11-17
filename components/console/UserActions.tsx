@@ -74,7 +74,7 @@ export function UserActions({
           onClick={() =>
             run(
               () => deleteServiceUserFromDetail(serviceId, userId),
-              `사용자를 지울까요? ${label}\n로그인 수단, 토큰, 세션이 같이 지워지고 되돌릴 수 없어요.`,
+              `사용자를 지울까요? ${label}\n로그인 방식, 토큰, 세션이 같이 지워지고 되돌릴 수 없어요.`,
             )
           }
         >

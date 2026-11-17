@@ -14,7 +14,7 @@ export function signupBlock(service: Pick<Service, "signupEnabled">): SignupBloc
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function signupBlockMessage(_service: unknown, _block: SignupBlock) {
-  return "이 서비스는 지금 새로 가입할 수 없어요. 이미 가입한 이메일로 로그인하세요.";
+  return "이 서비스는 지금 새로 가입할 수 없어요. 이미 가입한 계정으로 로그인하세요.";
 }
 
 export class SignupBlockedError extends Error {

@@ -43,7 +43,7 @@ export async function changePassword(clientId: string, _prev: AccountState, form
   if (identity?.passwordHash) {
     const now = String(form.get("currentPassword") ?? "");
     if (!now || !(await verifyPassword(now, identity.passwordHash))) {
-      return { error: "지금 비밀번호가 맞지 않아요. 다시 입력하거나, 로그아웃한 뒤 비밀번호 재설정을 하세요." };
+      return { error: "현재 비밀번호가 맞지 않아요. 다시 입력하거나, 로그아웃한 뒤 비밀번호 재설정을 하세요." };
     }
     await prisma.identity.update({
       where: { id: identity.id },

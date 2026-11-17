@@ -33,7 +33,7 @@ export function NewServiceForm() {
           <CopyField label="Client ID" value={state.clientId} />
           <CopyField label="Client Secret" value={state.secret} secret />
           <Notice tone="warning">
-            Client Secret은 지금 한 번만 보여줘요. 안전한 곳에 저장하세요. 잃어버리면 설정에서 새로 발급할 수 있어요.
+            Client Secret은 지금 한 번만 보여줘요. 안전한 곳에 저장하세요. 잃어버리면 개요에서 새로 발급할 수 있어요.
           </Notice>
         </Block>
         <div>

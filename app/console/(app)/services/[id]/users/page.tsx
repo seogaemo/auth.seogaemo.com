@@ -97,7 +97,7 @@ export default async function UsersPage({
               <thead>
                 <tr className="h-8 border-b border-base [&>th+th]:border-l [&>th+th]:border-base">
                   <th className="px-2 text-footnote font-default text-tertiary">사용자</th>
-                  <th className="px-2 text-footnote font-default text-tertiary">인증 방식</th>
+                  <th className="px-2 text-footnote font-default text-tertiary">로그인 방식</th>
                   <th className="px-2 text-footnote font-default text-tertiary">마지막 로그인</th>
                   <th className="px-2 text-footnote font-default text-tertiary">상태</th>
                 </tr>

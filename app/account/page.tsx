@@ -62,7 +62,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
       />
 
       <div className="flex flex-col gap-6">
-        <Section title="로그인 수단">
+        <Section title="로그인 방식">
           <ul className="flex flex-wrap gap-2">
             {methods.map((method) => (
               <li key={method} className="border-2 border-[rgba(0,0,0,0.12)] px-2.5 py-1 font-mono text-[13px] tracking-[-0.04em] text-[#101016]">

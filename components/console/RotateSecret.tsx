@@ -30,7 +30,7 @@ export function RotateSecret({ serviceId }: { serviceId: string }) {
             arrow
             disabled={pending}
             onClick={() => {
-              if (!confirm("새 Client Secret을 발급하면 지금 Client Secret은 바로 쓸 수 없게 돼요. 계속할까요?")) return;
+              if (!confirm("새 Client Secret을 발급할까요? 지금 Client Secret은 바로 쓸 수 없게 돼요.")) return;
               startTransition(async () => {
                 const result = await rotateClientSecret(serviceId);
                 if (result?.secret) setSecret(result.secret);

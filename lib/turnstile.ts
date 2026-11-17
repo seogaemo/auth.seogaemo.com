@@ -32,4 +32,4 @@ export async function verifyTurnstile(form: FormData) {
   }
 }
 
-export const TURNSTILE_MESSAGE = "사람인지 확인하지 못했어요. 확인 상자를 다시 체크한 뒤 시도하세요.";
+export const TURNSTILE_MESSAGE = "사람인지 확인하지 못했어요. 아래 확인이 끝나면 다시 시도하세요.";

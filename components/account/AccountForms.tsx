@@ -29,7 +29,7 @@ export function PasswordForm({ clientId, hasPassword }: { clientId: string; hasP
       <LoginError>{state?.error}</LoginError>
       <Done>{state?.message}</Done>
       {hasPassword && (
-        <LoginField label="지금 비밀번호" id="currentPassword" name="currentPassword" type="password" autoComplete="current-password" required />
+        <LoginField label="현재 비밀번호" id="currentPassword" name="currentPassword" type="password" autoComplete="current-password" required />
       )}
       <LoginField
         label={hasPassword ? "새 비밀번호" : "비밀번호"}

@@ -57,7 +57,7 @@ export function LoginPreview({
               ))}
             </div>
           ))}
-        {providers.length === 0 && <p className="text-footnote text-quaternary">켜진 인증 방식이 없어요.</p>}
+        {providers.length === 0 && <p className="text-footnote text-quaternary">켜진 로그인 방식이 없어요.</p>}
       </div>
     </LoginShell>
   );

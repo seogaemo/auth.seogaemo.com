@@ -43,9 +43,9 @@ export function SettingsForm({ serviceId, name, redirectUris, providers, availab
           </FormRow>
 
           <fieldset className="flex flex-col gap-1.5 sm:flex-row sm:gap-3">
-            <legend className="sr-only">인증 방식</legend>
+            <legend className="sr-only">로그인 방식</legend>
             <span aria-hidden className="shrink-0 text-footnote text-tertiary sm:w-28 sm:pt-[10px]">
-              인증 방식
+              로그인 방식
             </span>
             <div className="flex flex-1 flex-wrap gap-2">
               {PROVIDERS.map((provider) => {

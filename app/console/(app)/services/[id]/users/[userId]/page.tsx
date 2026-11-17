@@ -59,7 +59,7 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
           </InfoRow>
           <InfoRow label="이메일">{user.email ?? "없음"}</InfoRow>
           {user.name && <InfoRow label="이름">{user.name}</InfoRow>}
-          <InfoRow label="로그인 수단">
+          <InfoRow label="로그인 방식">
             {identities
               .map((i) => i.provider)
               .filter(isLoginMethod)
@@ -83,7 +83,7 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
 
         <Block
           title="로그인된 기기"
-          description={`로그인 유지 중인 브라우저 ${sessions.length}개, 살아 있는 refresh token ${activeTokens}개`}
+          description={`로그인 유지 중인 기기 ${sessions.length}개, 유효한 refresh token ${activeTokens}개`}
         >
           {sessions.length === 0 ? (
             <p className="rounded-lg border border-base p-4 text-footnote text-tertiary">로그인 유지 중인 기기가 없어요.</p>

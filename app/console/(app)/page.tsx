@@ -67,7 +67,7 @@ export default async function ApplicationListPage() {
 
       <div className="border-t-2 border-[#101016]">
         <div aria-hidden className={`hidden h-9 border-b border-base px-3 ${COLUMNS}`}>
-          {["이름", "Client ID", "인증 방식", "사용자", "만든 날"].map((label, index) => (
+          {["이름", "Client ID", "로그인 방식", "사용자", "만든 날"].map((label, index) => (
             <span key={label} className={`text-label text-tertiary ${index === 3 ? "text-right" : ""}`}>
               {label}
             </span>
@@ -104,7 +104,7 @@ export default async function ApplicationListPage() {
                 </code>
 
                 <div className="hidden lg:flex">
-                  <span className="sr-only">인증 방식 </span>
+                  <span className="sr-only">로그인 방식 </span>
                   <EnabledProviders providers={getProviders(service)} />
                 </div>
 
