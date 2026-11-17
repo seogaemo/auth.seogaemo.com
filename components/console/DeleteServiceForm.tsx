@@ -18,7 +18,7 @@ export function DeleteServiceForm({ serviceId, name }: { serviceId: string; name
     <form action={action} className="flex flex-col gap-4">
       <FormFeedback error={state?.error} />
       <Card tone="danger">
-        <FormRow label="확인" htmlFor="confirm" hint={`지우려면 "${name}"을 입력하세요.`}>
+        <FormRow label="확인" htmlFor="confirm" hint={`지우려면 서비스 이름을 그대로 입력하세요: ${name}`}>
           <div className="flex flex-col gap-3 sm:flex-row">
             <Input id="confirm" name="confirm" autoComplete="off" required placeholder={name} />
             <Button type="submit" variant="danger" disabled={pending || Boolean(state?.redirectTo)}>

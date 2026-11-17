@@ -8,22 +8,22 @@ const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
  */
 export function parseRedirectUris(input: string): { uris: string[] } | { error: string } {
   const lines = [...new Set(input.split(/\r?\n/).map((l) => l.trim()).filter(Boolean))];
-  if (lines.length > 20) return { error: "Redirect URI는 20개까지 등록할 수 있어요." };
+  if (lines.length > 20) return { error: "Redirect URI는 20개까지 등록할 수 있어요. 안 쓰는 주소를 지우세요." };
 
   for (const line of lines) {
     let url: URL;
     try {
       url = new URL(line);
     } catch {
-      return { error: `올바른 주소가 아니에요: ${line}` };
+      return { error: `https://example.com/auth/callback 형식으로 입력하세요: ${line}` };
     }
-    if (url.hash || line.includes("#")) return { error: `#이 들어간 주소는 쓸 수 없어요: ${line}` };
-    if (url.username || url.password) return { error: `계정 정보가 들어간 주소는 쓸 수 없어요: ${line}` };
+    if (url.hash || line.includes("#")) return { error: `# 뒤 부분을 빼고 입력하세요: ${line}` };
+    if (url.username || url.password) return { error: `주소에서 아이디와 비밀번호(user:pass@)를 빼고 입력하세요: ${line}` };
     if (url.protocol === "http:" && !LOCAL_HOSTS.has(url.hostname)) {
-      return { error: `http는 localhost에서만 쓸 수 있어요: ${line}` };
+      return { error: `http는 localhost에서만 쓸 수 있어요. https로 바꿔 입력하세요: ${line}` };
     }
     if (url.protocol !== "https:" && url.protocol !== "http:") {
-      return { error: `https 주소만 쓸 수 있어요: ${line}` };
+      return { error: `https로 시작하는 주소를 입력하세요: ${line}` };
     }
   }
 

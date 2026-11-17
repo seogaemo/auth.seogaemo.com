@@ -44,9 +44,9 @@ function Tag({ children, tone = "default" }: { children: React.ReactNode; tone?:
 
 /** 켜진 로그인 수단만 작게. 꺼진 것까지 보여주면 카드가 시끄러워진다 (상세 설정에서 다 보인다) */
 function EnabledProviders({ providers }: { providers: Provider[] }) {
-  if (providers.length === 0) return <span className="text-label text-quaternary">로그인 수단 없음</span>;
+  if (providers.length === 0) return <span className="text-label text-quaternary">켜진 인증 방식 없음</span>;
   return (
-    <ul className="flex items-center gap-2" aria-label="켜진 로그인 수단">
+    <ul className="flex items-center gap-2" aria-label="켜진 인증 방식">
       {providers.map((provider) => (
         <li key={provider} className="flex">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -157,7 +157,7 @@ export default async function ServiceListPage() {
 
 const STEPS = [
   { title: "서비스 만들기", body: "이름과 Redirect URI를 넣으면 Client ID를 받아요." },
-  { title: "로그인 수단 고르기", body: "이메일, 이메일 코드, Google, 카카오 중에서 켜요." },
+  { title: "인증 방식 고르기", body: "이메일/비밀번호, 이메일 코드, Google, 카카오 중에서 켜요." },
   { title: "앱에 연결하기", body: "OIDC 라이브러리에 Discovery URL과 Client ID를 넣으면 끝." },
 ];
 

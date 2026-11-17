@@ -21,7 +21,7 @@ export function RemoveMemberButton({
   const label = self ? "나가기" : "빼기";
   const question = self
     ? "이 서비스의 관리자에서 나갈까요? 다시 들어오려면 소유자가 추가해야 해요."
-    : `${email}을 관리자에서 뺄까요?`;
+    : `관리자에서 뺄까요? ${email}\n이 서비스를 더 관리할 수 없게 돼요.`;
 
   return (
     <span className="flex items-center gap-2">

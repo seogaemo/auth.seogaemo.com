@@ -23,7 +23,7 @@ export async function addMember(serviceId: string, _prev: ActionState, form: For
 
   const email = normalizeEmail(form.get("email"));
   const fields = { email: String(form.get("email") ?? "") };
-  if (!email) return { error: "이메일 주소를 확인하세요.", fields };
+  if (!email) return { error: "name@example.com 형식으로 이메일을 입력하세요.", fields };
   if (email === developer.email) return { error: "소유자는 이미 이 서비스를 관리하고 있어요.", fields };
 
   const prisma = getPrisma();
@@ -64,7 +64,7 @@ export async function removeMember(serviceId: string, memberId: string): Promise
   const { developer, isOwner } = await requireServiceAccess(serviceId);
   const prisma = getPrisma();
   const member = await prisma.serviceMember.findFirst({ where: { id: memberId, serviceId } });
-  if (!member) return { error: "이미 빠진 관리자예요." };
+  if (!member) return { error: "이미 빠진 관리자예요. 새로고침하면 목록이 맞춰져요." };
 
   const self = member.email === developer.email;
   if (!isOwner && !self) return { error: "다른 관리자는 소유자만 뺄 수 있어요." };

@@ -129,7 +129,7 @@ export async function continueWithEmail(
     if (!passwordOn && !emailOn) navigate("/login");
 
     const email = normalizeEmail(form.get("email"));
-    if (!email) return { error: "이메일 주소를 확인하세요." };
+    if (!email) return { error: "name@example.com 형식으로 이메일을 입력하세요." };
     await rememberEmail(email);
 
     if (passwordOn && (await hasPasswordAccount(transaction.serviceId, email))) {
@@ -192,7 +192,7 @@ export async function startSignup(
     const transaction = await requireLogin("password");
     const email = normalizeEmail(form.get("email"));
     const password = String(form.get("password") ?? "");
-    if (!email) return { error: "이메일 주소를 확인하세요." };
+    if (!email) return { error: "name@example.com 형식으로 이메일을 입력하세요." };
 
     await rememberEmail(email);
     const rule = checkPasswordRule(password);
@@ -225,7 +225,7 @@ export async function startReset(
   return run(async () => {
     const transaction = await requireLogin("password");
     const email = normalizeEmail(form.get("email"));
-    if (!email) return { error: "이메일 주소를 확인하세요." };
+    if (!email) return { error: "name@example.com 형식으로 이메일을 입력하세요." };
 
     // 가입되지 않은 이메일이어도 같은 화면으로 보낸다 (가입 여부를 알려주지 않는다)
     const exists = await hasPasswordAccount(transaction.serviceId, email);
@@ -297,7 +297,7 @@ export async function verifyCode(
         newPassword,
       );
       // 계정이 없는 이메일이면 메일을 안 보냈으니 여기까지 올 수 없다
-      if (!userId) return { error: "코드가 맞지 않아요." };
+      if (!userId) return { error: "코드가 맞지 않아요. 메일로 받은 6자리를 다시 확인하세요." };
     }
 
     await complete(transaction, userId);

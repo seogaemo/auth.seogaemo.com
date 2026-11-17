@@ -133,7 +133,7 @@ export async function verifyEmailCode(record: EmailCode, code: string): Promise<
     where: { id: record.id, consumedAt: null },
     data: { consumedAt: new Date() },
   });
-  if (count !== 1) return { ok: false, error: "이미 사용한 코드예요." };
+  if (count !== 1) return { ok: false, error: "이미 사용한 코드예요. 새 코드를 받으세요." };
 
   return { ok: true, record };
 }
