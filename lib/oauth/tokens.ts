@@ -20,6 +20,9 @@ export function userClaims(user: User, scope: string) {
   }
   if (hasScope(scope, "profile")) {
     if (user.name) claims.name = user.name;
+    // Outline 등 일부 RP는 preferred_username/name 중 하나가 없으면 로그인을 거부한다.
+    // 이름이 없는 사용자(이메일 로그인 등)도 있으므로 이메일 앞부분, 그다음 id로 대체한다.
+    claims.preferred_username = user.name || user.email?.split("@")[0] || user.id;
     if (user.image) claims.picture = user.image;
   }
 

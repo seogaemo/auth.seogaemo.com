@@ -75,7 +75,7 @@ check("code reuse -> invalid_grant", (await r.json()).error === "invalid_grant")
 
 r = await get("/oauth/userinfo", { authorization: "Bearer " + tok.access_token });
 const ui = await r.json();
-check("userinfo", ui.sub === "usr_e2e" && ui.email === "e2e@example.com" && ui.name === "E2E", JSON.stringify(ui));
+check("userinfo", ui.sub === "usr_e2e" && ui.email === "e2e@example.com" && ui.name === "E2E" && ui.preferred_username === "E2E", JSON.stringify(ui));
 r = await get("/oauth/userinfo", { authorization: "Bearer " + tok.id_token });
 check("id_token rejected at userinfo", r.status === 401);
 

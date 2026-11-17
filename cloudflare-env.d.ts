@@ -25,6 +25,9 @@ interface CloudflareEnv {
   /** 카카오 콘솔에서 Client Secret을 켠 경우에만 */
   KAKAO_CLIENT_SECRET?: string;
 
+  /** (선택) Gravatar API 키. 없으면 키 없이 공개 API를 부른다 (호출 한도가 낮다). */
+  GRAVATAR_API_KEY?: string;
+
   /** 메일 발송 (smtp2go). 비어 있으면 이메일/비밀번호, 이메일 코드 로그인이 꺼진다. */
   SMTP_HOST?: string;
   SMTP_PORT?: string;
