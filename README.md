@@ -157,6 +157,15 @@ npx wrangler secret put SMTP_PASSWORD
 
 `GOOGLE_CLIENT_ID`, `KAKAO_CLIENT_ID`는 비밀값이 아니라서 `wrangler.jsonc`의 `vars`에 넣는다.
 
+### 데이터 청소
+
+매일 03:17(KST)에 Cron이 `worker.ts`의 `scheduled`를 불러 `lib/cleanup.ts`를 돌린다.
+
+- 만료되고 하루 지난 로그인 중간 기록, 인증 코드, 이메일 코드, 세션, refresh token을 지운다.
+- 로그인 기록은 90일, 콘솔 활동 기록은 1년만 남긴다.
+
+결과는 Workers 로그에 `cleanup {...}`로 남는다. 로컬에서는 `npx wrangler dev --test-scheduled`로 띄운 뒤 `curl "http://localhost:8787/__scheduled?cron=17+18+*+*+*"`로 돌려 본다.
+
 ### 서명 키 교체
 
 토큰(1시간)과 콘솔 세션(7일)이 옛 키로 서명돼 있으니, 옛 공개키를 한동안 JWKS에 같이 둔다.
