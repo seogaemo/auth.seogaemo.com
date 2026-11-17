@@ -24,7 +24,7 @@ export function ServiceHeader({
         </span>
       )}
       <div className="flex min-w-0 flex-col">
-        <h1 className="truncate text-headline font-strong text-primary">{title ?? name}</h1>
+        <h1 className="break-words text-headline font-strong text-primary">{title ?? name}</h1>
         {subtitle && <p className="text-footnote text-tertiary">{subtitle}</p>}
       </div>
     </div>

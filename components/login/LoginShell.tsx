@@ -37,7 +37,7 @@ export function LoginShell({
       className={`login-grid flex flex-col items-center justify-center px-4 ${preview ? "rounded-lg py-10" : "min-h-dvh py-10"}`}
       style={brandingStyle(branding)}
     >
-      <div className="flex w-full max-w-[400px] flex-col gap-7 break-keep border-[6px] border-login-brand-strong bg-white p-5 shadow-[8px_8px_0_0_rgba(0,0,0,0.18)] sm:p-7">
+      <div className="flex w-full max-w-[400px] flex-col gap-7 break-keep border-[6px] [overflow-wrap:anywhere] border-login-brand-strong bg-white p-5 shadow-[8px_8px_0_0_rgba(0,0,0,0.18)] sm:p-7">
         {children}
         <footer className="flex justify-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}

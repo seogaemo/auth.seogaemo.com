@@ -29,7 +29,7 @@ export default async function ConsoleLayout({ children }: { children: ReactNode 
         name={developer.name}
         services={services.map((s) => ({ id: s.id, name: s.name, hasLogo: !!s.logoKey }))}
       />
-      <main id="content" tabIndex={-1} className="flex-1 px-5 py-6 outline-none md:px-10 md:py-10">{children}</main>
+      <main id="content" tabIndex={-1} className="min-w-0 flex-1 px-5 py-6 outline-none md:px-10 md:py-10">{children}</main>
     </div>
   );
 }

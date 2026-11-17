@@ -56,7 +56,7 @@ export default async function UsersPage({
             아직 로그인한 사용자가 없어요.
           </p>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="relative overflow-x-auto">
             <table className="w-full min-w-[560px] text-left">
               <thead>
                 <tr className="h-8 border-b border-base [&>th+th]:border-l [&>th+th]:border-base">
