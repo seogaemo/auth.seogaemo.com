@@ -72,7 +72,7 @@ export default async function UsersPage({
             type="search"
             defaultValue={q}
             placeholder="이메일, 이름, 사용자 ID"
-            className="h-10 min-w-0 flex-1 rounded-lg border border-base bg-base-elevated px-3 text-footnote text-primary placeholder:text-unselected focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--content-accent)] focus-visible:ring-offset-2"
+            className="h-10 min-w-0 flex-1 rounded-lg border border-base bg-base-elevated px-3 text-footnote text-primary placeholder:text-quaternary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--content-accent)] focus-visible:ring-offset-2"
           />
           <button
             type="submit"

@@ -25,11 +25,11 @@ type ButtonSize = "md" | "lg";
  */
 const BUTTON_VARIANT: Record<ButtonVariant, string> = {
   primary:
-    "border-2 border-[rgba(0,0,0,0.2)] bg-[#2c73f4] text-white shadow-[0_3px_0_0_#2551a2] hover:bg-[#2667dc] active:translate-y-[3px] active:shadow-none",
+    "border-2 border-[rgba(0,0,0,0.2)] bg-[var(--button-primary)] text-white shadow-[0_3px_0_0_#2551a2] hover:bg-[#2667dc] active:translate-y-[3px] active:shadow-none",
   secondary:
     "border border-base bg-base-elevated text-primary shadow-[0_2px_0_0_var(--border-base)] hover:bg-base active:translate-y-[2px] active:shadow-none",
   danger:
-    "border-2 border-[rgba(0,0,0,0.2)] bg-[#ff3b30] text-white shadow-[0_3px_0_0_#b2231a] hover:bg-[#e8362c] active:translate-y-[3px] active:shadow-none",
+    "border-2 border-[rgba(0,0,0,0.2)] bg-[var(--button-danger)] text-white shadow-[0_3px_0_0_#b2231a] hover:bg-[#cf1512] active:translate-y-[3px] active:shadow-none",
 };
 
 const BUTTON_SIZE: Record<ButtonSize, string> = {
@@ -94,7 +94,7 @@ export function Input(props: InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
       {...props}
-      className={`h-10 w-full rounded-lg border border-base bg-base-elevated px-3 text-footnote text-primary placeholder:text-unselected ${focusRing} ${props.className ?? ""}`}
+      className={`h-10 w-full rounded-lg border border-base bg-base-elevated px-3 text-footnote text-primary placeholder:text-quaternary ${focusRing} ${props.className ?? ""}`}
     />
   );
 }
@@ -103,7 +103,7 @@ export function Textarea(props: TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return (
     <textarea
       {...props}
-      className={`w-full rounded-lg border border-base bg-base-elevated px-3 py-2.5 font-mono text-footnote text-primary placeholder:text-unselected ${focusRing} ${props.className ?? ""}`}
+      className={`w-full rounded-lg border border-base bg-base-elevated px-3 py-2.5 font-mono text-footnote text-primary placeholder:text-quaternary ${focusRing} ${props.className ?? ""}`}
     />
   );
 }

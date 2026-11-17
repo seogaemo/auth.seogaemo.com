@@ -106,7 +106,7 @@ export function memberAddedMessage(serviceName: string, inviter: string, console
 <p style="margin:0 0 4px;font-size:13px;color:#777783">Seogaemo SSO</p>
 <h1 style="margin:0 0 16px;font-size:22px;line-height:1.35">${escapeHtml(serviceName)} 관리자로 추가됐어요</h1>
 <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#5a5a66">${escapeHtml(lead)}</p>
-<a href="${escapeHtml(consoleUrl)}" style="display:inline-block;padding:12px 20px;background:#2c73f4;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none">콘솔 열기</a>
+<a href="${escapeHtml(consoleUrl)}" style="display:inline-block;padding:12px 20px;background:#276eef;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none">콘솔 열기</a>
 </td></tr></table>
 <p style="margin:16px 0 0;font-size:12px;color:#9797a0">Seogaemo SSO</p>
 </td></tr></table></body></html>`;

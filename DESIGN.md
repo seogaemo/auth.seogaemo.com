@@ -47,7 +47,7 @@ Figma 파일(`idaas.seogaemo.com`)은 아주 초기 초안이다. 이 문서는 
 | `text-primary` | 본문, 제목 |
 | `text-secondary` | 보조 본문 |
 | `text-tertiary` | 날짜, 뒤로가기 링크 같은 메타 정보 |
-| `text-quaternary` | 폼 라벨, 선택 안 된 메뉴 |
+| `text-quaternary` | 폼 라벨, 도움말, placeholder. 흰 바탕에서만 쓴다 (`bg-base` 위는 `text-tertiary`) |
 | `text-unselected` | 비활성 아이콘 |
 | `text-unable` | disabled |
 | `text-content-accent` | 텍스트 액션 ("수정 완료", "사진 변경하기") |
@@ -64,6 +64,8 @@ Figma 파일(`idaas.seogaemo.com`)은 아주 초기 초안이다. 이 문서는 
 | `bg-negative-elevated` | 위험 영역 배경 |
 
 **테두리**: `border-base` (gray-200)가 기본이다.
+
+**글자 대비.** 글자는 배경과 4.5:1 이상이어야 한다 (WCAG 1.4.3). DS 값 중 `--content-tertiary`, `--content-quaternary`, `--content-accent`, `--content-negative`가 흰 바탕에서 모자라서 `app/globals.css`에서 같은 색상에 밝기만 낮춘 값으로 덮어쓴다. 흰 글자를 올리는 버튼은 `--button-primary`, `--button-danger`를 쓴다. `text-unselected`(gray.400, 2.1:1)는 글자에 쓰지 않는다. 로그인 버튼 글자는 서비스 브랜드 색에 맞춰 `--login-on-brand`(흰색 또는 검정)로 정해진다.
 
 **주의: 글자색과 폰트는 상속되지 않는다.** DS가 base 스타일로 모든 요소(`*`)에 `color: var(--content-primary)`와 `font-family: Pretendard`를 직접 건다. 그래서 부모에 `text-quaternary`나 `font-mono`를 줘도 자식 요소(`<th>`, `<span>` 등)는 primary 색, Pretendard가 된다. 글자색과 폰트는 글자를 가진 요소에 직접 준다.
 

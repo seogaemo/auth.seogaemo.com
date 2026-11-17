@@ -29,7 +29,7 @@ export default async function ConsoleLoginPage({
 
       <a
         href="/console/login/start"
-        className="flex h-12 w-full max-w-[300px] items-center justify-center gap-2 rounded border-2 border-[rgba(0,0,0,0.2)] bg-[#2c73f3] shadow-[0_4px_0_0_#2551a2] transition-[transform,box-shadow,background-color] duration-75 motion-reduce:transition-none hover:bg-[#2667dc] active:translate-y-[4px] active:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2c73f3] focus-visible:ring-offset-4"
+        className="flex h-12 w-full max-w-[300px] items-center justify-center gap-2 rounded border-2 border-[rgba(0,0,0,0.2)] bg-[var(--button-primary)] shadow-[0_4px_0_0_#2551a2] transition-[transform,box-shadow,background-color] duration-75 motion-reduce:transition-none hover:bg-[#2667dc] active:translate-y-[4px] active:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2c73f3] focus-visible:ring-offset-4"
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/brand/seogaemo-symbol-white.svg" alt="" width={16} height={16} />

@@ -23,8 +23,27 @@
 }
 
 /* Hosted Login 전용 토큰 (DESIGN.md 3.3). 서비스 브랜딩이 --login-brand, --login-background를 덮어쓴다. */
+/*
+ * 글자 대비 보정 (WCAG 1.4.3, 4.5:1). @seogaemo/ds-tailwind의 값은 흰 배경에서 기준에 못 미쳐서
+ * 같은 색상(hue)과 채도는 두고 OKLCH 밝기만 낮춘 값으로 의미 토큰을 다시 가리킨다.
+ * 대비는 흰색(#fff)과 bg-base(#f4f4f6), 각 상태의 elevated 배경에 대고 쟀다. DS에 반영되면 지운다.
+ */
 :root {
-  --login-brand: #2c73f4;
+  --content-tertiary: #6d6d79; /* gray.600 #777783: 흰색 4.42, base 4.02 -> 5.10, 4.65 */
+  --content-quaternary: #74747d; /* gray.500 #9797a0: 흰색 2.90 -> 4.63. 흰 바탕에만 쓴다 */
+  --content-accent: #0065e8; /* blue.500 #007aff: 흰색 4.02 -> 5.22, accent-elevated 4.62 */
+  --content-negative: #c70000; /* red.500 #ff3b30: 흰색 3.55 -> 6.13, negative-elevated 4.61 */
+
+  /* 흰 글자를 올리는 채운 버튼 (흰색 대비 4.6) */
+  --button-primary: #276eef; /* 시안 #2c73f4는 4.32 */
+  --button-danger: #e71916; /* 시안 #ff3b30은 3.55 */
+}
+
+:root {
+  /* 서비스가 브랜드 색을 안 정했을 때. 흰 글자 대비 4.6 (시안 #2c73f4는 4.32) */
+  --login-brand: #276eef;
+  /* 브랜드 색 위 글자. LoginShell이 브랜드 색에 맞춰 흰색이나 검정으로 덮어쓴다 */
+  --login-on-brand: #ffffff;
   --login-stroke: rgba(0, 0, 0, 0.1);
   --login-stroke-strong: rgba(0, 0, 0, 0.2);
   /* 시안 값. 카카오 공식 색은 #fee500 */
@@ -44,8 +63,10 @@
   /* 로그인 배경 (Figma 0:632): 패턴 이미지 두 장을 브랜드 색 위에 겹친다 */
   .login-grid {
     /* 파생 색은 브랜딩을 덮어쓴 이 요소에서 계산해야 서비스 색을 따라간다.
-       기본 #2c73f4 기준으로 계산하면 시안의 #235cc3이 나온다. */
+       기본 #276eef 기준으로 계산하면 시안의 #235cc3과 거의 같다. */
     --login-brand-strong: color-mix(in srgb, var(--login-brand) 80%, black);
+    /* 흰 카드 위 링크 글자. 밝은 브랜드 색이면 LoginShell이 검정으로 덮어쓴다 */
+    --login-brand-text: var(--login-brand-strong);
     background-color: var(--login-background, var(--login-brand));
     background-image: url("/brand/login-bg-1.png"), url("/brand/login-bg-2.png");
     background-size:

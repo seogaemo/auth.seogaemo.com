@@ -22,7 +22,7 @@ export function LoginPreview({
   const fakeInput = (label: string, placeholder: string) => (
     <div className="flex flex-col gap-1.5">
       <span className="font-mono text-[13px] font-[500] tracking-[-0.04em] text-quaternary">{label}</span>
-      <span className="flex h-12 items-center border-2 border-[rgba(0,0,0,0.12)] px-3 font-mono text-[15px] text-unselected">
+      <span className="flex h-12 items-center border-2 border-[rgba(0,0,0,0.12)] px-3 font-mono text-[15px] text-quaternary">
         {placeholder}
       </span>
     </div>
@@ -36,7 +36,7 @@ export function LoginPreview({
           <div className="flex flex-col gap-3">
             {fakeInput("이메일", "name@example.com")}
             <span className="mt-1 flex h-12 items-center justify-center border-2 border-[rgba(0,0,0,0.2)] bg-login-brand shadow-[0_3px_0_0_var(--login-brand-strong)]">
-              <span className="font-mono text-[15px] font-[600] tracking-[-0.06em] text-white">계속하기</span>
+              <span className="font-mono text-[15px] font-[600] tracking-[-0.06em] text-[var(--login-on-brand)]">계속하기</span>
             </span>
           </div>
         )}

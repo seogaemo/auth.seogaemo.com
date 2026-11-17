@@ -12,7 +12,7 @@ interface Props {
   logoUrl: string | null;
 }
 
-const DEFAULT_BRAND = "#2c73f4";
+const DEFAULT_BRAND = "#276eef";
 const HEX = /^#[0-9a-fA-F]{6}$/;
 
 function ColorInput({
@@ -81,7 +81,7 @@ export function BrandingForm({ serviceId, brandColor, brandBackground, logoUrl }
               // eslint-disable-next-line @next/next/no-img-element
               <img src={shownLogo} alt="로고" width={48} height={48} className="size-12 shrink-0 rounded-md object-cover" />
             ) : (
-              <span className="flex size-12 shrink-0 items-center justify-center rounded-md bg-base text-label text-quaternary">
+              <span className="flex size-12 shrink-0 items-center justify-center rounded-md bg-base text-label text-tertiary">
                 없음
               </span>
             )}

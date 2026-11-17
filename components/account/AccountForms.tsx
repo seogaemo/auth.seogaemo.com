@@ -111,7 +111,7 @@ export function DeleteAccountForm({ clientId, confirmText }: { clientId: string;
       <button
         type="submit"
         disabled={pending || Boolean(state?.redirectTo)}
-        className="flex h-12 w-full items-center justify-center border-2 border-[rgba(0,0,0,0.2)] bg-[#ff3b30] shadow-[0_3px_0_0_#b2231a] transition-[transform,box-shadow] duration-75 active:translate-y-[3px] active:shadow-none disabled:opacity-60 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff3b30] focus-visible:ring-offset-2"
+        className="flex h-12 w-full items-center justify-center border-2 border-[rgba(0,0,0,0.2)] bg-[var(--button-danger)] shadow-[0_3px_0_0_#b2231a] transition-[transform,box-shadow] duration-75 active:translate-y-[3px] active:shadow-none disabled:opacity-60 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff3b30] focus-visible:ring-offset-2"
       >
         <span className="font-mono text-[15px] font-[600] tracking-[-0.06em] text-white">{pending ? "탈퇴하는 중" : "탈퇴하기"}</span>
       </button>

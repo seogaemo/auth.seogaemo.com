@@ -24,7 +24,7 @@ export function LoginField({
         id={id}
         aria-describedby={hint ? `${id}-hint` : undefined}
         {...input}
-        className={`h-12 w-full border-2 border-[rgba(0,0,0,0.12)] bg-white px-3 font-mono text-[15px] tracking-[-0.02em] text-[#101016] placeholder:text-unselected focus:border-login-brand focus:outline-none ${input.className ?? ""}`}
+        className={`h-12 w-full border-2 border-[rgba(0,0,0,0.12)] bg-white px-3 font-mono text-[15px] tracking-[-0.02em] text-[#101016] placeholder:text-quaternary focus:border-login-brand focus:outline-none ${input.className ?? ""}`}
       />
       {hint && (
         <p id={`${id}-hint`} className="text-label text-quaternary">
@@ -37,7 +37,7 @@ export function LoginField({
 
 const BUTTON = {
   primary:
-    "border-[rgba(0,0,0,0.2)] bg-login-brand text-white shadow-[0_3px_0_0_var(--login-brand-strong)] hover:brightness-105",
+    "border-[rgba(0,0,0,0.2)] bg-login-brand text-[var(--login-on-brand)] shadow-[0_3px_0_0_var(--login-brand-strong)] hover:brightness-105",
   secondary:
     "border-[rgba(0,0,0,0.12)] bg-white text-[#101016] shadow-[0_3px_0_0_rgba(0,0,0,0.12)] hover:bg-[#f7f7f8]",
 };
@@ -57,7 +57,7 @@ export function LoginButton({
         // eslint-disable-next-line @next/next/no-img-element
         <img src={icon} alt="" width={20} height={20} className="size-5" />
       )}
-      <span className={`font-mono text-[15px] font-[600] tracking-[-0.06em] ${variant === "primary" ? "text-white" : "text-[#101016]"}`}>
+      <span className={`font-mono text-[15px] font-[600] tracking-[-0.06em] ${variant === "primary" ? "text-[var(--login-on-brand)]" : "text-[#101016]"}`}>
         {children}
       </span>
     </button>
@@ -84,7 +84,7 @@ export function LoginTextLink({ href, children }: { href: string; children: Reac
   return (
     <Link
       href={href}
-      className={`rounded-sm font-mono text-[13px] font-[500] tracking-[-0.04em] text-login-brand-strong underline decoration-1 underline-offset-[3px] hover:text-login-brand ${ring}`}
+      className={`rounded-sm font-mono text-[13px] font-[500] tracking-[-0.04em] text-[var(--login-brand-text)] underline decoration-1 underline-offset-[3px] hover:text-login-brand ${ring}`}
     >
       {children}
     </Link>
@@ -110,7 +110,7 @@ export function LoginDivider() {
   return (
     <div className="flex items-center gap-3" aria-hidden>
       <span className="h-px flex-1 bg-[rgba(0,0,0,0.1)]" />
-      <span className="font-mono text-[12px] tracking-[-0.04em] text-unselected">또는</span>
+      <span className="font-mono text-[12px] tracking-[-0.04em] text-quaternary">또는</span>
       <span className="h-px flex-1 bg-[rgba(0,0,0,0.1)]" />
     </div>
   );
