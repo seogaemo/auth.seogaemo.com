@@ -6,8 +6,8 @@ Seogaemo SSO 서버와 SDK를 담은 pnpm workspace.
 |---|---|---|
 | [`apps/auth`](./apps/auth) | `@seogaemo/auth` (비공개) | SSO 서버와 콘솔. Next.js + OpenNext on Cloudflare Workers. 운영, 배포, 로컬 개발은 [apps/auth/README.md](./apps/auth/README.md) |
 | [`packages/oauth`](./packages/oauth) | `@seogaemo/oauth` | 표준 OAuth 2.0 / OpenID Connect 클라이언트. 의존성 없음 (fetch, WebCrypto) |
-| [`packages/oauth-browser`](./packages/oauth-browser) | `@seogaemo/oauth-browser` | SPA용. 아직 비어 있음 |
-| [`packages/oauth-next`](./packages/oauth-next) | `@seogaemo/oauth-next` | Next.js용. 아직 비어 있음 |
+| [`packages/oauth-browser`](./packages/oauth-browser) | `@seogaemo/oauth-browser` | SPA용. 로그인 이동, 토큰 저장, 탭 사이 안전한 갱신 |
+| [`packages/oauth-next`](./packages/oauth-next) | `@seogaemo/oauth-next` | Next.js(App Router)용. Route Handler, 암호화 세션 쿠키, 갱신 |
 
 ```bash
 pnpm install       # 전체 설치

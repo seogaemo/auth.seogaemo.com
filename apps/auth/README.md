@@ -157,7 +157,7 @@ MAIL_DEV_LOG=1            # 메일을 보내지 않고 로그(제목에 코드 �
 
 로컬에서 콘솔에 로그인하려면 위 키를 채우고, 각 제공자 콘솔에 `http://localhost:8787/oauth/provider/{google|kakao}/callback`도 등록해야 한다.
 
-전체 흐름 테스트: 위처럼 띄운 뒤 `node scripts/e2e-local.mjs` (스크립트 상단 주석 참고). SDK(`@seogaemo/oauth`)를 이 서버에 붙여 보는 건 `pnpm --filter @seogaemo/oauth build` 뒤 `node scripts/e2e-sdk-local.mjs`. 로그인 유지, prompt, 로그아웃, 정지, 계정 화면은 `node scripts/e2e-session-local.mjs`. 표준 조항별 확인(Discovery, PKCE, 토큰, 폐기, UserInfo, 루프백)은 `node scripts/e2e-standards-local.mjs`.
+전체 흐름 테스트: 위처럼 띄운 뒤 `node scripts/e2e-local.mjs` (스크립트 상단 주석 참고). SDK를 이 서버에 붙여 보는 건 `pnpm build`(루트) 뒤 `node scripts/e2e-sdk-local.mjs`(`@seogaemo/oauth`)와 `node scripts/e2e-sdk-packages-local.mjs`(`oauth-browser`, `oauth-next`). 로그인 유지, prompt, 로그아웃, 정지, 계정 화면은 `node scripts/e2e-session-local.mjs`. 표준 조항별 확인(Discovery, PKCE, 토큰, 폐기, UserInfo, 루프백)은 `node scripts/e2e-standards-local.mjs`.
 
 패스키는 진짜 Chrome과 가상 인증기(CDP)로 확인한다: `node scripts/e2e-passkey-local.mjs` (스크립트 상단 주석 참고). `ISSUER`가 `.dev.vars`와 같은 주소로 떠 있어야 하고(기본 `http://localhost:8788`, 다르면 `E2E_BASE`), WebAuthn은 `localhost`에서만 `http`로 동작한다.
 
