@@ -1,10 +1,12 @@
 import { isProvider, type Provider } from "../config";
+import { isAppSchemeUrl } from "../redirect-uri";
 
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
 
 /**
- * 줄마다 하나씩 받은 redirect URI를 검사한다.
- * https만 허용하고, 개발용으로 localhost만 http를 허용한다. fragment(#)는 금지 (RFC 6749 3.1.2).
+ * 줄마다 하나씩 받은 redirect URI를 검사한다. fragment(#)는 금지 (RFC 6749 3.1.2).
+ * 웹은 https만, 개발용으로 localhost만 http를 허용한다.
+ * 네이티브 앱은 역도메인 스킴(com.example.app:/callback, RFC 8252 7.1)을 허용한다.
  */
 export function parseRedirectUris(input: string): { uris: string[] } | { error: string } {
   const lines = [...new Set(input.split(/\r?\n/).map((l) => l.trim()).filter(Boolean))];
@@ -15,7 +17,7 @@ export function parseRedirectUris(input: string): { uris: string[] } | { error: 
     try {
       url = new URL(line);
     } catch {
-      return { error: `https://example.com/auth/callback 형식으로 입력하세요: ${line}` };
+      return { error: `https://example.com/auth/callback이나 com.example.app:/callback 형식으로 입력하세요: ${line}` };
     }
     if (url.hash || line.includes("#")) return { error: `# 뒤 부분을 빼고 입력하세요: ${line}` };
     if (url.username || url.password) return { error: `주소에서 아이디와 비밀번호(user:pass@)를 빼고 입력하세요: ${line}` };
@@ -23,7 +25,14 @@ export function parseRedirectUris(input: string): { uris: string[] } | { error: 
       return { error: `http는 localhost에서만 쓸 수 있어요. https로 바꿔 입력하세요: ${line}` };
     }
     if (url.protocol !== "https:" && url.protocol !== "http:") {
-      return { error: `https로 시작하는 주소를 입력하세요: ${line}` };
+      if (!isAppSchemeUrl(url)) {
+        return {
+          error: `웹은 https로, 앱은 com.example.app:/callback처럼 앱 도메인을 뒤집은 스킴으로 입력하세요: ${line}`,
+        };
+      }
+      if (!url.host && (url.pathname === "" || url.pathname === "/")) {
+        return { error: `스킴 뒤에 경로를 붙여 입력하세요. 예: ${url.protocol}/oauth/callback` };
+      }
     }
   }
 

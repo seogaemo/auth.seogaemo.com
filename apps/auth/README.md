@@ -16,7 +16,7 @@ Seogaemo SSO. 누구나 가입해서 자기 서비스를 등록하고 "Seogaemo�
 앱 안의 메뉴는 다섯 개다. 개발자가 하려는 일 하나가 메뉴 하나에서 끝나게 묶는다. 새 기능은 메뉴를 늘리기 전에 이 다섯 중 어느 일에 속하는지 먼저 본다.
 
 - 개요 (`/console/services/[id]`): 지금 상태. 아직 사용자가 없으면 시작 체크리스트(Redirect URI 등록, 예시 코드, 로그인 화면 꾸미기)를 실제 상태로 체크해서 보여준다. 사용자가 생기면 최근 14일 숫자와 하루 로그인 그래프, 최근 로그인 실패(사용자 상세로 연결)
-- 연동 (`/integration`): 코드에 넣을 것 전부. Discovery URL, Client ID, Client Secret 재발급, 계정 화면 주소, Redirect URI, 이 앱의 실제 값을 채운 예시 코드(Auth.js, oidc-client-ts)
+- 연동 (`/integration`): 코드에 넣을 것 전부. Discovery URL, Client ID, Client Secret 재발급, 계정 화면 주소, Redirect URI, 이 앱의 실제 값을 채운 예시 코드(Auth.js, oidc-client-ts, iOS AppAuth)
 - 로그인 화면 (`/branding`): 사용자에게 보이는 것 전부. 앱 이름과 로그인 방식, 로고와 색(R2), 가입 받기와 약관 링크. 오른쪽 미리보기는 저장 전에도 입력하는 대로 바뀐다
 - 사용자 (`/users`): 이메일, 이름, ID로 찾기. 상세에서 로그인 방식, 로그인된 기기, 최근 기록을 보고 정지, 모든 기기 로그아웃, 삭제. 위에 접근 제한 상태가 보이고 `/users/access`에서 바꾼다 (켜면 허용 목록의 이메일, 도메인만 로그인과 가입. `lib/allowlist.ts`. 확인된 이메일로만 맞추고, 목록 밖 사용자는 refresh token 갱신도 막는다)
 - 관리자 (`/members`): 소유자 말고 같이 관리할 개발자를 콘솔 계정 이메일로 추가 (최대 20명, 가입 전 이메일도 가능, 알림 메일). 관리자는 연동, 로그인 화면, 사용자를 관리하고, 관리자 추가와 앱 삭제는 소유자만 한다. 관리자는 스스로 나갈 수 있다. 최근 활동 5개, 전체 활동 기록은 `/members/activity`. 맨 아래 앱 삭제(소유자만)
@@ -47,6 +47,13 @@ Seogaemo SSO. 누구나 가입해서 자기 서비스를 등록하고 "Seogaemo�
 - **청소**: 매일 Cron이 어느 서비스에도 그 이메일의 사용자가 없는 `PasskeyOwner`(와 `Passkey`)를 지운다. 저장 도중 그만둬 패스키 없이 남은 소유자도 하루 뒤 지운다. WebAuthn challenge는 `LoginTransaction.webauthnChallenge`에 두고 한 번 쓰면 지운다.
 - 라이브러리는 `@simplewebauthn/server`, `@simplewebauthn/browser`. 서버 코드는 `lib/passkey.ts`, 액션은 `actions/login.ts`(passkey*), 화면은 `components/login/PasskeyPrompt.tsx`.
 
+### Redirect URI
+
+- 요청한 `redirect_uri`는 등록된 값과 글자 하나까지 같아야 한다 (RFC 6749 3.1.2). `#`은 받지 않는다.
+- 웹: `https`만. 개발용으로 `localhost`, `127.0.0.1`, `[::1]`은 `http`도 받는다.
+- 네이티브 앱(iOS, Android): 앱 도메인을 뒤집은 스킴만 받는다. 예: `com.example.app:/oauth/callback` (RFC 8252 7.1). 점이 없는 `myapp:`은 다른 앱과 겹치기 쉬워서 받지 않는다. 앱은 public client로 만들고 PKCE만 쓴다.
+- iOS는 `ASWebAuthenticationSession`(AppAuth-iOS가 쓰는 것)으로 연다. `WKWebView`로 열면 Google 로그인과 패스키가 막힌다.
+
 ### 로그인 유지와 로그아웃
 
 - 로그인하면 그 브라우저에 앱별 로그인 세션이 30일 동안 남는다 (`Session`). 그동안 `/oauth/authorize`는 로그인 화면 없이 바로 code를 준다.
@@ -56,7 +63,7 @@ Seogaemo SSO. 누구나 가입해서 자기 서비스를 등록하고 "Seogaemo�
 - `prompt=login`, `max_age`: 다시 로그인시킨다
 - `prompt=select_account`: "이 계정으로 계속 / 다른 계정으로 로그인" 화면
 - `login_hint`: 이메일 칸을 미리 채운다
-- 로그아웃: `GET/POST /oauth/logout` (OIDC RP-Initiated Logout). `id_token_hint`나 `client_id`로 앱을 알면 그 앱 세션만, 모르면 이 브라우저의 모든 세션을 끝낸다. 세션에서 나온 refresh token도 같이 끊긴다. `post_logout_redirect_uri`는 등록된 Redirect URI와 origin이 같을 때만 따르고, 아니면 우리 로그아웃 화면에 머문다.
+- 로그아웃: `GET/POST /oauth/logout` (OIDC RP-Initiated Logout). `id_token_hint`나 `client_id`로 앱을 알면 그 앱 세션만, 모르면 이 브라우저의 모든 세션을 끝낸다. 세션에서 나온 refresh token도 같이 끊긴다. `post_logout_redirect_uri`는 등록된 웹 Redirect URI와 origin이 같거나, 등록된 앱 스킴과 스킴이 같을 때만 따르고, 아니면 우리 로그아웃 화면에 머문다.
 - 콘솔 로그아웃도 콘솔 앱의 세션을 같이 끝낸다.
 
 ### 계정 화면

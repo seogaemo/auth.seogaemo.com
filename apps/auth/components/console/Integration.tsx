@@ -7,6 +7,7 @@ import { RedirectUrisForm } from "@/components/console/RedirectUrisForm";
 import { RotateSecret } from "@/components/console/RotateSecret";
 import { Block, InfoRow } from "@/components/console/ui";
 import { getIssuer } from "@/lib/config";
+import { isAppSchemeUrl, isWebUrl, parseUrl } from "@/lib/redirect-uri";
 import { getRedirectUris, isPublicClient } from "@/lib/service";
 
 function Example({ title, description, open, children }: { title: string; description: string; open?: boolean; children: ReactNode }) {
@@ -33,14 +34,11 @@ function Example({ title, description, open, children }: { title: string; descri
 export function Integration({ service, firstRun }: { service: Service; firstRun: boolean }) {
   const issuer = getIssuer();
   const publicClient = isPublicClient(service);
-  const redirect = getRedirectUris(service)[0] ?? "https://example.com/callback";
-  const origin = (() => {
-    try {
-      return new URL(redirect).origin;
-    } catch {
-      return "https://example.com";
-    }
-  })();
+  // 웹 예제는 첫 웹 주소, iOS 예제는 첫 앱 스킴 주소로 채운다
+  const uris = getRedirectUris(service).map((uri) => ({ uri, url: parseUrl(uri) }));
+  const redirect = uris.find(({ url }) => url && isWebUrl(url))?.uri ?? "https://example.com/callback";
+  const origin = new URL(redirect).origin;
+  const appRedirect = uris.find(({ url }) => url && isAppSchemeUrl(url))?.uri;
   const accountUrl = `${issuer}/account?client_id=${service.clientId}`;
 
   const authjs = `// auth.ts (Next.js, Auth.js v5)
@@ -83,6 +81,39 @@ console.log(user.profile.email);
 // 로그아웃 (Seogaemo 로그인도 끝나고 앱으로 돌아온다)
 await auth.signoutRedirect();`;
 
+  const ios = `// Swift Package: https://github.com/openid/AppAuth-iOS
+// 앱에는 Client Secret을 넣지 않는다. 콘솔에서 앱 종류를 "SPA, 모바일 앱"으로 만든 Client ID를 쓴다.
+import AppAuth
+
+let issuer = URL(string: "${issuer}")!
+let redirectURL = URL(string: "${appRedirect ?? "com.example.app:/oauth/callback"}")!
+
+var currentFlow: OIDExternalUserAgentSession?  // 로그인이 끝날 때까지 들고 있는다
+
+func signIn(from viewController: UIViewController) {
+  OIDAuthorizationService.discoverConfiguration(forIssuer: issuer) { config, error in
+    guard let config else { return print(error ?? "discovery failed") }
+    // PKCE(S256), state, nonce는 AppAuth가 만든다
+    let request = OIDAuthorizationRequest(
+      configuration: config,
+      clientId: "${service.clientId}",
+      clientSecret: nil,
+      scopes: [OIDScopeOpenID, OIDScopeEmail, OIDScopeProfile],
+      redirectURL: redirectURL,
+      responseType: OIDResponseTypeCode,
+      additionalParameters: nil
+    )
+    // ASWebAuthenticationSession으로 열린다 (WKWebView 안 됨: Google 로그인, 패스키가 막힌다)
+    currentFlow = OIDAuthState.authState(byPresenting: request, presenting: viewController) { state, error in
+      guard let state else { return print(error ?? "cancelled") }
+      // state를 Keychain에 저장해 두고, API를 부를 때마다 갱신된 토큰을 받는다
+      state.performAction { accessToken, idToken, error in
+        // Authorization: Bearer \(accessToken!)
+      }
+    }
+  }
+}`;
+
   const prompt = `// 이미 로그인돼 있으면 화면 없이 code를 받는다. 없으면 error=login_required
 ${issuer}/oauth/authorize?...&prompt=none
 
@@ -110,7 +141,7 @@ ${issuer}/oauth/authorize?...&login_hint=user@example.com`;
         <CopyField label="계정 화면" value={accountUrl} />
       </Block>
 
-      <Block title="Redirect URI" description="로그인이 끝나면 돌아갈 앱의 주소예요. 아래 예시 코드도 첫 번째 주소로 채워져요.">
+      <Block title="Redirect URI" description="로그인이 끝나면 돌아갈 주소예요. 웹은 https 주소, iOS와 Android 앱은 com.example.app:/oauth/callback 같은 앱 스킴을 등록해요.">
         <RedirectUrisForm serviceId={service.id} redirectUris={getRedirectUris(service)} />
       </Block>
 
@@ -125,6 +156,16 @@ ${issuer}/oauth/authorize?...&login_hint=user@example.com`;
           </Example>
           <Example title="SPA (React, Vue 등)" description="oidc-client-ts가 PKCE와 토큰 갱신을 알아서 해요.">
             <CodeBlock title="auth.ts" code={spa} />
+          </Example>
+          <Example
+            title="iOS (Swift)"
+            description={
+              appRedirect
+                ? "AppAuth가 PKCE, 토큰 교환, 갱신을 해요. 위에 등록한 앱 스킴으로 채웠어요."
+                : "AppAuth가 PKCE, 토큰 교환, 갱신을 해요. Redirect URI에 com.example.app:/oauth/callback처럼 앱 스킴을 먼저 등록하세요."
+            }
+          >
+            <CodeBlock title="SignIn.swift" code={ios} />
           </Example>
           <Example title="로그인 유지와 prompt" description="한 번 로그인하면 30일 동안 로그인 화면 없이 넘어가요.">
             <CodeBlock title="authorize 옵션" code={prompt} />

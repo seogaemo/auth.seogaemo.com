@@ -64,7 +64,7 @@ export function NewServiceForm() {
           <FormRow
             label="Redirect URI"
             htmlFor="redirectUris"
-            hint="로그인이 끝나면 돌아갈 주소. 한 줄에 하나씩, 나중에 바꿀 수 있어요."
+            hint="로그인이 끝나면 돌아갈 주소. 웹은 https 주소, 앱은 com.example.app:/oauth/callback 같은 앱 스킴. 한 줄에 하나씩, 나중에 바꿀 수 있어요."
           >
             <Textarea
               id="redirectUris"

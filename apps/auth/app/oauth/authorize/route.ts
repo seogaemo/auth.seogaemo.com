@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getPrisma } from "@/cloudflare";
-import { BROWSER_COOKIE, LOGIN_TX_COOKIE, SUPPORTED_PROMPTS, SUPPORTED_SCOPES, TTL } from "@/lib/config";
+import { BROWSER_COOKIE, getIssuer, LOGIN_TX_COOKIE, SUPPORTED_PROMPTS, SUPPORTED_SCOPES, TTL } from "@/lib/config";
 import { continueWithSession } from "@/lib/oauth/complete";
 import { loginErrorUrl } from "@/lib/oauth/errors";
 import { browserCookieOptions, findSession, isAuthTooOld, newBrowserKey } from "@/lib/oauth/session";
@@ -40,6 +40,8 @@ export async function GET(request: Request) {
     url.searchParams.set("error", error);
     url.searchParams.set("error_description", description);
     if (state) url.searchParams.set("state", state);
+    // RFC 9207: 오류 응답에도 iss를 붙인다 (discovery에서 지원한다고 알리므로 클라이언트가 확인한다)
+    url.searchParams.set("iss", getIssuer());
     return NextResponse.redirect(url.toString(), 302);
   };
 

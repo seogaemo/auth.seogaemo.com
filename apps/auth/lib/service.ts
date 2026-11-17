@@ -3,6 +3,7 @@ import type { Service } from "@prisma/client";
 import { getPrisma } from "@/cloudflare";
 import { endpoint, isProvider, type Provider } from "./config";
 import { hashSecret, timingSafeEqual } from "./crypto";
+import { isAppSchemeUrl, isWebUrl, parseUrl } from "./redirect-uri";
 
 function stringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((v): v is string => typeof v === "string") : [];
@@ -38,34 +39,23 @@ export async function verifyClientSecret(service: Service, secret: string) {
 }
 
 /**
- * 로그아웃 뒤 돌아갈 주소. 따로 등록받지 않고, 등록된 Redirect URI와 origin(스킴, 호스트, 포트)이 같으면 허용한다.
- * 남의 사이트로 보내는 열린 리다이렉트를 막는 데는 이것으로 충분하다.
+ * 로그아웃 뒤 돌아갈 주소. 따로 등록받지 않고 등록된 Redirect URI로 판단한다.
+ * - 웹: 등록된 웹 주소와 origin(스킴, 호스트, 포트)이 같으면
+ * - 앱: 등록된 앱 스킴과 스킴이 같으면 (앱 스킴 주소는 origin이 모두 "null"이라 origin으로 비교하면 안 된다)
+ * 남의 사이트나 다른 앱으로 보내는 열린 리다이렉트를 막는 데는 이것으로 충분하다.
  */
 export function isAllowedPostLogoutUri(service: Service, uri: string) {
-  let target: URL;
-  try {
-    target = new URL(uri);
-  } catch {
-    return false;
-  }
-  if (target.hash) return false;
-  const registered = service.isSystem ? [endpoint("/console/callback")] : getRedirectUris(service);
-  return registered.some((r) => {
-    try {
-      return new URL(r).origin === target.origin;
-    } catch {
-      return false;
-    }
-  });
+  const target = parseUrl(uri);
+  if (!target || target.hash) return false;
+  const registered = (service.isSystem ? [endpoint("/console/callback")] : getRedirectUris(service)).map(parseUrl);
+  if (isWebUrl(target)) return registered.some((r) => r && isWebUrl(r) && r.origin === target.origin);
+  if (isAppSchemeUrl(target)) return registered.some((r) => r && isAppSchemeUrl(r) && r.protocol === target.protocol);
+  return false;
 }
 
-/** 등록된 첫 Redirect URI의 origin (계정 화면, 로그아웃 화면의 "돌아가기" 링크) */
+/** 등록된 첫 웹 Redirect URI의 origin (계정 화면, 로그아웃 화면의 "열기" 링크). 앱 스킴만 있으면 없다 */
 export function serviceHomeUrl(service: Service) {
-  const first = service.isSystem ? endpoint("/console") : getRedirectUris(service)[0];
-  if (!first) return null;
-  try {
-    return service.isSystem ? first : new URL(first).origin;
-  } catch {
-    return null;
-  }
+  if (service.isSystem) return endpoint("/console");
+  const web = getRedirectUris(service).map(parseUrl).find((url) => url && isWebUrl(url));
+  return web ? web.origin : null;
 }

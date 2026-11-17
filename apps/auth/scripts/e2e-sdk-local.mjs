@@ -95,5 +95,58 @@ check(
   await rejects(wrong.finishLogin(serverIssuesCode(url, "svc_dev", "usr_sdk"), transaction), (e) => e instanceof OAuthError && e.error === "invalid_client" && e.status === 401),
 );
 
+// --- 네이티브 앱: private-use URI scheme (RFC 8252 7.1)
+console.log("--- native app (com.seogaemo.dev:/oauth/callback)");
+const APP = "com.seogaemo.dev:/oauth/callback";
+const savedUris = JSON.parse(
+  JSON.parse(execFileSync("npx", ["wrangler", "d1", "execute", "db.auth.seogaemo.com", "--local", "--json", "--command", `SELECT redirectUris FROM "Service" WHERE id='svc_dev_public'`], { stdio: "pipe" }).toString())[0].results[0].redirectUris,
+);
+sql(`UPDATE "Service" SET redirectUris='${JSON.stringify([...savedUris, APP])}' WHERE id='svc_dev_public';`);
+try {
+  const app = await createClient({ issuer: B, redirectUri: APP, clientId: "dev-public" });
+  const { url, transaction } = await app.startLogin();
+  let r = await fetch(url, { redirect: "manual" });
+  check("authorize accepts an app scheme redirect_uri", r.status === 302 && new URL(r.headers.get("location"), B).pathname === "/login", `${r.status} ${r.headers.get("location")}`);
+
+  const result = await app.finishLogin(serverIssuesCode(url, "svc_dev_public", "usr_sdk_pub"), transaction);
+  check("code for the app scheme exchanges and verifies", result.claims?.sub === "usr_sdk_pub");
+
+  // 서버가 직접 앱 스킴으로 돌려보내는 응답: 오류(PKCE 없음)와 prompt=none
+  const noPkce = new URL(url);
+  noPkce.searchParams.delete("code_challenge");
+  r = await fetch(noPkce, { redirect: "manual" });
+  const errorBack = r.headers.get("location") ?? "";
+  check("errors go back to the app scheme with state and iss", errorBack.startsWith(`${APP}?`) && new URL(errorBack).searchParams.get("iss") === B, errorBack);
+  check(
+    "SDK reads that error as OAuthError (iss present, RFC 9207)",
+    await rejects(app.finishLogin(errorBack, transaction), (e) => e instanceof OAuthError && e.error === "invalid_request"),
+  );
+
+  const silent = await app.startLogin({ prompt: "none" });
+  r = await fetch(silent.url, { redirect: "manual" });
+  const silentBack = r.headers.get("location") ?? "";
+  check(
+    "prompt=none without a session -> login_required at the app scheme",
+    silentBack.startsWith(`${APP}?`) && (await rejects(app.finishLogin(silentBack, silent.transaction), (e) => e instanceof OAuthError && e.error === "login_required")),
+    silentBack,
+  );
+
+  const other = new URL(url);
+  other.searchParams.set("redirect_uri", "com.attacker.app:/oauth/callback");
+  r = await fetch(other, { redirect: "manual" });
+  check("an unregistered app scheme -> error page, not the app", (r.headers.get("location") ?? "").includes("/login/error?code=invalid_redirect_uri"), r.headers.get("location"));
+
+  const logoutTo = async (target) => {
+    const res = await fetch(app.logoutUrl({ postLogoutRedirectUri: target }), { redirect: "manual" });
+    return res.headers.get("location") ?? "";
+  };
+  check("logout returns to the same app scheme", (await logoutTo("com.seogaemo.dev:/signed-out")).startsWith("com.seogaemo.dev:/signed-out"));
+  check("logout refuses another app's scheme", (await logoutTo("com.attacker.app:/signed-out")).includes("/logout?") );
+  check("logout refuses a site that is not registered", (await logoutTo("https://evil.example.com/")).includes("/logout?"));
+  check("logout still allows the registered web origin", (await logoutTo("http://localhost:5173/bye")).startsWith("http://localhost:5173/bye"));
+} finally {
+  sql(`UPDATE "Service" SET redirectUris='${JSON.stringify(savedUris)}' WHERE id='svc_dev_public';`);
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

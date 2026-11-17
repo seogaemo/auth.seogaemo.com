@@ -17,7 +17,7 @@ export function RedirectUrisForm({ serviceId, redirectUris }: { serviceId: strin
           <FormRow
             label="Redirect URI"
             htmlFor="redirectUris"
-            hint="한 줄에 하나씩. 요청한 redirect_uri가 여기 있는 값과 글자 하나까지 같아야 해요."
+            hint="한 줄에 하나씩. 웹은 https 주소, 앱은 com.example.app:/oauth/callback 같은 앱 스킴. 요청한 redirect_uri가 여기 있는 값과 글자 하나까지 같아야 해요."
           >
             <Textarea
               id="redirectUris"
