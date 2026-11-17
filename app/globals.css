@@ -51,6 +51,12 @@
 }
 
 @layer base {
+  /* 위아래로 끝까지 당겨도 고무줄 효과로 빈 배경이 드러나지 않게 한다 */
+  html,
+  body {
+    overscroll-behavior: none;
+  }
+
   /* 입체 버튼이 눌림을 직접 그리니 모바일 기본 회색 탭 표시는 끈다 */
   a,
   button,

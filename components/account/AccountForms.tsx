@@ -55,7 +55,7 @@ export function RemovePasskeyButton({ clientId, passkeyId }: { clientId: string;
   useNavigate(state);
 
   return (
-    <div className="flex flex-col items-end gap-1">
+    <div className="flex shrink-0 flex-col items-end gap-1">
       <button
         type="button"
         disabled={pending}
@@ -63,7 +63,7 @@ export function RemovePasskeyButton({ clientId, passkeyId }: { clientId: string;
           if (!window.confirm("이 패스키를 삭제할까요? 모든 Seogaemo 서비스에서 이 패스키로 로그인할 수 없게 돼요.")) return;
           start(async () => setState(await removePasskey(clientId, passkeyId)));
         }}
-        className="rounded-sm font-mono text-[13px] font-[500] tracking-[-0.04em] text-[#b2231a] underline decoration-1 underline-offset-[3px] hover:text-[#ff3b30] disabled:opacity-50"
+        className="whitespace-nowrap rounded-sm font-mono text-[13px] font-[500] tracking-[-0.04em] text-[#b2231a] underline decoration-1 underline-offset-[3px] hover:text-[#ff3b30] disabled:opacity-50"
       >
         {pending ? "삭제 중" : "삭제"}
       </button>

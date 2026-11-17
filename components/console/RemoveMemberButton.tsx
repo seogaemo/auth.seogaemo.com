@@ -24,7 +24,7 @@ export function RemoveMemberButton({
     : `관리자에서 뺄까요? ${email}\n이 앱을 더 관리할 수 없게 돼요.`;
 
   return (
-    <span className="flex items-center gap-2">
+    <span className="flex shrink-0 items-center gap-2">
       <span role="alert" className="text-label text-content-negative">
         {error}
       </span>
@@ -41,7 +41,7 @@ export function RemoveMemberButton({
             else if (result?.error) setError(result.error);
           });
         }}
-        className="shrink-0 rounded text-footnote text-content-negative hover:underline disabled:opacity-50"
+        className="shrink-0 whitespace-nowrap rounded text-footnote text-content-negative hover:underline disabled:opacity-50"
       >
         {pending ? "처리 중" : label}
       </button>

@@ -144,7 +144,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
               <ul className="flex flex-col">
                 {passkeys.map((p) => (
                   <li key={p.id} className="flex items-baseline justify-between gap-3 border-b border-[rgba(0,0,0,0.06)] py-2 last:border-0">
-                    <span className="text-footnote text-[#101016]">
+                    <span className="min-w-0 text-footnote text-[#101016]">
                       {dateTime.format(p.createdAt)} 저장
                       <span className="ml-1.5 text-label text-tertiary">
                         {p.lastUsedAt ? `마지막 사용 ${dateTime.format(p.lastUsedAt)}` : "사용한 적 없음"}
@@ -162,7 +162,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
           <ul className="flex flex-col">
             {sessions.map((s) => (
               <li key={s.id} className="flex items-baseline justify-between gap-3 border-b border-[rgba(0,0,0,0.06)] py-2 last:border-0">
-                <span className="text-footnote text-[#101016]">
+                <span className="min-w-0 text-footnote text-[#101016]">
                   {describeUserAgent(s.userAgent)}
                   {s.id === session.id && <span className="ml-1.5 text-label text-[var(--login-brand-text)]">이 기기</span>}
                 </span>
