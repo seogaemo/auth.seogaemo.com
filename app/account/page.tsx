@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 
-import { DeleteAccountForm, PasswordForm, SignOutOthersButton } from "@/components/account/AccountForms";
+import { DeleteAccountForm, PasswordForm, RemovePasskeyButton, SignOutOthersButton } from "@/components/account/AccountForms";
 import { LoginTextLink } from "@/components/login/fields";
 import { LoginShell } from "@/components/login/LoginShell";
 import { ServiceHeading } from "@/components/login/ServiceHeading";
 import { getPrisma } from "@/cloudflare";
 import { loadAccount } from "@/lib/account";
-import { isProvider, PROVIDER_LABELS } from "@/lib/config";
+import { isLoginMethod, LOGIN_METHOD_LABELS } from "@/lib/config";
+import { listPasskeys, passkeyAvailable } from "@/lib/passkey";
 import { describeUserAgent } from "@/lib/request";
 import { getProviders, serviceHomeUrl } from "@/lib/service";
 
@@ -33,17 +34,18 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   const { service, session, user } = await loadAccount(clientId);
   const prisma = getPrisma();
 
-  const [identities, sessions] = await Promise.all([
+  const [identities, sessions, passkeys] = await Promise.all([
     prisma.identity.findMany({ where: { userId: user.id }, orderBy: { createdAt: "asc" } }),
     prisma.session.findMany({
       where: { userId: user.id, expiresAt: { gt: new Date() } },
       orderBy: { lastSeenAt: "desc" },
     }),
+    listPasskeys(user.email),
   ]);
   const hasPassword = identities.some((i) => i.provider === "password" && i.passwordHash);
   const canUsePassword = hasPassword || (getProviders(service).includes("password") && !!user.email);
   const home = serviceHomeUrl(service);
-  const methods = [...new Set(identities.map((i) => i.provider))].filter(isProvider);
+  const methods = [...new Set(identities.map((i) => i.provider))].filter(isLoginMethod);
 
   return (
     <LoginShell branding={service}>
@@ -64,7 +66,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
           <ul className="flex flex-wrap gap-2">
             {methods.map((method) => (
               <li key={method} className="border-2 border-[rgba(0,0,0,0.12)] px-2.5 py-1 font-mono text-[13px] tracking-[-0.04em] text-[#101016]">
-                {PROVIDER_LABELS[method]}
+                {LOGIN_METHOD_LABELS[method]}
               </li>
             ))}
           </ul>
@@ -77,6 +79,31 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
               <p className="text-footnote text-secondary">비밀번호를 만들면 이메일과 비밀번호로도 로그인할 수 있어요.</p>
             )}
             <PasswordForm clientId={service.clientId} hasPassword={hasPassword} />
+          </Section>
+        )}
+
+        {user.email && (passkeys.length > 0 || passkeyAvailable(getProviders(service))) && (
+          <Section title="패스키">
+            <p className="text-footnote text-secondary">
+              패스키는 {user.email}에 붙어 있어요. 삭제하면 모든 Seogaemo 서비스에 적용돼요. 새 패스키는 이메일 코드나 비밀번호로 로그인할 때 저장할 수 있어요.
+            </p>
+            {passkeys.length === 0 ? (
+              <p className="text-footnote text-tertiary">저장한 패스키가 없어요.</p>
+            ) : (
+              <ul className="flex flex-col">
+                {passkeys.map((p) => (
+                  <li key={p.id} className="flex items-baseline justify-between gap-3 border-b border-[rgba(0,0,0,0.06)] py-2 last:border-0">
+                    <span className="text-footnote text-[#101016]">
+                      {dateTime.format(p.createdAt)} 저장
+                      <span className="ml-1.5 text-label text-tertiary">
+                        {p.lastUsedAt ? `마지막 사용 ${dateTime.format(p.lastUsedAt)}` : "사용한 적 없음"}
+                      </span>
+                    </span>
+                    <RemovePasskeyButton clientId={service.clientId} passkeyId={p.id} />
+                  </li>
+                ))}
+              </ul>
+            )}
           </Section>
         )}
 

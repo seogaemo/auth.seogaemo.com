@@ -1,11 +1,19 @@
 "use client";
 
+import {
+  browserSupportsWebAuthnAutofill,
+  sendSignal,
+  startAuthentication,
+  WebAuthnAbortService,
+} from "@simplewebauthn/browser";
 import { useActionState, useEffect, useState, useTransition } from "react";
 
 import {
   continueAsCurrent,
   continueWithEmail,
   emailCodeInstead,
+  passkeyLogin,
+  passkeyLoginOptions,
   passwordLogin,
   resendCode,
   startReset,
@@ -24,31 +32,95 @@ function useNavigate(state: LoginFormState) {
   return Boolean(state?.redirectTo);
 }
 
+/**
+ * 이메일 칸에 저장한 패스키를 자동완성으로 띄운다 (Conditional UI). 버튼을 누르지 않아도 칸을 누르면 목록이 뜨고,
+ * 고르면 바로 로그인한다. 이메일 폼을 보내는 중에는 요청을 접고, 끝나면 다시 건다.
+ */
+function usePasskeyAutofill(enabled: boolean, idle: boolean) {
+  const [error, setError] = useState<string | null>(null);
+  const [redirectTo, setRedirectTo] = useState<string | null>(null);
+  // 실패한 뒤에는 이메일 칸을 다시 누를 때 새로 건다 (challenge는 한 번만 쓴다. 바로 다시 걸면 같은 패스키로 계속 실패한다)
+  const [armed, setArmed] = useState(true);
+
+  useEffect(() => {
+    if (redirectTo) window.location.assign(redirectTo);
+  }, [redirectTo]);
+
+  useEffect(() => {
+    if (!enabled || !idle || redirectTo || !armed) return;
+    let active = true;
+
+    (async () => {
+      if (!(await browserSupportsWebAuthnAutofill())) return;
+      const options = await passkeyLoginOptions();
+      if (!active || !options) return;
+
+      let response;
+      try {
+        response = await startAuthentication({ optionsJSON: options, useBrowserAutofill: true });
+      } catch {
+        return; // 접었거나(이메일 입력 시작), 고르지 않고 닫았다
+      }
+      if (!active) return;
+
+      const result = await passkeyLogin(response);
+      if (!active) return;
+      if (result.redirectTo) return setRedirectTo(result.redirectTo);
+      setError(result.error ?? null);
+      if (result.unknownCredentialId) {
+        // 서버에서 지운 패스키가 기기에 남아 있으면 지우라고 브라우저에 알린다 (지원하는 브라우저만)
+        sendSignal({
+          signalName: "unknownCredential",
+          rpID: window.location.hostname,
+          credentialID: result.unknownCredentialId,
+        }).catch(() => {});
+      }
+      setArmed(false);
+    })().catch((e) => console.warn("passkey autofill failed", e));
+
+    return () => {
+      active = false;
+      WebAuthnAbortService.cancelCeremony();
+    };
+  }, [enabled, idle, redirectTo, armed]);
+
+  const rearm = () => setArmed(true);
+  return { error, navigating: redirectTo !== null, inputProps: { onFocus: rearm, onClick: rearm } };
+}
+
 /** 첫 단계: 이메일만 받는다. 다음 화면은 서버가 계정에 맞춰 고른다. */
 export function EmailStartForm({
   defaultEmail,
   canSignup,
+  passkey,
   turnstileKey,
 }: {
   defaultEmail?: string;
   canSignup: boolean;
+  /** 패스키로 로그인할 수 있는 서비스 */
+  passkey: boolean;
   turnstileKey?: string | null;
 }) {
   const [state, action, pending] = useActionState<LoginFormState, FormData>(continueWithEmail, null);
-  const navigating = useNavigate(state);
+  const formNavigating = useNavigate(state);
+  const autofill = usePasskeyAutofill(passkey, !pending && !formNavigating);
+  const navigating = formNavigating || autofill.navigating;
 
   return (
     <form action={action} className="flex flex-col gap-3">
-      <LoginError>{state?.error}</LoginError>
+      <LoginError>{state?.error ?? autofill.error}</LoginError>
       <LoginField
         label="이메일"
         id="email"
         name="email"
         type="email"
-        autoComplete="username"
+        autoComplete={passkey ? "username webauthn" : "username"}
+        autoFocus
         required
         defaultValue={state?.email ?? defaultEmail}
         placeholder="name@example.com"
+        {...autofill.inputProps}
+        hint={passkey ? "패스키를 저장했다면 이 칸을 눌러 바로 로그인하세요." : undefined}
       />
       {turnstileKey && <Turnstile key={JSON.stringify(state)} siteKey={turnstileKey} />}
       <div className="pt-1">

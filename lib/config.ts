@@ -4,11 +4,14 @@ import { PROVIDERS, SOCIAL_PROVIDERS, type Provider, type SocialProvider } from 
 
 /** 로그인 수단 목록과 이름, 아이콘은 provider-meta.ts 한 곳에서 정한다 */
 export {
+  isLoginMethod,
+  LOGIN_METHOD_LABELS,
   PROVIDER_LABELS,
   PROVIDERS,
   SOCIAL_PROVIDERS,
   providerIcon,
   socialMeta,
+  type LoginMethod,
   type Provider,
   type SocialProvider,
 } from "./provider-meta";

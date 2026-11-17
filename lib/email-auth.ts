@@ -141,11 +141,11 @@ export async function verifyEmailCode(record: EmailCode, code: string): Promise<
 
 /**
  * 메일 인증이 끝난 이메일로 사용자를 확정한다. 메일을 받은 사람이니 검증된 이메일로 본다.
- * provider: email(코드 로그인) 또는 password(회원가입)
+ * provider: email(코드 로그인), password(회원가입), passkey(패스키 로그인)
  */
 export async function userForVerifiedEmail(
   serviceId: string,
-  provider: "email" | "password",
+  provider: "email" | "password" | "passkey",
   email: string,
   passwordHash?: string,
 ) {

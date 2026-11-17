@@ -1,5 +1,5 @@
 import { getPrisma } from "@/cloudflare";
-import type { Provider } from "../config";
+import type { LoginMethod } from "../config";
 import { recordLoginEvent } from "../events";
 import { gravatarProfile, refreshFromGravatarInBackground } from "../gravatar";
 import { signupBlock, SignupBlockedError } from "../signup-policy";
@@ -17,7 +17,7 @@ import type { ProviderProfile } from "./providers";
  */
 export async function upsertUserFromProfile(
   serviceId: string,
-  provider: Provider,
+  provider: LoginMethod,
   profile: ProviderProfile,
 ) {
   const prisma = getPrisma();
