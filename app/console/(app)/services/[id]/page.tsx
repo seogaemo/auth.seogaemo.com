@@ -9,7 +9,7 @@ import { requireServiceAccess } from "@/lib/console/session";
 import { isProviderConfigured } from "@/lib/oauth/providers";
 import { getProviders, getRedirectUris, isPublicClient } from "@/lib/service";
 
-export const metadata = { title: "서비스 설정" };
+export const metadata = { title: "Application 설정" };
 
 export default async function ServiceSettingsPage({
   params,
@@ -25,11 +25,11 @@ export default async function ServiceSettingsPage({
 
   return (
     <Page>
-      <BackLink href="/console" label="서비스 목록" />
+      <BackLink href="/console" label="Applications" />
 
       <div className="flex flex-col gap-8">
         <ServiceHeader id={service.id} name={service.name} hasLogo={!!service.logoKey} subtitle="설정" />
-        {created && <Notice tone="positive">서비스를 만들었어요.</Notice>}
+        {created && <Notice tone="positive">Application을 만들었어요.</Notice>}
 
         <Block title="연동 정보" description="OIDC를 지원하는 라이브러리에 Discovery URL과 Client ID를 넣으면 돼요.">
           <CopyField label="Discovery URL" value={endpoint("/.well-known/openid-configuration")} />
@@ -54,7 +54,7 @@ export default async function ServiceSettingsPage({
         </Block>
 
         {isOwner && (
-          <Block title="서비스 삭제" description="이 서비스의 사용자와 토큰이 모두 지워지고 되돌릴 수 없어요.">
+          <Block title="Application 삭제" description="이 Application의 사용자와 토큰이 모두 지워지고 되돌릴 수 없어요.">
             <DeleteServiceForm serviceId={service.id} name={service.name} />
           </Block>
         )}

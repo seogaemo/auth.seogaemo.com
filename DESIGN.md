@@ -178,7 +178,7 @@ Hosted Login에만 쓴다. `tailwind.config.ts`의 `theme.extend`나 `globals.cs
 ┌─ Sidebar 256 (bg black) ─┬──────── Content (bg-base-elevated) ────────┐
 │ Seogaemo SSO       [⇤]   │        ← Application        (text-tertiary) │
 │                          │                                             │
-│ ▣ Application (선택)     │        서비스 목록     (text-display strong) │
+│ ▣ Application (선택)     │        Applications    (text-display strong) │
 │ ◇ Branding               │        ┌ max-w 640, 가운데 정렬 ┐           │
 │ 👥 User Management       │        │ 리스트 / 폼 / 테이블   │           │
 │                          │        └────────────────────────┘           │
@@ -188,7 +188,7 @@ Hosted Login에만 쓴다. `tailwind.config.ts`의 `theme.extend`나 `globals.cs
 
 - 사이드바: 폭 256px, 접으면 52px (아이콘만). 메뉴 항목은 `p-2 rounded-lg`, 선택 상태는 `bg-white/10`. 글자는 `text-footnote` 흰색.
 - 사이드바는 위치에 따라 내용이 바뀐다.
-  - 서비스 밖(목록, 새로 만들기): "Applications" 메뉴 하나와 "내 서비스" 바로가기 목록 (20px 로고 + 이름). 서비스 메뉴는 보여주지 않는다.
+  - 서비스 밖(목록, 새로 만들기): "Applications" 메뉴 하나와 "내 Application" 바로가기 목록 (20px 로고 + 이름). 서비스 메뉴는 보여주지 않는다.
   - 서비스 안: 서비스 로고, 이름, "서비스 변경하기" 아래에 Application, Branding, User Management, Admins.
 - 콘텐츠: 최대 폭 640px, 가운데 정렬. 상단에 뒤로가기 링크, 64px 아래에 페이지 제목이 온다.
 - 사용자 테이블처럼 넓은 화면이 필요한 페이지는 640px 제한을 풀고 좌우 24px 여백만 둔다.
@@ -284,7 +284,7 @@ Hosted Login에만 쓴다. `tailwind.config.ts`의 `theme.extend`나 `globals.cs
 | 사용자 | 유저, 회원 |
 | 개발자 | 운영자, 관리자, 어드민 (Seogaemo에 가입해서 자기 서비스를 등록한 사람) |
 
-콘솔 사이드바 메뉴는 예외적으로 영문(Applications, Application, Branding, User Management, Admins)을 쓴다. 메뉴 이름과 페이지 제목이 다를 수 있다 (메뉴 "Application", 페이지 제목 "서비스 목록").
+콘솔 사이드바 메뉴는 예외적으로 영문(Applications, Application, Branding, User Management, Admins)을 쓴다. 콘솔에서 개발자가 등록한 대상은 메뉴, 제목, 버튼, 에러 모두 "Application"으로 부른다 (예: "새 Application", "Application 이름"). 조사는 "Application을/이/은". 최종 사용자가 보는 로그인 화면과 로그인 에러에서는 "서비스"라고 쓴다.
 
 ### 7.2 톤
 

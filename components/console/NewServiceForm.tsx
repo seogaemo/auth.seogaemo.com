@@ -28,7 +28,7 @@ export function NewServiceForm() {
   if (state?.secret && state.serviceId && state.clientId) {
     return (
       <div className="flex flex-col gap-6">
-        <Notice tone="positive">서비스를 만들었어요.</Notice>
+        <Notice tone="positive">Application을 만들었어요.</Notice>
         <Block title="연동 정보">
           <CopyField label="Client ID" value={state.clientId} />
           <CopyField label="Client Secret" value={state.secret} secret />
@@ -37,7 +37,7 @@ export function NewServiceForm() {
           </Notice>
         </Block>
         <div>
-          <ButtonLink href={`/console/services/${state.serviceId}`}>서비스 설정으로 가기</ButtonLink>
+          <ButtonLink href={`/console/services/${state.serviceId}`}>Application 설정으로 가기</ButtonLink>
         </div>
       </div>
     );
@@ -106,7 +106,7 @@ export function NewServiceForm() {
 
         <div className="flex justify-end">
           <Button type="submit" disabled={pending}>
-            {pending ? "만드는 중" : "서비스 만들기"}
+            {pending ? "만드는 중" : "Application 만들기"}
           </Button>
         </div>
       </form>

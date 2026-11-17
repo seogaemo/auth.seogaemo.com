@@ -113,9 +113,9 @@ export async function deleteService(
   form: FormData,
 ): Promise<ActionState> {
   const { service, isOwner } = await requireServiceAccess(serviceId);
-  if (!isOwner) return { error: "서비스는 소유자만 지울 수 있어요." };
+  if (!isOwner) return { error: "Application은 소유자만 지울 수 있어요." };
   if (String(form.get("confirm") ?? "").trim() !== service.name) {
-    return { error: "서비스 이름이 맞지 않아요. 띄어쓰기와 대소문자까지 똑같이 입력하세요." };
+    return { error: "Application 이름이 맞지 않아요. 띄어쓰기와 대소문자까지 똑같이 입력하세요." };
   }
 
   if (service.logoKey) await getR2().delete(service.logoKey);

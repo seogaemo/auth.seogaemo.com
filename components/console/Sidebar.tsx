@@ -109,7 +109,7 @@ function HomeSection({ services, pathname }: { services: SidebarService[]; pathn
       {services.length > 0 && (
         <nav aria-labelledby="sidebar-services" className="hidden min-h-0 flex-col gap-1 md:flex">
           <h2 id="sidebar-services" className="px-2 pb-1 text-label text-[rgba(255,255,255,0.5)]">
-            내 서비스
+            내 Application
           </h2>
           <div className="flex min-h-0 flex-col gap-0.5 overflow-y-auto overscroll-contain">
             {services.map((service) => (
@@ -145,11 +145,11 @@ function ServiceSection({ current, pathname }: { current: SidebarService; pathna
         <div className="flex min-w-0 flex-col">
           <span className="truncate text-footnote font-strong text-white">{current.name}</span>
           <Link href="/console" className="w-fit rounded text-label text-[rgba(255,255,255,0.6)] hover:text-white">
-            서비스 변경하기
+            Application 변경하기
           </Link>
         </div>
       </div>
-      <Menu label="서비스 메뉴" items={items} />
+      <Menu label="Application 메뉴" items={items} />
     </>
   );
 }

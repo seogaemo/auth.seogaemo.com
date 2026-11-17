@@ -7,7 +7,7 @@ import { PROVIDER_LABELS, providerIcon, type Provider } from "@/lib/config";
 import { manageableServices, requireDeveloper } from "@/lib/console/session";
 import { getProviders, isPublicClient } from "@/lib/service";
 
-export const metadata: Metadata = { title: "서비스 목록" };
+export const metadata: Metadata = { title: "Applications" };
 
 const dateFormat = new Intl.DateTimeFormat("ko-KR", { dateStyle: "medium", timeZone: "Asia/Seoul" });
 const HEX = /^#[0-9a-fA-F]{6}$/;
@@ -75,14 +75,14 @@ export default async function ServiceListPage() {
     <div className="mx-auto flex w-full max-w-[1080px] flex-col gap-8 pb-16">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-col gap-1">
-          <h1 className="font-mono text-[24px] font-[500] leading-[1.35] tracking-[-0.04em] text-primary">서비스</h1>
+          <h1 className="font-mono text-[24px] font-[500] leading-[1.35] tracking-[-0.04em] text-primary">Applications</h1>
           <p className="text-footnote text-tertiary">
-            Seogaemo로 로그인을 붙인 서비스 {services.length}개
+            Seogaemo로 로그인을 붙인 Application {services.length}개
           </p>
         </div>
         <ButtonLink href="/console/services/new">
           <PlusIcon className="-ml-1" color="text-white" />
-          <span className="text-footnote font-strong text-white">새 서비스</span>
+          <span className="text-footnote font-strong text-white">새 Application</span>
         </ButtonLink>
       </header>
 
@@ -147,7 +147,7 @@ export default async function ServiceListPage() {
             <span className="flex size-10 items-center justify-center rounded-full bg-base transition-colors group-hover:bg-[#2c73f4]">
               <PlusIcon color="text-tertiary transition-colors group-hover:text-white" />
             </span>
-            <span className="text-footnote font-strong text-tertiary group-hover:text-content-accent">새 서비스 만들기</span>
+            <span className="text-footnote font-strong text-tertiary group-hover:text-content-accent">새 Application 만들기</span>
           </Link>
         </li>
       </ul>
@@ -156,7 +156,7 @@ export default async function ServiceListPage() {
 }
 
 const STEPS = [
-  { title: "서비스 만들기", body: "이름과 Redirect URI를 넣으면 Client ID를 받아요." },
+  { title: "Application 만들기", body: "이름과 Redirect URI를 넣으면 Client ID를 받아요." },
   { title: "인증 방식 고르기", body: "이메일/비밀번호, 이메일 코드, Google, 카카오 중에서 켜요." },
   { title: "앱에 연결하기", body: "OIDC 라이브러리에 Discovery URL과 Client ID를 넣으면 끝." },
 ];
@@ -170,10 +170,10 @@ function EmptyState() {
         <img src="/brand/seogaemo-symbol.svg" alt="" width={40} height={40} />
         <div className="flex flex-col gap-2">
           <h1 className="font-mono text-[28px] font-[500] leading-[1.35] tracking-[-0.04em] text-primary">
-            첫 서비스를 등록해 보세요
+            첫 Application을 등록해 보세요
           </h1>
           <p className="break-keep text-pretty text-body text-secondary">
-            등록하면 내 서비스에 &quot;Seogaemo로 로그인&quot; 버튼을 붙일 수 있어요. 사용자 관리와 로그인 화면은 Seogaemo가 맡아요.
+            등록하면 내 앱이나 웹사이트에 &quot;Seogaemo로 로그인&quot; 버튼을 붙일 수 있어요. 사용자 관리와 로그인 화면은 Seogaemo가 맡아요.
           </p>
         </div>
       </div>
@@ -195,7 +195,7 @@ function EmptyState() {
       <div>
         <ButtonLink href="/console/services/new" size="lg">
           <PlusIcon className="-ml-1" color="text-white" />
-          <span className="text-body font-strong text-white">서비스 만들기</span>
+          <span className="text-body font-strong text-white">Application 만들기</span>
         </ButtonLink>
       </div>
     </div>

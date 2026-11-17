@@ -58,7 +58,7 @@ export default async function MembersPage({ params }: { params: Promise<{ id: st
 
         <Block
           title="관리자"
-          description="관리자는 설정, 브랜딩, 사용자 관리를 할 수 있어요. 서비스 삭제와 관리자 추가는 소유자만 해요."
+          description="관리자는 설정, 브랜딩, 사용자 관리를 할 수 있어요. Application 삭제와 관리자 추가는 소유자만 해요."
         >
           <ul className="flex flex-col gap-2">
             <MemberRow

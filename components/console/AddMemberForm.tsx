@@ -18,7 +18,7 @@ export function AddMemberForm({ serviceId }: { serviceId: string }) {
           <FormRow
             label="이메일"
             htmlFor="member-email"
-            hint="이 이메일로 콘솔에 로그인하면 이 서비스를 같이 관리할 수 있어요. 아직 가입 전이어도 돼요."
+            hint="이 이메일로 콘솔에 로그인하면 이 Application을 같이 관리할 수 있어요. 아직 가입 전이어도 돼요."
           >
             <div className="flex flex-col gap-3 sm:flex-row">
               <Input
