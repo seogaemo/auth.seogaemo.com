@@ -189,6 +189,8 @@ Hosted Login에만 쓴다. `tailwind.config.ts`의 `theme.extend`나 `globals.cs
 - 사이드바: 폭 256px, 접으면 52px (아이콘만). 메뉴 항목은 `p-2 rounded-lg`, 선택 상태는 `bg-white/10`. 글자는 `text-footnote` 흰색.
 - 사이드바는 위치에 따라 내용이 바뀐다.
   - 서비스 밖(목록, 새로 만들기): "Applications" 메뉴 하나와 "내 Application" 바로가기 목록 (20px 로고 + 이름). 서비스 메뉴는 보여주지 않는다.
+  - md 미만(폰): 사이드바 대신 위에 높이 56px 검은 바(워드마크 + 메뉴 버튼). 버튼을 누르면 같은 내용을 왼쪽 280px 서랍(`<dialog>`, showModal)으로 연다. Esc, 배경 클릭, 페이지 이동이면 닫힌다.
+  - Application 목록은 카드 대신 목록 한 장: 위 2px 검은 선, 줄마다 아래 1px 선. lg 이상은 이름, Client ID, 인증 방식, 사용자, 만든 날 칸. 좁으면 이름 아래 Client ID와 한 줄 요약.
   - 서비스 안: 서비스 로고, 이름, "서비스 변경하기" 아래에 Application, Branding, User Management, Admins.
 - 콘텐츠: 최대 폭 640px, 가운데 정렬. 상단에 뒤로가기 링크, 64px 아래에 페이지 제목이 온다.
 - 사용자 테이블처럼 넓은 화면이 필요한 페이지는 640px 제한을 풀고 좌우 24px 여백만 둔다.
