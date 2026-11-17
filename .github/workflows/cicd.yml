@@ -35,11 +35,14 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Check login providers
+        working-directory: apps/auth
         run: pnpm run check:providers
 
       - name: Apply D1 migrations
+        working-directory: apps/auth
         run: pnpm run db:migrate:remote
 
       # opennextjs-cloudflare build로 .open-next를 만든 뒤 wrangler deploy까지 한다.
       - name: Build and deploy
+        working-directory: apps/auth
         run: pnpm run deploy
