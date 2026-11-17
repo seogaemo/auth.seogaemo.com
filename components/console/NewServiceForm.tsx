@@ -37,7 +37,7 @@ export function NewServiceForm() {
           </Notice>
         </Block>
         <div>
-          <ButtonLink href={`/console/services/${state.serviceId}`}>앱 설정으로 가기</ButtonLink>
+          <ButtonLink href={`/console/services/${state.serviceId}?created=1`}>연동하러 가기</ButtonLink>
         </div>
       </div>
     );

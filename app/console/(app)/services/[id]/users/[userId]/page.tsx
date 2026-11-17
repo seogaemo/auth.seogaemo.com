@@ -49,7 +49,7 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
 
   return (
     <Page>
-      <BackLink href={`/console/services/${service.id}/users`} label="사용자 관리" />
+      <BackLink href={`/console/services/${service.id}/users`} label="사용자" />
       <div className="flex flex-col gap-8">
         <ServiceHeader id={service.id} name={service.name} hasLogo={!!service.logoKey} title={label} subtitle="사용자 상세" />
 

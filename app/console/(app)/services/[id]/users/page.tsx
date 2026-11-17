@@ -8,7 +8,7 @@ import { isEmailAllowed } from "@/lib/allowlist";
 import { isProvider } from "@/lib/config";
 import { requireServiceAccess } from "@/lib/console/session";
 
-export const metadata = { title: "사용자 관리" };
+export const metadata = { title: "사용자" };
 
 const PAGE_SIZE = 50;
 const dateFormat = new Intl.DateTimeFormat("ko-KR", {
@@ -59,7 +59,7 @@ export default async function UsersPage({
           id={service.id}
           name={service.name}
           hasLogo={!!service.logoKey}
-          subtitle={`사용자 관리 / ${q ? "찾은" : "전체"} 사용자 ${total.toLocaleString("ko-KR")}명`}
+          subtitle={`${q ? "찾은" : "전체"} 사용자 ${total.toLocaleString("ko-KR")}명`}
         />
 
         <form role="search" action={base} className="flex gap-2">

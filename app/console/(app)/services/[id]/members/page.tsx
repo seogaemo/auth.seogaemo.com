@@ -1,4 +1,7 @@
+import Link from "next/link";
+
 import { getPrisma } from "@/cloudflare";
+import { ActivityList } from "@/components/console/ActivityList";
 import { AddMemberForm } from "@/components/console/AddMemberForm";
 import { RemoveMemberButton } from "@/components/console/RemoveMemberButton";
 import { ServiceHeader } from "@/components/console/ServiceHeader";
@@ -34,11 +37,12 @@ export default async function MembersPage({ params }: { params: Promise<{ id: st
   const { developer, service, isOwner } = await requireServiceAccess(id);
 
   const prisma = getPrisma();
-  const [owner, members] = await Promise.all([
+  const [owner, members, recent] = await Promise.all([
     service.ownerId
       ? prisma.user.findUnique({ where: { id: service.ownerId }, select: { email: true, name: true } })
       : null,
     prisma.serviceMember.findMany({ where: { serviceId: service.id }, orderBy: { createdAt: "asc" } }),
+    prisma.auditLog.findMany({ where: { serviceId: service.id }, orderBy: { createdAt: "desc" }, take: 5 }),
   ]);
   // 아직 콘솔에 가입하지 않은 이메일 표시용
   const joined = new Set(
@@ -58,7 +62,7 @@ export default async function MembersPage({ params }: { params: Promise<{ id: st
 
         <Block
           title="관리자"
-          description="관리자는 설정, 브랜딩, 사용자 관리를 할 수 있어요. 앱 삭제와 관리자 추가는 소유자만 해요."
+          description="관리자는 사용자, 설정, 브랜딩을 관리할 수 있어요. 앱 삭제와 관리자 추가는 소유자만 해요."
         >
           <ul className="flex flex-col gap-2">
             <MemberRow
@@ -102,6 +106,18 @@ export default async function MembersPage({ params }: { params: Promise<{ id: st
             <AddMemberForm serviceId={service.id} />
           </Block>
         )}
+
+        <Block title="최근 활동" description="관리자들이 이 앱에서 바꾼 것. 1년 동안 남아요.">
+          <ActivityList logs={recent} />
+          {recent.length > 0 && (
+            <Link
+              href={`/console/services/${service.id}/members/activity`}
+              className="self-start rounded-sm text-footnote text-content-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--content-accent)]"
+            >
+              활동 기록 전체 보기
+            </Link>
+          )}
+        </Block>
       </div>
     </Page>
   );

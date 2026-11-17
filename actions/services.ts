@@ -94,6 +94,8 @@ export async function updateSettings(
   });
   await recordAudit(serviceId, developer, "settings.update");
 
+  revalidatePath(`/console/services/${serviceId}/settings`);
+  // 이름과 Redirect URI는 개요(예시 코드)에도 보인다
   revalidatePath(`/console/services/${serviceId}`);
   return { message: "저장했어요." };
 }
@@ -211,7 +213,7 @@ export async function updateAllowlist(
 
   await recordAudit(serviceId, developer, "access.update");
 
-  revalidatePath(`/console/services/${serviceId}/access`);
+  revalidatePath(`/console/services/${serviceId}/settings`);
   return {
     message: restrict
       ? `저장했어요. 이제 허용 목록의 ${parsed.entries.length}개 항목만 로그인할 수 있어요.`
@@ -268,6 +270,6 @@ export async function updateSignupSettings(serviceId: string, _prev: ActionState
     },
   });
   await recordAudit(serviceId, developer, "signup.update");
-  revalidatePath(`/console/services/${serviceId}`);
+  revalidatePath(`/console/services/${serviceId}/settings`);
   return { message: "저장했어요." };
 }

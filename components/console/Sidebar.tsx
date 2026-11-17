@@ -207,17 +207,14 @@ function HomeSection({ services, pathname }: { services: SidebarService[]; pathn
 function ServiceSection({ current, pathname }: { current: SidebarService; pathname: string }) {
   const base = `/console/services/${current.id}`;
   const items = [
-    { href: base, icon: "captive_portal", label: "설정" },
+    { href: base, icon: "stats", label: "개요" },
+    { href: `${base}/users`, icon: "group", label: "사용자" },
+    { href: `${base}/settings`, icon: "captive_portal", label: "설정" },
     { href: `${base}/branding`, icon: "shapes", label: "브랜딩" },
-    { href: `${base}/users`, icon: "group", label: "사용자 관리" },
-    { href: `${base}/access`, icon: "lock-white", label: "접근 제한" },
-    { href: `${base}/stats`, icon: "stats", label: "통계" },
-    { href: `${base}/activity`, icon: "activity", label: "활동 기록" },
     { href: `${base}/members`, icon: "admin", label: "관리자" },
-    { href: `${base}/guide`, icon: "guide", label: "연동 가이드" },
   ].map((item) => ({
     ...item,
-    // 사용자 상세(/users/[id])에서도 "사용자 관리"를 켠다
+    // 사용자 상세(/users/[id]), 활동 기록(/members/activity)에서도 위 메뉴를 켠다
     active: pathname === item.href || (item.href !== base && pathname.startsWith(`${item.href}/`)),
   }));
 
