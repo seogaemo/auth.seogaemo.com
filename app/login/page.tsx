@@ -6,7 +6,9 @@ import { LoginShell } from "@/components/login/LoginShell";
 import { ProviderButton, ProviderIconButton } from "@/components/login/ProviderButton";
 import { ServiceHeading } from "@/components/login/ServiceHeading";
 import { isSocialProvider } from "@/lib/config";
+import { LegalLinks } from "@/components/login/LegalLinks";
 import { loadLoginContext, loadLoginEmail } from "@/lib/login-context";
+import { turnstileSiteKey } from "@/lib/turnstile";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "로그인" };
@@ -36,7 +38,13 @@ export default async function LoginPage() {
       <ServiceHeading name={service.name} logoUrl={logoUrl} />
 
       <div className="flex flex-col gap-5">
-        {emailFirst && <EmailStartForm defaultEmail={await loadLoginEmail()} canSignup={password} />}
+        {emailFirst && (
+          <EmailStartForm
+            defaultEmail={await loadLoginEmail(transaction.loginHint)}
+            canSignup={password && service.signupEnabled}
+            turnstileKey={turnstileSiteKey()}
+          />
+        )}
 
         {socials.length > 0 &&
           (emailFirst ? (
@@ -59,6 +67,7 @@ export default async function LoginPage() {
         <p className="text-label text-quaternary">
           {service.name}에 전달되는 정보: {sharedInfo(transaction.scope)}
         </p>
+        <LegalLinks service={service} />
       </div>
     </LoginShell>
   );

@@ -32,8 +32,12 @@ export async function issueTokens(params: {
   user: User;
   scope: string;
   nonce?: string | null;
+  /** 이 토큰을 만든 로그인 세션. 로그아웃하면 refresh token이 같이 끊긴다. */
+  sessionId?: string | null;
+  /** 마지막 직접 인증 시각 (id_token auth_time) */
+  authTime?: Date | null;
 }) {
-  const { service, user, scope, nonce } = params;
+  const { service, user, scope, nonce, sessionId, authTime } = params;
 
   const refreshToken = randomToken();
   await getPrisma().refreshToken.create({
@@ -42,6 +46,7 @@ export async function issueTokens(params: {
       serviceId: service.id,
       userId: user.id,
       scope,
+      sessionId: sessionId ?? null,
       expiresAt: new Date(Date.now() + TTL.refreshTokenMs),
     },
   });
@@ -59,6 +64,8 @@ export async function issueTokens(params: {
         sub: user.id,
         aud: service.clientId,
         ...(nonce ? { nonce } : {}),
+        ...(sessionId ? { sid: sessionId } : {}),
+        ...(authTime ? { auth_time: Math.floor(authTime.getTime() / 1000) } : {}),
       })
     : undefined;
 

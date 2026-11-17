@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useState, useTransition } from "react";
 
 import {
+  continueAsCurrent,
   continueWithEmail,
   emailCodeInstead,
   passwordLogin,
@@ -13,6 +14,7 @@ import {
   type LoginFormState,
 } from "@/actions/login";
 import { LoginButton, LoginError, LoginField, LoginTextLink } from "./fields";
+import { Turnstile } from "./Turnstile";
 
 /** 액션이 이동할 주소를 돌려주면 브라우저가 직접 이동한다 (외부 redirect_uri 포함) */
 function useNavigate(state: LoginFormState) {
@@ -23,7 +25,15 @@ function useNavigate(state: LoginFormState) {
 }
 
 /** 첫 단계: 이메일만 받는다. 다음 화면은 서버가 계정에 맞춰 고른다. */
-export function EmailStartForm({ defaultEmail, canSignup }: { defaultEmail?: string; canSignup: boolean }) {
+export function EmailStartForm({
+  defaultEmail,
+  canSignup,
+  turnstileKey,
+}: {
+  defaultEmail?: string;
+  canSignup: boolean;
+  turnstileKey?: string | null;
+}) {
   const [state, action, pending] = useActionState<LoginFormState, FormData>(continueWithEmail, null);
   const navigating = useNavigate(state);
 
@@ -40,6 +50,7 @@ export function EmailStartForm({ defaultEmail, canSignup }: { defaultEmail?: str
         defaultValue={state?.email ?? defaultEmail}
         placeholder="name@example.com"
       />
+      {turnstileKey && <Turnstile key={JSON.stringify(state)} siteKey={turnstileKey} />}
       <div className="pt-1">
         <LoginButton type="submit" disabled={pending || navigating}>
           {pending ? "확인 중" : "계속하기"}
@@ -99,7 +110,7 @@ export function EmailCodeInsteadForm() {
   );
 }
 
-export function SignupForm({ defaultEmail }: { defaultEmail?: string }) {
+export function SignupForm({ defaultEmail, turnstileKey }: { defaultEmail?: string; turnstileKey?: string | null }) {
   const [state, action, pending] = useActionState<LoginFormState, FormData>(startSignup, null);
   const navigating = useNavigate(state);
 
@@ -126,6 +137,7 @@ export function SignupForm({ defaultEmail }: { defaultEmail?: string }) {
         minLength={8}
         hint="8자 이상"
       />
+      {turnstileKey && <Turnstile key={JSON.stringify(state)} siteKey={turnstileKey} />}
       <div className="pt-1">
         <LoginButton type="submit" disabled={pending || navigating}>
           {pending ? "메일 보내는 중" : "인증 코드 받기"}
@@ -136,7 +148,7 @@ export function SignupForm({ defaultEmail }: { defaultEmail?: string }) {
 }
 
 /** 비밀번호 재설정: 이메일을 받아 코드를 보낸다 */
-export function ResetRequestForm({ defaultEmail }: { defaultEmail?: string }) {
+export function ResetRequestForm({ defaultEmail, turnstileKey }: { defaultEmail?: string; turnstileKey?: string | null }) {
   const [state, action, pending] = useActionState<LoginFormState, FormData>(startReset, null);
   const navigating = useNavigate(state);
 
@@ -153,6 +165,7 @@ export function ResetRequestForm({ defaultEmail }: { defaultEmail?: string }) {
         defaultValue={state?.email ?? defaultEmail}
         placeholder="name@example.com"
       />
+      {turnstileKey && <Turnstile key={JSON.stringify(state)} siteKey={turnstileKey} />}
       <div className="pt-1">
         <LoginButton type="submit" disabled={pending || navigating}>
           {pending ? "메일 보내는 중" : "인증 코드 받기"}
@@ -227,6 +240,24 @@ export function VerifyCodeForm({ needsNewPassword }: { needsNewPassword: boolean
           {resending ? "보내는 중" : "코드 다시 받기"}
         </button>
       </div>
+    </form>
+  );
+}
+
+/** 로그인된 계정으로 계속 (계정 선택 화면) */
+export function ContinueAsForm({ label }: { label: string }) {
+  const [state, action, pending] = useActionState<LoginFormState, FormData>(() => continueAsCurrent(), null);
+  const navigating = useNavigate(state);
+
+  return (
+    <form action={action} className="flex flex-col gap-3">
+      <LoginError>{state?.error}</LoginError>
+      <p className="border-2 border-[rgba(0,0,0,0.12)] px-3 py-3 font-mono text-[15px] tracking-[-0.02em] text-[#101016] [overflow-wrap:anywhere]">
+        {label}
+      </p>
+      <LoginButton type="submit" disabled={pending || navigating}>
+        {pending ? "확인 중" : "이 계정으로 계속"}
+      </LoginButton>
     </form>
   );
 }

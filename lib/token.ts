@@ -1,5 +1,7 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import {
+  createLocalJWKSet,
+  errors,
   importJWK,
   jwtVerify,
   SignJWT,
@@ -26,6 +28,9 @@ export interface IdTokenClaims extends JWTPayload {
   sub: string;
   aud: string;
   nonce?: string;
+  /** 로그인 세션 id (RP-Initiated Logout의 id_token_hint로 돌아온다) */
+  sid?: string;
+  auth_time?: number;
   email?: string;
   email_verified?: boolean;
   name?: string;
@@ -86,6 +91,35 @@ async function loadKeys(source: string): Promise<SigningKeys> {
   return { kid: jwk.kid, privateKey, publicKey, publicJwk };
 }
 
+/**
+ * 검증에 쓰는 공개키들: 지금 서명 키 + 교체 전 키(JWT_RETIRED_JWKS, 공개 JWK 배열).
+ * 키를 바꾼 뒤에도 이미 나간 토큰과 콘솔 세션이 만료될 때까지 통과하게 한다 (README "서명 키 교체").
+ */
+function retiredJwks(): JWK[] {
+  const source = getCloudflareContext().env.JWT_RETIRED_JWKS;
+  if (!source) return [];
+  try {
+    const parsed = JSON.parse(source) as JWK[] | { keys: JWK[] };
+    const keys = Array.isArray(parsed) ? parsed : parsed.keys;
+    // 공개 부분만 남긴다 (실수로 개인키를 넣어도 내보내지 않게)
+    return keys
+      .filter((k) => k.kid && k.kty === "EC")
+      .map((k) => ({ kty: k.kty, crv: k.crv, x: k.x, y: k.y, kid: k.kid, alg: ALG, use: "sig" }));
+  } catch {
+    console.error("JWT_RETIRED_JWKS is not valid JSON");
+    return [];
+  }
+}
+
+async function publicKeys(): Promise<JWK[]> {
+  const { publicJwk } = await getSigningKeys();
+  return [publicJwk, ...retiredJwks().filter((k) => k.kid !== publicJwk.kid)];
+}
+
+async function keyResolver() {
+  return createLocalJWKSet({ keys: await publicKeys() });
+}
+
 async function sign(
   { sub, aud, ...rest }: JWTPayload & { sub: string; aud: string },
   typ: string,
@@ -113,8 +147,7 @@ export function signIdToken(claims: IdTokenClaims) {
 
 /** 서명, 만료, 발급자, (주어진 경우) audience를 검증한다. 실패하면 예외를 던진다. */
 export async function verifyAccessToken(token: string, audience?: string) {
-  const { publicKey } = await getSigningKeys();
-  const { payload } = await jwtVerify<AccessTokenClaims>(token, publicKey, {
+  const { payload } = await jwtVerify<AccessTokenClaims>(token, await keyResolver(), {
     issuer: getIssuer(),
     audience,
     algorithms: [ALG],
@@ -140,8 +173,7 @@ export function signConsoleSession(userId: string) {
 }
 
 export async function verifyConsoleSession(token: string) {
-  const { publicKey } = await getSigningKeys();
-  const { payload } = await jwtVerify(token, publicKey, {
+  const { payload } = await jwtVerify(token, await keyResolver(), {
     issuer: getIssuer(),
     audience: consoleAudience(),
     algorithms: [ALG],
@@ -150,8 +182,25 @@ export async function verifyConsoleSession(token: string) {
   return payload.sub ?? null;
 }
 
-/** /.well-known/jwks.json 응답 */
+/**
+ * 로그아웃의 id_token_hint. 우리가 서명한 id_token이면 만료됐어도 받는다 (OIDC RP-Initiated Logout 2).
+ * 아니면 null.
+ */
+export async function verifyIdTokenHint(token: string): Promise<IdTokenClaims | null> {
+  try {
+    const { payload } = await jwtVerify<IdTokenClaims>(token, await keyResolver(), {
+      issuer: getIssuer(),
+      algorithms: [ALG],
+      typ: "JWT",
+    });
+    return payload;
+  } catch (error) {
+    if (error instanceof errors.JWTExpired) return error.payload as IdTokenClaims;
+    return null;
+  }
+}
+
+/** /.well-known/jwks.json 응답 (교체 전 키도 함께) */
 export async function getJwks() {
-  const { publicJwk } = await getSigningKeys();
-  return { keys: [publicJwk] };
+  return { keys: await publicKeys() };
 }

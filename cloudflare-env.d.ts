@@ -7,6 +7,15 @@ interface CloudflareEnv {
 
   /** EC P-256 개인키 JWK (kid 포함). `wrangler secret put JWT_PRIVATE_JWK`로 등록한다. */
   JWT_PRIVATE_JWK: string;
+  /** 교체 전 서명 키의 공개 JWK 배열 (JSON). 키 교체 뒤 옛 토큰이 만료될 때까지만 둔다. */
+  JWT_RETIRED_JWKS?: string;
+
+  /** IP별 로그인 시도 제한 (Workers Rate Limiting). 없으면 제한하지 않는다. */
+  LOGIN_LIMITER?: RateLimit;
+
+  /** Cloudflare Turnstile. 둘 다 있어야 켜진다. */
+  TURNSTILE_SITE_KEY?: string;
+  TURNSTILE_SECRET_KEY?: string;
 
   /** 비어 있으면 해당 로그인 수단은 꺼진 것으로 본다. */
   GOOGLE_CLIENT_ID?: string;

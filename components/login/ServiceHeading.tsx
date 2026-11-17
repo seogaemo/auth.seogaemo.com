@@ -3,12 +3,15 @@ export function ServiceHeading({
   name,
   logoUrl,
   action = "로그인하기",
+  title,
   description,
 }: {
   name: string;
   logoUrl?: string | null;
   /** 두 번째 줄 */
   action?: string;
+  /** "{서비스}에 / {action}" 대신 쓸 제목 */
+  title?: React.ReactNode;
   description?: React.ReactNode;
 }) {
   return (
@@ -22,9 +25,13 @@ export function ServiceHeading({
         </div>
       )}
       <h1 className="font-mono text-[24px] font-[450] leading-[1.35] tracking-[-0.04em] text-black">
-        {name}에
-        <br />
-        {action}
+        {title ?? (
+          <>
+            {name}에
+            <br />
+            {action}
+          </>
+        )}
       </h1>
       {description && <p className="text-footnote text-secondary">{description}</p>}
     </header>

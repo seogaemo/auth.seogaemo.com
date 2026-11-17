@@ -30,6 +30,14 @@
       "database_id": "170e7f8e-2caa-416e-a969-ff22e7ccc3a9"
     }
   ],
+	// IP별 로그인 시도 제한 (lib/rate-limit.ts). namespace_id는 계정 안에서 이 제한을 구분하는 아무 숫자다.
+	"ratelimits": [
+		{
+			"name": "LOGIN_LIMITER",
+			"namespace_id": "1001",
+			"simple": { "limit": 30, "period": 60 }
+		}
+	],
 	"r2_buckets": [
     {
       "binding": "R2",

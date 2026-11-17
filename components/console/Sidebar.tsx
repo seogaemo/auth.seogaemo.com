@@ -211,8 +211,15 @@ function ServiceSection({ current, pathname }: { current: SidebarService; pathna
     { href: `${base}/branding`, icon: "shapes", label: "브랜딩" },
     { href: `${base}/users`, icon: "group", label: "사용자 관리" },
     { href: `${base}/access`, icon: "lock-white", label: "접근 제한" },
+    { href: `${base}/stats`, icon: "stats", label: "통계" },
+    { href: `${base}/activity`, icon: "activity", label: "활동 기록" },
     { href: `${base}/members`, icon: "admin", label: "관리자" },
-  ].map((item) => ({ ...item, active: pathname === item.href }));
+    { href: `${base}/guide`, icon: "guide", label: "연동 가이드" },
+  ].map((item) => ({
+    ...item,
+    // 사용자 상세(/users/[id])에서도 "사용자 관리"를 켠다
+    active: pathname === item.href || (item.href !== base && pathname.startsWith(`${item.href}/`)),
+  }));
 
   return (
     <>

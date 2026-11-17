@@ -3,6 +3,7 @@ import { DeleteServiceForm } from "@/components/console/DeleteServiceForm";
 import { RotateSecret } from "@/components/console/RotateSecret";
 import { ServiceHeader } from "@/components/console/ServiceHeader";
 import { SettingsForm } from "@/components/console/SettingsForm";
+import { SignupSettingsForm } from "@/components/console/SignupSettingsForm";
 import { BackLink, Block, InfoRow, Notice, Page } from "@/components/console/ui";
 import { endpoint, PROVIDERS } from "@/lib/config";
 import { requireServiceAccess } from "@/lib/console/session";
@@ -50,6 +51,15 @@ export default async function ServiceSettingsPage({
             redirectUris={getRedirectUris(service)}
             providers={getProviders(service)}
             available={PROVIDERS.filter(isProviderConfigured)}
+          />
+        </Block>
+
+        <Block title="가입과 약관" description="새 가입을 받을지, 로그인 화면에 걸 약관을 정해요.">
+          <SignupSettingsForm
+            serviceId={service.id}
+            signupEnabled={service.signupEnabled}
+            termsUrl={service.termsUrl}
+            privacyUrl={service.privacyUrl}
           />
         </Block>
 

@@ -1,0 +1,100 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+
+import { getPrisma } from "@/cloudflare";
+import { checkPasswordRule } from "@/lib/email-auth";
+import { currentBrowserKey, endAllSessions, findSession } from "@/lib/oauth/session";
+import { hashPassword, verifyPassword } from "@/lib/password";
+import { isRateLimited, RATE_LIMITED_MESSAGE } from "@/lib/rate-limit";
+import { findServiceByClientId, getProviders } from "@/lib/service";
+
+export type AccountState = { error?: string; message?: string; redirectTo?: string } | null;
+
+/** 액션에서는 redirect()를 못 쓰니(OpenNext 404) 세션이 없으면 null */
+async function account(clientId: string) {
+  const service = await findServiceByClientId(clientId);
+  if (!service || service.isSystem) return null;
+  const session = await findSession(await currentBrowserKey(), service.id);
+  return session ? { service, session, user: session.user } : null;
+}
+
+const loginAgain = (clientId: string): AccountState => ({
+  redirectTo: `/account/login?client_id=${encodeURIComponent(clientId)}`,
+});
+
+/**
+ * 비밀번호 바꾸기. 비밀번호가 없는 계정(코드, 소셜 로그인)은 새로 만든다.
+ * 바꾸고 나면 이 기기 말고 다른 기기의 로그인은 끊는다.
+ */
+export async function changePassword(clientId: string, _prev: AccountState, form: FormData): Promise<AccountState> {
+  if (await isRateLimited()) return { error: RATE_LIMITED_MESSAGE };
+  const current = await account(clientId);
+  if (!current) return loginAgain(clientId);
+  const { service, session, user } = current;
+  const prisma = getPrisma();
+
+  const next = String(form.get("newPassword") ?? "");
+  const rule = checkPasswordRule(next);
+  if (rule) return { error: rule };
+
+  const identity = await prisma.identity.findFirst({ where: { userId: user.id, provider: "password" } });
+  if (identity?.passwordHash) {
+    const now = String(form.get("currentPassword") ?? "");
+    if (!now || !(await verifyPassword(now, identity.passwordHash))) {
+      return { error: "지금 비밀번호가 맞지 않아요. 다시 입력하거나, 로그아웃한 뒤 비밀번호 재설정을 하세요." };
+    }
+    await prisma.identity.update({
+      where: { id: identity.id },
+      data: { passwordHash: await hashPassword(next), failedAttempts: 0, lockedUntil: null },
+    });
+  } else {
+    if (!getProviders(service).includes("password")) {
+      return { error: "이 서비스는 비밀번호 로그인을 쓰지 않아요." };
+    }
+    if (!user.email) return { error: "확인된 이메일이 없는 계정은 비밀번호를 만들 수 없어요." };
+    await prisma.identity.create({
+      data: {
+        serviceId: service.id,
+        userId: user.id,
+        provider: "password",
+        providerUserId: user.email,
+        email: user.email,
+        passwordHash: await hashPassword(next),
+      },
+    });
+  }
+
+  await endAllSessions(service.id, user.id, session.id);
+  revalidatePath("/account");
+  return {
+    message: identity?.passwordHash
+      ? "비밀번호를 바꿨어요. 다른 기기에서는 다시 로그인해야 해요."
+      : "비밀번호를 만들었어요. 이제 이메일과 비밀번호로도 로그인할 수 있어요.",
+  };
+}
+
+/** 이 기기 말고 다른 기기의 로그인을 모두 끊는다 */
+export async function signOutOtherDevices(clientId: string): Promise<AccountState> {
+  const current = await account(clientId);
+  if (!current) return loginAgain(clientId);
+  await endAllSessions(current.service.id, current.user.id, current.session.id);
+  revalidatePath("/account");
+  return { message: "다른 기기의 로그인을 모두 끊었어요." };
+}
+
+/** 탈퇴. 확인으로 이메일(없으면 "탈퇴")을 그대로 입력받는다. 사용자, 로그인 수단, 토큰, 세션이 모두 지워진다. */
+export async function deleteAccount(clientId: string, _prev: AccountState, form: FormData): Promise<AccountState> {
+  const current = await account(clientId);
+  if (!current) return loginAgain(clientId);
+  const { service, user } = current;
+
+  const expected = user.email ?? "탈퇴";
+  if (String(form.get("confirm") ?? "").trim().toLowerCase() !== expected.toLowerCase()) {
+    return { error: `확인 칸에 다음을 그대로 입력하세요: ${expected}` };
+  }
+
+  await getPrisma().user.delete({ where: { id: user.id } });
+  // revalidatePath를 하면 지금 화면(이미 지운 사용자)을 다시 그리다 로그인으로 튄다. 이동만 한다.
+  return { redirectTo: `/account/deleted?client_id=${encodeURIComponent(service.clientId)}` };
+}

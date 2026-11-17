@@ -24,7 +24,7 @@ export async function loadLoginContext(require?: Provider) {
   };
 }
 
-/** 첫 단계에서 입력한 이메일 (화면에 미리 채우는 용도) */
-export async function loadLoginEmail() {
-  return (await cookies()).get(LOGIN_EMAIL_COOKIE)?.value ?? undefined;
+/** 첫 단계에서 입력한 이메일, 없으면 서비스가 보낸 login_hint (화면에 미리 채우는 용도) */
+export async function loadLoginEmail(loginHint?: string | null) {
+  return (await cookies()).get(LOGIN_EMAIL_COOKIE)?.value ?? loginHint ?? undefined;
 }

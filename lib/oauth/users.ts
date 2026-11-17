@@ -1,5 +1,7 @@
 import { getPrisma } from "@/cloudflare";
 import type { Provider } from "../config";
+import { recordLoginEvent } from "../events";
+import { signupBlock, SignupBlockedError } from "../signup-policy";
 import type { ProviderProfile } from "./providers";
 
 /**
@@ -10,6 +12,7 @@ import type { ProviderProfile } from "./providers";
  * 3. 둘 다 아니면 새 사용자
  *
  * 검증되지 않은 이메일로는 연결하지 않는다. 남의 이메일로 가입해 계정을 가로채는 것을 막기 위해서다.
+ * 새 사용자를 만들 때는 서비스의 가입 설정(가입 받기, 허용 도메인)을 따른다. 막히면 SignupBlockedError.
  */
 export async function upsertUserFromProfile(
   serviceId: string,
@@ -48,16 +51,22 @@ export async function upsertUserFromProfile(
       })
     : null;
 
-  const user =
-    existing ??
-    (await prisma.user.create({
+  let user = existing;
+  if (!user) {
+    const service = await prisma.service.findUniqueOrThrow({ where: { id: serviceId } });
+    const block = signupBlock(service);
+    if (block) throw new SignupBlockedError(block);
+
+    user = await prisma.user.create({
       data: {
         serviceId,
         email: verifiedEmail,
         name: profile.name,
         image: profile.image,
       },
-    }));
+    });
+    await recordLoginEvent({ serviceId, type: "signup", userId: user.id, email: user.email, method: provider });
+  }
 
   await prisma.identity.create({
     data: {

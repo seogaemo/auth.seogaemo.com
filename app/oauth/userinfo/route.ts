@@ -27,7 +27,7 @@ export async function GET(request: Request) {
     where: { id: claims.sub },
     include: { service: true },
   });
-  if (!user || user.service.clientId !== claims.client_id) return unauthorized();
+  if (!user || user.service.clientId !== claims.client_id || user.disabledAt) return unauthorized();
 
   return json(userClaims(user, claims.scope));
 }

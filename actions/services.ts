@@ -7,12 +7,15 @@ import { parseAllowlist } from "@/lib/allowlist";
 import { requireDeveloper, requireServiceAccess } from "@/lib/console/session";
 import {
   parseHexColor,
+  parseOptionalHttpsUrl,
   parseProviders,
   parseRedirectUris,
   parseServiceName,
 } from "@/lib/console/validation";
 import { hashSecret, randomToken } from "@/lib/crypto";
 import { PROVIDERS } from "@/lib/config";
+import { recordAudit } from "@/lib/events";
+import { endAllSessions } from "@/lib/oauth/session";
 
 export type ActionState = {
   error?: string;
@@ -72,7 +75,7 @@ export async function updateSettings(
   _prev: ActionState,
   form: FormData,
 ): Promise<ActionState> {
-  await requireServiceAccess(serviceId);
+  const { developer } = await requireServiceAccess(serviceId);
   const fields = echo(form, "name", "redirectUris");
 
   const parsedName = parseServiceName(form.get("name"));
@@ -89,13 +92,14 @@ export async function updateSettings(
       providers: parseProviders(form.getAll("providers")),
     },
   });
+  await recordAudit(serviceId, developer, "settings.update");
 
   revalidatePath(`/console/services/${serviceId}`);
   return { message: "저장했어요." };
 }
 
 export async function rotateClientSecret(serviceId: string): Promise<ActionState> {
-  const { service } = await requireServiceAccess(serviceId);
+  const { service, developer } = await requireServiceAccess(serviceId);
   if (service.clientSecretHash === "") {
     return { error: "SPA, 모바일 앱은 Client Secret을 쓰지 않아요." };
   }
@@ -105,6 +109,7 @@ export async function rotateClientSecret(serviceId: string): Promise<ActionState
     where: { id: serviceId },
     data: { clientSecretHash: await hashSecret(secret) },
   });
+  await recordAudit(serviceId, developer, "secret.rotate");
   return { secret };
 }
 
@@ -133,7 +138,7 @@ export async function updateBranding(
   _prev: ActionState,
   form: FormData,
 ): Promise<ActionState> {
-  const { service } = await requireServiceAccess(serviceId);
+  const { service, developer } = await requireServiceAccess(serviceId);
 
   const fields = echo(form, "brandColor", "brandBackground");
   const brand = parseHexColor(form.get("brandColor"));
@@ -163,15 +168,24 @@ export async function updateBranding(
     where: { id: serviceId },
     data: { brandColor: brand.color, brandBackground: background.color, logoKey },
   });
+  await recordAudit(serviceId, developer, "branding.update");
 
   revalidatePath(`/console/services/${serviceId}/branding`);
   return { message: "저장했어요." };
 }
 
+/** serviceId 조건을 같이 걸어 다른 서비스의 사용자를 건드리지 못하게 한다 */
+async function serviceUser(serviceId: string, userId: string) {
+  const access = await requireServiceAccess(serviceId);
+  const user = await getPrisma().user.findFirst({ where: { id: userId, serviceId } });
+  return { ...access, user };
+}
+
 export async function deleteServiceUser(serviceId: string, userId: string) {
-  await requireServiceAccess(serviceId);
-  // serviceId 조건을 같이 걸어 다른 서비스의 사용자를 지우지 못하게 한다
-  await getPrisma().user.deleteMany({ where: { id: userId, serviceId } });
+  const { developer, user } = await serviceUser(serviceId, userId);
+  if (!user) return;
+  await getPrisma().user.delete({ where: { id: user.id } });
+  await recordAudit(serviceId, developer, "user.delete", user.email ?? user.id);
   revalidatePath(`/console/services/${serviceId}/users`);
 }
 
@@ -180,7 +194,7 @@ export async function updateAllowlist(
   _prev: ActionState,
   form: FormData,
 ): Promise<ActionState> {
-  await requireServiceAccess(serviceId);
+  const { developer } = await requireServiceAccess(serviceId);
   const restrict = form.get("restrictLogin") === "on";
   const fields = { ...echo(form, "allowedEmails"), restrictLogin: restrict ? "on" : "" };
 
@@ -195,10 +209,65 @@ export async function updateAllowlist(
     data: { restrictLogin: restrict, allowedEmails: parsed.entries },
   });
 
+  await recordAudit(serviceId, developer, "access.update");
+
   revalidatePath(`/console/services/${serviceId}/access`);
   return {
     message: restrict
       ? `저장했어요. 이제 허용 목록의 ${parsed.entries.length}개 항목만 로그인할 수 있어요.`
       : "저장했어요. 누구나 로그인할 수 있어요.",
   };
+}
+
+/** 상세 화면에서 지운 뒤에는 목록으로 이동한다 (지운 사용자 화면을 다시 그리지 않게) */
+export async function deleteServiceUserFromDetail(serviceId: string, userId: string): Promise<ActionState> {
+  const { developer, user } = await serviceUser(serviceId, userId);
+  if (user) {
+    await getPrisma().user.delete({ where: { id: user.id } });
+    await recordAudit(serviceId, developer, "user.delete", user.email ?? user.id);
+  }
+  return { redirectTo: `/console/services/${serviceId}/users` };
+}
+
+/** 정지: 로그인, 토큰 갱신, userinfo를 막고 지금 세션과 토큰을 모두 끊는다. 해제하면 다시 로그인할 수 있다. */
+export async function setUserDisabled(serviceId: string, userId: string, disabled: boolean): Promise<ActionState> {
+  const { developer, user } = await serviceUser(serviceId, userId);
+  if (!user) return { error: "이미 지워진 사용자예요. 목록으로 돌아가세요." };
+  await getPrisma().user.update({ where: { id: user.id }, data: { disabledAt: disabled ? new Date() : null } });
+  if (disabled) await endAllSessions(serviceId, user.id);
+  await recordAudit(serviceId, developer, disabled ? "user.disable" : "user.enable", user.email ?? user.id);
+  revalidatePath(`/console/services/${serviceId}/users/${userId}`);
+  return { message: disabled ? "정지했어요. 이 사용자의 로그인과 토큰을 모두 끊었어요." : "정지를 풀었어요. 다시 로그인할 수 있어요." };
+}
+
+export async function revokeUserSessions(serviceId: string, userId: string): Promise<ActionState> {
+  const { developer, user } = await serviceUser(serviceId, userId);
+  if (!user) return { error: "이미 지워진 사용자예요. 목록으로 돌아가세요." };
+  await endAllSessions(serviceId, user.id);
+  await recordAudit(serviceId, developer, "user.sessions.revoke", user.email ?? user.id);
+  revalidatePath(`/console/services/${serviceId}/users/${userId}`);
+  return { message: "모든 기기의 로그인과 refresh token을 끊었어요. 다음 요청부터 다시 로그인해야 해요." };
+}
+
+/** 가입 설정과 약관 링크 */
+export async function updateSignupSettings(serviceId: string, _prev: ActionState, form: FormData): Promise<ActionState> {
+  const { developer } = await requireServiceAccess(serviceId);
+  const fields = echo(form, "termsUrl", "privacyUrl");
+
+  const terms = parseOptionalHttpsUrl(form.get("termsUrl"), "이용약관");
+  if ("error" in terms) return { error: terms.error, fields };
+  const privacy = parseOptionalHttpsUrl(form.get("privacyUrl"), "개인정보 처리방침");
+  if ("error" in privacy) return { error: privacy.error, fields };
+
+  await getPrisma().service.update({
+    where: { id: serviceId },
+    data: {
+      signupEnabled: form.get("signupEnabled") === "on",
+      termsUrl: terms.url,
+      privacyUrl: privacy.url,
+    },
+  });
+  await recordAudit(serviceId, developer, "signup.update");
+  revalidatePath(`/console/services/${serviceId}`);
+  return { message: "저장했어요." };
 }

@@ -43,8 +43,16 @@ async function exchangeAuthorizationCode(service: Service, form: URLSearchParams
   if (!result.ok) return oauthError(result.error, result.description);
 
   const { record } = result;
+  if (record.user.disabledAt) return oauthError("invalid_grant", "user is disabled");
   return json(
-    await issueTokens({ service, user: record.user, scope: record.scope, nonce: record.nonce }),
+    await issueTokens({
+      service,
+      user: record.user,
+      scope: record.scope,
+      nonce: record.nonce,
+      sessionId: record.sessionId,
+      authTime: record.authTime,
+    }),
   );
 }
 
@@ -71,6 +79,7 @@ async function rotateRefreshToken(service: Service, form: URLSearchParams) {
   if (record.expiresAt < new Date()) {
     return oauthError("invalid_grant", "refresh token expired");
   }
+  if (record.user.disabledAt) return oauthError("invalid_grant", "user is disabled");
   // 허용 목록이 켜지거나 바뀌어 목록 밖이 된 사용자는 더 이어 쓸 수 없다
   if (!isEmailAllowed(service, record.user.email)) {
     await revokeAllRefreshTokens(record.serviceId, record.userId);
@@ -94,5 +103,5 @@ async function rotateRefreshToken(service: Service, form: URLSearchParams) {
   }
   const scope = requested?.length ? requested.join(" ") : record.scope;
 
-  return json(await issueTokens({ service, user: record.user, scope }));
+  return json(await issueTokens({ service, user: record.user, scope, sessionId: record.sessionId }));
 }

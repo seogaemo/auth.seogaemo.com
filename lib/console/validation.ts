@@ -48,3 +48,16 @@ export function parseHexColor(value: FormDataEntryValue | null): { color: string
   if (!/^#[0-9a-fA-F]{6}$/.test(color)) return { error: "색은 #2C73F4 같은 형식으로 입력하세요." };
   return { color: color.toLowerCase() };
 }
+
+/** 비워 두면 null. 있으면 https 주소여야 한다. */
+export function parseOptionalHttpsUrl(value: FormDataEntryValue | null, label: string): { url: string | null } | { error: string } {
+  const text = String(value ?? "").trim();
+  if (!text) return { url: null };
+  try {
+    const url = new URL(text);
+    if (url.protocol !== "https:") return { error: `${label} 주소는 https로 시작하게 입력하세요.` };
+    return { url: url.toString() };
+  } catch {
+    return { error: `${label} 주소를 https://example.com/terms 형식으로 입력하세요.` };
+  }
+}

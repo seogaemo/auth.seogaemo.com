@@ -176,7 +176,9 @@ export async function resetPassword(serviceId: string, email: string, password: 
   return identity.userId;
 }
 
-export type PasswordLoginResult = { ok: true; userId: string } | { ok: false; error: string };
+export type PasswordLoginResult =
+  | { ok: true; userId: string }
+  | { ok: false; error: string; reason: "wrong_password" | "locked" };
 
 const WRONG_CREDENTIALS = "이메일 또는 비밀번호가 맞지 않아요.";
 
@@ -191,10 +193,10 @@ export async function loginWithPassword(
 
   if (!identity?.passwordHash) {
     await burnPasswordTime(password);
-    return { ok: false, error: WRONG_CREDENTIALS };
+    return { ok: false, error: WRONG_CREDENTIALS, reason: "wrong_password" };
   }
   if (identity.lockedUntil && identity.lockedUntil > new Date()) {
-    return { ok: false, error: "비밀번호를 여러 번 틀려서 잠시 잠겼어요. 15분 뒤에 다시 시도하거나 비밀번호를 재설정하세요." };
+    return { ok: false, error: "비밀번호를 여러 번 틀려서 잠시 잠겼어요. 15분 뒤에 다시 시도하거나 비밀번호를 재설정하세요.", reason: "locked" };
   }
 
   if (!(await verifyPassword(password, identity.passwordHash))) {
@@ -206,7 +208,7 @@ export async function loginWithPassword(
           ? { failedAttempts: 0, lockedUntil: new Date(Date.now() + LIMITS.passwordLockMs) }
           : { failedAttempts: failed },
     });
-    return { ok: false, error: WRONG_CREDENTIALS };
+    return { ok: false, error: WRONG_CREDENTIALS, reason: "wrong_password" };
   }
 
   await prisma.identity.update({

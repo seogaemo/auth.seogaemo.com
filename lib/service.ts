@@ -36,3 +36,36 @@ export async function verifyClientSecret(service: Service, secret: string) {
   if (isPublicClient(service)) return false;
   return timingSafeEqual(await hashSecret(secret), service.clientSecretHash);
 }
+
+/**
+ * 로그아웃 뒤 돌아갈 주소. 따로 등록받지 않고, 등록된 Redirect URI와 origin(스킴, 호스트, 포트)이 같으면 허용한다.
+ * 남의 사이트로 보내는 열린 리다이렉트를 막는 데는 이것으로 충분하다.
+ */
+export function isAllowedPostLogoutUri(service: Service, uri: string) {
+  let target: URL;
+  try {
+    target = new URL(uri);
+  } catch {
+    return false;
+  }
+  if (target.hash) return false;
+  const registered = service.isSystem ? [endpoint("/console/callback")] : getRedirectUris(service);
+  return registered.some((r) => {
+    try {
+      return new URL(r).origin === target.origin;
+    } catch {
+      return false;
+    }
+  });
+}
+
+/** 등록된 첫 Redirect URI의 origin (계정 화면, 로그아웃 화면의 "돌아가기" 링크) */
+export function serviceHomeUrl(service: Service) {
+  const first = service.isSystem ? endpoint("/console") : getRedirectUris(service)[0];
+  if (!first) return null;
+  try {
+    return service.isSystem ? first : new URL(first).origin;
+  } catch {
+    return null;
+  }
+}

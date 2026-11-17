@@ -22,11 +22,17 @@ import {
   verifyEmailCode,
 } from "@/lib/email-auth";
 import type { EmailCodePurpose } from "@/lib/mail";
-import { finishLogin } from "@/lib/oauth/complete";
+import { continueWithSession, finishLogin } from "@/lib/oauth/complete";
+import { currentBrowserKey, findSession } from "@/lib/oauth/session";
+import { getPrisma } from "@/cloudflare";
 import { isProviderConfigured } from "@/lib/oauth/providers";
 import { findActiveTransaction } from "@/lib/oauth/transaction";
 import { hashPassword } from "@/lib/password";
 import { getProviders } from "@/lib/service";
+import { recordLoginEvent } from "@/lib/events";
+import { isRateLimited, RATE_LIMITED_MESSAGE } from "@/lib/rate-limit";
+import { SignupBlockedError, signupBlock, signupBlockMessage, userExists } from "@/lib/signup-policy";
+import { TURNSTILE_MESSAGE, verifyTurnstile } from "@/lib/turnstile";
 
 export type LoginFormState = {
   error?: string;
@@ -44,11 +50,35 @@ function navigate(to: string): never {
   throw new Navigate(to);
 }
 
+/**
+ * 액션 공통: IP별 시도 제한을 먼저 보고, 본문에서 던진 이동(Navigate)을 응답으로 바꾼다.
+ */
 function run(fn: () => Promise<LoginFormState>): Promise<LoginFormState> {
-  return fn().catch((error) => {
+  return (async () => {
+    if (await isRateLimited()) {
+      const transaction = await currentTransaction();
+      if (transaction) {
+        await recordLoginEvent({ serviceId: transaction.serviceId, type: "failure", reason: "rate_limited" });
+      }
+      return { error: RATE_LIMITED_MESSAGE };
+    }
+    return fn();
+  })().catch((error) => {
     if (error instanceof Navigate) return { redirectTo: error.to };
     throw error;
   });
+}
+
+/** 가입이 막힌 경우 (가입 설정) 사용자에게 보여줄 문구 */
+function signupError(
+  transaction: NonNullable<Awaited<ReturnType<typeof currentTransaction>>>,
+  error: unknown,
+  email?: string,
+): LoginFormState {
+  if (error instanceof SignupBlockedError) {
+    return { error: signupBlockMessage(transaction.service, error.block), email };
+  }
+  throw error;
 }
 
 async function currentTransaction() {
@@ -71,8 +101,9 @@ async function requireLogin(provider: Provider) {
 async function complete(
   transaction: Parameters<typeof finishLogin>[0],
   userId: string,
+  method: Provider,
 ) {
-  const url = await finishLogin(transaction, userId);
+  const url = await finishLogin(transaction, userId, method);
   // 쿠키는 여기서 지우지 않는다. 액션에서 쿠키를 바꾸면 Next가 지금 페이지를 다시 그리는데,
   // 로그인 진행이 이미 끝나서 "만료" 화면으로 먼저 넘어가 버린다. DB의 진행 기록은
   // finishLogin에서 지워졌으니 남은 쿠키는 쓸모가 없고, 10분 뒤 사라진다.
@@ -140,12 +171,18 @@ export async function continueWithEmail(
 
     const email = normalizeEmail(form.get("email"));
     if (!email) return { error: "name@example.com 형식으로 이메일을 입력하세요." };
+    if (!(await verifyTurnstile(form))) return { error: TURNSTILE_MESSAGE, email };
     await rememberEmail(email);
     const blocked = blockedEmail(transaction, email);
     if (blocked) return blocked;
 
     if (passwordOn && (await hasPasswordAccount(transaction.serviceId, email))) {
       navigate("/login/password");
+    }
+    // 처음 보는 이메일인데 가입이 막혀 있으면 코드를 보내기 전에 알려준다
+    if (!(await userExists(transaction.serviceId, email))) {
+      const block = signupBlock(transaction.service);
+      if (block) return { error: signupBlockMessage(transaction.service, block), email };
     }
     if (emailOn) return sendLoginCodeTo(transaction, email);
     navigate("/login/signup");
@@ -191,9 +228,12 @@ export async function passwordLogin(
       email,
       password,
     );
-    if (!result.ok) return { error: result.error, email };
+    if (!result.ok) {
+      await recordLoginEvent({ serviceId: transaction.serviceId, type: "failure", email, method: "password", reason: result.reason });
+      return { error: result.error, email };
+    }
 
-    await complete(transaction, result.userId);
+    await complete(transaction, result.userId, "password");
     return null;
   });
 }
@@ -207,10 +247,15 @@ export async function startSignup(
     const email = normalizeEmail(form.get("email"));
     const password = String(form.get("password") ?? "");
     if (!email) return { error: "name@example.com 형식으로 이메일을 입력하세요." };
+    if (!(await verifyTurnstile(form))) return { error: TURNSTILE_MESSAGE, email };
 
     await rememberEmail(email);
     const blocked = blockedEmail(transaction, email);
     if (blocked) return blocked;
+    if (!(await userExists(transaction.serviceId, email))) {
+      const block = signupBlock(transaction.service);
+      if (block) return { error: signupBlockMessage(transaction.service, block), email };
+    }
     const rule = checkPasswordRule(password);
     if (rule) return { error: rule, email };
     if (await hasPasswordAccount(transaction.serviceId, email)) {
@@ -242,6 +287,7 @@ export async function startReset(
     const transaction = await requireLogin("password");
     const email = normalizeEmail(form.get("email"));
     if (!email) return { error: "name@example.com 형식으로 이메일을 입력하세요." };
+    if (!(await verifyTurnstile(form))) return { error: TURNSTILE_MESSAGE, email };
 
     const blocked = blockedEmail(transaction, email);
     if (blocked) return blocked;
@@ -296,23 +342,39 @@ export async function verifyCode(
       record,
       String(form.get("code") ?? ""),
     );
-    if (!result.ok) return { error: result.error };
+    if (!result.ok) {
+      await recordLoginEvent({
+        serviceId: transaction.serviceId,
+        type: "failure",
+        email: record.email,
+        method: PURPOSE_PROVIDER[purpose],
+        reason: "wrong_code",
+      });
+      return { error: result.error };
+    }
 
     let userId: string | null;
-    if (purpose === "signup") {
-      userId = (
-        await userForVerifiedEmail(
-          transaction.serviceId,
-          "password",
-          record.email,
-          record.pendingPasswordHash ?? undefined,
-        )
-      ).id;
-    } else if (purpose === "login") {
-      userId = (
-        await userForVerifiedEmail(transaction.serviceId, "email", record.email)
-      ).id;
-    } else {
+    try {
+      if (purpose === "signup") {
+        userId = (
+          await userForVerifiedEmail(
+            transaction.serviceId,
+            "password",
+            record.email,
+            record.pendingPasswordHash ?? undefined,
+          )
+        ).id;
+      } else if (purpose === "login") {
+        userId = (
+          await userForVerifiedEmail(transaction.serviceId, "email", record.email)
+        ).id;
+      } else {
+        userId = null;
+      }
+    } catch (error) {
+      return signupError(transaction, error);
+    }
+    if (purpose === "reset") {
       userId = await resetPassword(
         transaction.serviceId,
         record.email,
@@ -322,7 +384,7 @@ export async function verifyCode(
       if (!userId) return { error: "코드가 맞지 않아요. 메일로 받은 6자리를 다시 확인하세요." };
     }
 
-    await complete(transaction, userId);
+    await complete(transaction, userId!, PURPOSE_PROVIDER[purpose]);
     return null;
   });
 }
@@ -354,5 +416,18 @@ export async function resendCode(): Promise<LoginFormState> {
     if (!result.ok) return { error: result.error };
     await goToVerify(result.codeId);
     return null;
+  });
+}
+
+/** "이 계정으로 계속" (prompt=select_account): 살아 있는 세션으로 code를 준다 */
+export async function continueAsCurrent(): Promise<LoginFormState> {
+  return run(async () => {
+    const transaction = await currentTransaction();
+    if (!transaction) navigate("/login/error?code=expired");
+    const session = await findSession(await currentBrowserKey(), transaction.serviceId);
+    if (!session) navigate("/login");
+
+    await getPrisma().loginTransaction.deleteMany({ where: { id: transaction.id } });
+    navigate(await continueWithSession(transaction, session));
   });
 }

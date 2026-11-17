@@ -9,6 +9,8 @@ export const LOGIN_ERRORS = {
   provider_failed: "로그인 제공자와 연결하지 못했어요. 잠시 후 다시 시도하세요.",
   not_allowed:
     "이 서비스는 허용된 이메일로만 로그인할 수 있어요. 다른 계정으로 서비스에서 다시 시도하거나 서비스 운영자에게 문의하세요.",
+  user_disabled: "이 계정은 정지됐어요. 서비스 운영자에게 문의하세요.",
+  signup_closed: "이 서비스는 지금 새로 가입할 수 없어요. 이미 가입한 계정으로 로그인하세요.",
 } as const;
 
 export type LoginErrorCode = keyof typeof LOGIN_ERRORS;

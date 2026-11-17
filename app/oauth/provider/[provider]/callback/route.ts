@@ -9,6 +9,8 @@ import { completeProviderLogin } from "@/lib/oauth/providers";
 import { clientRedirectUrl, finishLogin } from "@/lib/oauth/complete";
 import { redirectToClientUrl } from "@/lib/oauth/transaction";
 import { upsertUserFromProfile } from "@/lib/oauth/users";
+import { recordLoginEvent } from "@/lib/events";
+import { SignupBlockedError } from "@/lib/signup-policy";
 
 export const dynamic = "force-dynamic";
 
@@ -80,10 +82,14 @@ export async function GET(
     }
     user = await upsertUserFromProfile(transaction.serviceId, provider, profile);
   } catch (error) {
-    console.error("provider login failed", provider, error);
     await prisma.loginTransaction.deleteMany({ where: { id: transaction.id } });
+    if (error instanceof SignupBlockedError) {
+      await recordLoginEvent({ serviceId: transaction.serviceId, type: "failure", method: provider, reason: `signup_${error.block}` });
+      return NextResponse.redirect(loginErrorUrl("signup_closed"), 302);
+    }
+    console.error("provider login failed", provider, error);
     return NextResponse.redirect(loginErrorUrl("provider_failed"), 302);
   }
 
-  return redirectToClientUrl(await finishLogin(transaction, user.id));
+  return redirectToClientUrl(await finishLogin(transaction, user.id, provider));
 }

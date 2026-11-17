@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { getPrisma } from "@/cloudflare";
 import { endpoint } from "@/lib/config";
 import { requireServiceAccess } from "@/lib/console/session";
+import { recordAudit } from "@/lib/events";
 import { normalizeEmail } from "@/lib/email-auth";
 import { isMailConfigured, memberAddedMessage, sendMail } from "@/lib/mail";
 import type { ActionState } from "./services";
@@ -36,6 +37,7 @@ export async function addMember(serviceId: string, _prev: ActionState, form: For
   if (existing) return { error: "이미 관리자예요.", fields };
 
   await prisma.serviceMember.create({ data: { serviceId, email, invitedById: developer.id } });
+  await recordAudit(serviceId, developer, "member.add", email);
 
   // 알림 메일은 실패해도 추가는 그대로 둔다
   let mailed = false;
@@ -70,9 +72,10 @@ export async function removeMember(serviceId: string, memberId: string): Promise
   if (!isOwner && !self) return { error: "다른 관리자는 소유자만 뺄 수 있어요." };
 
   await prisma.serviceMember.delete({ where: { id: member.id } });
+  await recordAudit(serviceId, developer, self ? "member.leave" : "member.remove", member.email);
 
   // 스스로 나가면 이 서비스 화면을 더 볼 수 없다. 다시 그리면 404가 먼저 뜨니 이동만 한다.
   if (self) return { redirectTo: "/console" };
   revalidatePath(membersPath(serviceId));
-  return { message: `${member.email}을 관리자에서 뺐어요.` };
+  return { message: `관리자에서 뺐어요: ${member.email}` };
 }

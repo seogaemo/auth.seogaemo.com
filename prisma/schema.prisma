@@ -30,6 +30,12 @@ model Service {
   /// string[]. 이메일(name@example.com) 또는 도메인(example.com). 소문자
   allowedEmails Json    @default("[]")
 
+  /// 새 사용자 가입을 받을지. 끄면 기존 사용자만 로그인한다.
+  signupEnabled Boolean @default(true)
+  /// 로그인 화면 아래에 거는 이용약관, 개인정보 처리방침 주소
+  termsUrl      String?
+  privacyUrl    String?
+
   /// 서비스를 등록한 개발자. 개발자는 시스템 서비스(콘솔)의 User다.
   ownerId String?
   owner   User?   @relation("OwnedServices", fields: [ownerId], references: [id])
@@ -41,6 +47,9 @@ model Service {
   loginTransactions  LoginTransaction[]
   emailCodes         EmailCode[]
   members            ServiceMember[]
+  sessions           Session[]
+  loginEvents        LoginEvent[]
+  auditLogs          AuditLog[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -80,9 +89,12 @@ model User {
   ownedServices      Service[]           @relation("OwnedServices")
   authorizationCodes AuthorizationCode[]
   refreshTokens      RefreshToken[]
+  sessions           Session[]
 
   createdAt   DateTime  @default(now())
   lastLoginAt DateTime?
+  /// 콘솔에서 정지한 시각. 정지되면 로그인, 토큰 갱신, userinfo가 막힌다.
+  disabledAt  DateTime?
 
   @@unique([serviceId, email])
 }
@@ -132,6 +144,13 @@ model LoginTransaction {
   providerState        String? @unique
   providerCodeVerifier String?
 
+  /// OIDC prompt (공백 구분), max_age(초), login_hint
+  prompt    String?
+  maxAge    Int?
+  loginHint String?
+  /// 서비스로 code를 보내지 않고 우리 화면(/account)으로 돌아가는 로그인. 이때 PKCE 값은 빈 문자열이다.
+  returnTo  String?
+
   expiresAt DateTime
   createdAt DateTime @default(now())
 }
@@ -150,6 +169,9 @@ model AuthorizationCode {
   nonce               String?
   codeChallenge       String
   codeChallengeMethod String
+  /// 이 code를 만든 로그인 세션과 마지막으로 직접 인증한 시각 (id_token의 sid, auth_time)
+  sessionId           String?
+  authTime            DateTime?
 
   expiresAt DateTime
   usedAt    DateTime?
@@ -166,11 +188,85 @@ model RefreshToken {
   user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   scope     String
+  /// 로그아웃하면 이 세션에서 나온 토큰을 같이 끊는다
+  sessionId String?
   expiresAt DateTime
   revokedAt DateTime?
   createdAt DateTime  @default(now())
 
   @@index([userId])
+  @@index([sessionId])
+}
+
+/// 브라우저의 로그인 상태 (서비스마다 하나). 쿠키 sg_browser 값의 해시로 찾는다.
+/// 살아 있으면 /oauth/authorize가 로그인 화면 없이 바로 code를 준다.
+model Session {
+  id          String @id @default(cuid())
+  /// SHA-256(sg_browser 쿠키) hex
+  browserHash String
+
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// 마지막으로 직접 인증한 시각과 수단 (password, email, google, kakao)
+  authTime  DateTime
+  method    String
+  userAgent String?
+  ip        String?
+
+  lastSeenAt DateTime @default(now())
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+
+  @@unique([browserHash, serviceId])
+  @@index([userId])
+}
+
+/// 로그인, 가입, 실패 기록 (사용자 상세, 통계)
+model LoginEvent {
+  id String @id @default(cuid())
+
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  /// 실패면 없을 수 있다. 사용자를 지워도 기록은 통계용으로 남긴다.
+  userId    String?
+  email     String?
+
+  /// login | signup | failure
+  type      String
+  /// password | email | google | kakao | session
+  method    String?
+  /// 실패 이유 (wrong_password, locked, wrong_code, disabled, rate_limited ...)
+  reason    String?
+  ip        String?
+  userAgent String?
+
+  createdAt DateTime @default(now())
+
+  @@index([serviceId, createdAt])
+  @@index([userId, createdAt])
+}
+
+/// 콘솔에서 누가 언제 무엇을 바꿨는지
+model AuditLog {
+  id String @id @default(cuid())
+
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  actorId    String?
+  actorEmail String?
+  /// settings.update, branding.update, secret.rotate, member.add, member.remove,
+  /// user.delete, user.disable, user.enable, user.sessions.revoke, signup.update
+  action     String
+  /// 대상 (사용자 이메일, 관리자 이메일 등)
+  target     String?
+
+  createdAt DateTime @default(now())
+
+  @@index([serviceId, createdAt])
 }
 
 /// 메일로 보내는 6자리 인증 코드 (회원가입, 이메일 코드 로그인, 비밀번호 재설정)
