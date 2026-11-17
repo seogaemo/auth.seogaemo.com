@@ -210,6 +210,7 @@ function ServiceSection({ current, pathname }: { current: SidebarService; pathna
     { href: base, icon: "captive_portal", label: "설정" },
     { href: `${base}/branding`, icon: "shapes", label: "브랜딩" },
     { href: `${base}/users`, icon: "group", label: "사용자 관리" },
+    { href: `${base}/access`, icon: "lock-white", label: "접근 제한" },
     { href: `${base}/members`, icon: "admin", label: "관리자" },
   ].map((item) => ({ ...item, active: pathname === item.href }));
 

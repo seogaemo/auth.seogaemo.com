@@ -1,6 +1,7 @@
 import type { Service } from "@prisma/client";
 
 import { getPrisma } from "@/cloudflare";
+import { isEmailAllowed } from "@/lib/allowlist";
 import { hashSecret } from "@/lib/crypto";
 import { consumeAuthorizationCode } from "@/lib/oauth/codes";
 import { authenticateClient, json, oauthError, preflight, readForm } from "@/lib/oauth/http";
@@ -69,6 +70,11 @@ async function rotateRefreshToken(service: Service, form: URLSearchParams) {
   }
   if (record.expiresAt < new Date()) {
     return oauthError("invalid_grant", "refresh token expired");
+  }
+  // 허용 목록이 켜지거나 바뀌어 목록 밖이 된 사용자는 더 이어 쓸 수 없다
+  if (!isEmailAllowed(service, record.user.email)) {
+    await revokeAllRefreshTokens(record.serviceId, record.userId);
+    return oauthError("invalid_grant", "user is not allowed to sign in to this client");
   }
 
   const { count } = await prisma.refreshToken.updateMany({

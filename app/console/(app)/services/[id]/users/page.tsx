@@ -4,6 +4,7 @@ import { ProviderIcons } from "@/components/console/ProviderIcons";
 import { ServiceHeader } from "@/components/console/ServiceHeader";
 import { BackLink, Page } from "@/components/console/ui";
 import { getPrisma } from "@/cloudflare";
+import { isEmailAllowed } from "@/lib/allowlist";
 import { isProvider } from "@/lib/config";
 import { requireServiceAccess } from "@/lib/console/session";
 
@@ -81,8 +82,18 @@ export default async function UsersPage({
                     className="h-12 border-b border-base transition-colors hover:bg-base [&>td+td]:border-l [&>td+td]:border-base"
                   >
                     <td className="px-2">
-                      <span className="block text-footnote text-primary">
-                        {user.email ?? user.name ?? "이름 없음"}
+                      <span className="flex items-center gap-1.5">
+                        <span className="text-footnote text-primary">
+                          {user.email ?? user.name ?? "이름 없음"}
+                        </span>
+                        {!isEmailAllowed(service, user.email) && (
+                          <span
+                            title="접근 제한의 허용 목록에 없어서 로그인할 수 없어요"
+                            className="shrink-0 rounded bg-warning-elevated px-1.5 py-0.5 text-caption font-strong text-secondary"
+                          >
+                            허용 목록 밖
+                          </span>
+                        )}
                       </span>
                       <span className="block font-mono text-caption text-quaternary">
                         {user.id}

@@ -2,6 +2,7 @@
 
 import { cookies } from "next/headers";
 
+import { isEmailAllowed, NOT_ALLOWED_MESSAGE } from "@/lib/allowlist";
 import {
   EMAIL_CODE_COOKIE,
   LOGIN_EMAIL_COOKIE,
@@ -93,14 +94,23 @@ async function savedEmail() {
   return normalizeEmail((await cookies()).get(LOGIN_EMAIL_COOKIE)?.value ?? null);
 }
 
-function enabledProviders(transaction: NonNullable<Awaited<ReturnType<typeof currentTransaction>>>) {
+type ActiveTransaction = NonNullable<Awaited<ReturnType<typeof currentTransaction>>>;
+
+/** 허용 목록이 켜진 서비스에서 목록 밖 이메일이면 오류 상태, 아니면 null */
+function blockedEmail(transaction: ActiveTransaction, email: string): LoginFormState {
+  return isEmailAllowed(transaction.service, email) ? null : { error: NOT_ALLOWED_MESSAGE, email };
+}
+
+function enabledProviders(transaction: ActiveTransaction) {
   return getProviders(transaction.service).filter(isProviderConfigured);
 }
 
 async function sendLoginCodeTo(
-  transaction: NonNullable<Awaited<ReturnType<typeof currentTransaction>>>,
+  transaction: ActiveTransaction,
   email: string,
 ): Promise<LoginFormState> {
+  const blocked = blockedEmail(transaction, email);
+  if (blocked) return blocked;
   const result = await sendEmailCode({
     service: transaction.service,
     transaction,
@@ -131,6 +141,8 @@ export async function continueWithEmail(
     const email = normalizeEmail(form.get("email"));
     if (!email) return { error: "name@example.com 형식으로 이메일을 입력하세요." };
     await rememberEmail(email);
+    const blocked = blockedEmail(transaction, email);
+    if (blocked) return blocked;
 
     if (passwordOn && (await hasPasswordAccount(transaction.serviceId, email))) {
       navigate("/login/password");
@@ -171,6 +183,8 @@ export async function passwordLogin(
     if (!email) navigate("/login");
     const password = String(form.get("password") ?? "");
     if (!password) return { error: "비밀번호를 입력하세요." };
+    const blocked = blockedEmail(transaction, email);
+    if (blocked) return blocked;
 
     const result = await loginWithPassword(
       transaction.serviceId,
@@ -195,6 +209,8 @@ export async function startSignup(
     if (!email) return { error: "name@example.com 형식으로 이메일을 입력하세요." };
 
     await rememberEmail(email);
+    const blocked = blockedEmail(transaction, email);
+    if (blocked) return blocked;
     const rule = checkPasswordRule(password);
     if (rule) return { error: rule, email };
     if (await hasPasswordAccount(transaction.serviceId, email)) {
@@ -226,6 +242,9 @@ export async function startReset(
     const transaction = await requireLogin("password");
     const email = normalizeEmail(form.get("email"));
     if (!email) return { error: "name@example.com 형식으로 이메일을 입력하세요." };
+
+    const blocked = blockedEmail(transaction, email);
+    if (blocked) return blocked;
 
     // 가입되지 않은 이메일이어도 같은 화면으로 보낸다 (가입 여부를 알려주지 않는다)
     const exists = await hasPasswordAccount(transaction.serviceId, email);
@@ -263,6 +282,9 @@ export async function verifyCode(
     if (!record) navigate("/login");
     const purpose = record.purpose as EmailCodePurpose;
     await requireLogin(PURPOSE_PROVIDER[purpose]);
+    // 코드를 보낸 뒤에 허용 목록이 바뀌었을 수 있다
+    const blocked = blockedEmail(transaction, record.email);
+    if (blocked) return blocked;
 
     const newPassword = String(form.get("newPassword") ?? "");
     if (purpose === "reset") {
@@ -316,6 +338,8 @@ export async function resendCode(): Promise<LoginFormState> {
     if (!record) navigate("/login");
 
     const purpose = record.purpose as EmailCodePurpose;
+    const blocked = blockedEmail(transaction, record.email);
+    if (blocked) return blocked;
     const send =
       purpose !== "reset" ||
       (await hasPasswordAccount(transaction.serviceId, record.email));

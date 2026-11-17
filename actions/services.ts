@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { getPrisma, getR2 } from "@/cloudflare";
+import { parseAllowlist } from "@/lib/allowlist";
 import { requireDeveloper, requireServiceAccess } from "@/lib/console/session";
 import {
   parseHexColor,
@@ -172,4 +173,32 @@ export async function deleteServiceUser(serviceId: string, userId: string) {
   // serviceId 조건을 같이 걸어 다른 서비스의 사용자를 지우지 못하게 한다
   await getPrisma().user.deleteMany({ where: { id: userId, serviceId } });
   revalidatePath(`/console/services/${serviceId}/users`);
+}
+
+export async function updateAllowlist(
+  serviceId: string,
+  _prev: ActionState,
+  form: FormData,
+): Promise<ActionState> {
+  await requireServiceAccess(serviceId);
+  const restrict = form.get("restrictLogin") === "on";
+  const fields = { ...echo(form, "allowedEmails"), restrictLogin: restrict ? "on" : "" };
+
+  const parsed = parseAllowlist(String(form.get("allowedEmails") ?? ""));
+  if ("error" in parsed) return { error: parsed.error, fields };
+  if (restrict && parsed.entries.length === 0) {
+    return { error: "허용할 이메일이나 도메인을 하나 이상 입력하세요. 목록이 비어 있으면 아무도 로그인할 수 없어요.", fields };
+  }
+
+  await getPrisma().service.update({
+    where: { id: serviceId },
+    data: { restrictLogin: restrict, allowedEmails: parsed.entries },
+  });
+
+  revalidatePath(`/console/services/${serviceId}/access`);
+  return {
+    message: restrict
+      ? `저장했어요. 이제 허용 목록의 ${parsed.entries.length}개 항목만 로그인할 수 있어요.`
+      : "저장했어요. 누구나 로그인할 수 있어요.",
+  };
 }

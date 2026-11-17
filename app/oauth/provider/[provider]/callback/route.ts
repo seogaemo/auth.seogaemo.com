@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 import { getPrisma } from "@/cloudflare";
+import { isEmailAllowed } from "@/lib/allowlist";
 import { isSocialProvider, LOGIN_TX_COOKIE } from "@/lib/config";
 import { loginErrorUrl } from "@/lib/oauth/errors";
 import { completeProviderLogin } from "@/lib/oauth/providers";
@@ -40,6 +41,7 @@ export async function GET(
   const prisma = getPrisma();
   const transaction = await prisma.loginTransaction.findUnique({
     where: { providerState },
+    include: { service: { select: { restrictLogin: true, allowedEmails: true } } },
   });
   const cookieTxId = (await cookies()).get(LOGIN_TX_COOKIE)?.value;
 
@@ -71,6 +73,11 @@ export async function GET(
   let user;
   try {
     const profile = await completeProviderLogin(provider, code, transaction.providerCodeVerifier);
+    // 허용 목록은 제공자가 확인한 이메일로만 맞춘다. 목록 밖이면 사용자를 만들지 않는다.
+    if (!isEmailAllowed(transaction.service, profile.emailVerified ? profile.email : null)) {
+      await prisma.loginTransaction.deleteMany({ where: { id: transaction.id } });
+      return NextResponse.redirect(loginErrorUrl("not_allowed"), 302);
+    }
     user = await upsertUserFromProfile(transaction.serviceId, provider, profile);
   } catch (error) {
     console.error("provider login failed", provider, error);

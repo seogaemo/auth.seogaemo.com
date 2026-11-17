@@ -7,6 +7,8 @@ export const LOGIN_ERRORS = {
   no_provider: "이 서비스에 켜진 로그인 방식이 없어요.",
   expired: "로그인 시간이 지났어요. 서비스에서 다시 시도하세요.",
   provider_failed: "로그인 제공자와 연결하지 못했어요. 잠시 후 다시 시도하세요.",
+  not_allowed:
+    "이 서비스는 허용된 이메일로만 로그인할 수 있어요. 다른 계정으로 서비스에서 다시 시도하거나 서비스 운영자에게 문의하세요.",
 } as const;
 
 export type LoginErrorCode = keyof typeof LOGIN_ERRORS;
