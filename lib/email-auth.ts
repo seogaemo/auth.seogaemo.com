@@ -5,6 +5,7 @@ import { LIMITS, TTL } from "./config";
 import { hashSecret, timingSafeEqual } from "./crypto";
 import { emailCodeMessage, sendMail, type EmailCodePurpose } from "./mail";
 import { burnPasswordTime, hashPassword, verifyPassword } from "./password";
+import { refreshFromGravatarInBackground } from "./gravatar";
 import { upsertUserFromProfile } from "./oauth/users";
 
 export function normalizeEmail(value: FormDataEntryValue | null) {
@@ -213,6 +214,7 @@ export async function loginWithPassword(
     where: { id: identity.id },
     data: { failedAttempts: 0, lockedUntil: null },
   });
-  await prisma.user.update({ where: { id: identity.userId }, data: { lastLoginAt: new Date() } });
+  const user = await prisma.user.update({ where: { id: identity.userId }, data: { lastLoginAt: new Date() } });
+  refreshFromGravatarInBackground(user);
   return { ok: true, userId: identity.userId };
 }

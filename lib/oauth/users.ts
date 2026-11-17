@@ -1,5 +1,6 @@
 import { getPrisma } from "@/cloudflare";
 import type { Provider } from "../config";
+import { gravatarProfile, refreshFromGravatarInBackground } from "../gravatar";
 import type { ProviderProfile } from "./providers";
 
 /**
@@ -32,7 +33,7 @@ export async function upsertUserFromProfile(
   });
 
   if (identity) {
-    return prisma.user.update({
+    const user = await prisma.user.update({
       where: { id: identity.userId },
       data: {
         lastLoginAt: now,
@@ -40,6 +41,8 @@ export async function upsertUserFromProfile(
         image: identity.user.image ?? profile.image,
       },
     });
+    refreshFromGravatarInBackground(user);
+    return user;
   }
 
   const existing = verifiedEmail
@@ -48,14 +51,20 @@ export async function upsertUserFromProfile(
       })
     : null;
 
+  // 가입할 때는 Gravatar를 기다렸다가 같이 저장한다 (최대 1.5초, 실패하면 없이 진행)
+  const gravatar =
+    !existing && verifiedEmail && !(profile.name && profile.image)
+      ? await gravatarProfile(verifiedEmail).catch(() => ({}) as { name?: string; image?: string })
+      : {};
+
   const user =
     existing ??
     (await prisma.user.create({
       data: {
         serviceId,
         email: verifiedEmail,
-        name: profile.name,
-        image: profile.image,
+        name: profile.name || gravatar.name,
+        image: profile.image || gravatar.image,
       },
     }));
 
@@ -69,5 +78,8 @@ export async function upsertUserFromProfile(
     },
   });
 
-  return prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: now } });
+  const updated = await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: now } });
+  // 기존 사용자에 로그인 수단을 새로 연결한 경우
+  if (existing) refreshFromGravatarInBackground(updated);
+  return updated;
 }
