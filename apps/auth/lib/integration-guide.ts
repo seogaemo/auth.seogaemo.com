@@ -15,9 +15,13 @@ export interface AppFacts {
   name: string;
   clientId: string;
   publicClient: boolean;
-  /** 예시에 쓸 웹 콜백 주소 (등록된 첫 웹 주소, 없으면 예시) */
+  /** 예시에 쓸 웹 콜백 주소 (등록된 첫 웹 주소, 없으면 {origin}/callback) */
   webRedirect: string;
+  /** 서버 앱(openid-client) 예시의 콜백 (등록된 첫 웹 주소, 없으면 {origin}/auth/callback) */
+  serverRedirect: string;
   webOrigin: string;
+  /** 웹 Redirect URI가 등록돼 있는지. 없으면 예시의 주소는 자리 표시 값이다 */
+  webRegistered: boolean;
   /** 로그아웃 뒤 돌아갈 주소 (등록된 첫 값, 없으면 웹 origin) */
   postLogout: string;
   /** 예시에 쓸 앱 스킴 콜백 (등록된 첫 앱 스킴, 없으면 예시) */
@@ -39,16 +43,18 @@ export function appFacts(service: Service): AppFacts {
   const issuer = getIssuer();
   const redirectUris = getRedirectUris(service);
   const parsed = redirectUris.map((uri) => ({ uri, url: parseUrl(uri) }));
-  const webRedirect = parsed.find(({ url }) => url && isWebUrl(url))?.uri ?? "https://example.com/api/auth/callback/seogaemo";
-  const webOrigin = new URL(webRedirect).origin;
+  const firstWeb = parsed.find(({ url }) => url && isWebUrl(url))?.uri;
+  const webOrigin = firstWeb ? new URL(firstWeb).origin : "https://app.example.com";
   const postLogoutUris = getPostLogoutRedirectUris(service);
   return {
     issuer,
     name: service.name,
     clientId: service.clientId,
     publicClient: isPublicClient(service),
-    webRedirect,
+    webRedirect: firstWeb ?? `${webOrigin}/callback`,
+    serverRedirect: firstWeb ?? `${webOrigin}/auth/callback`,
     webOrigin,
+    webRegistered: Boolean(firstWeb),
     postLogout: postLogoutUris[0] ?? webOrigin,
     appRedirect: parsed.find(({ url }) => url && isAppSchemeUrl(url))?.uri ?? "com.example.app:/oauth/callback",
     alg: service.idTokenSigningAlg === "ES256" ? "ES256" : "RS256",
@@ -70,8 +76,10 @@ export function placeholderFacts(): AppFacts {
     name: "내 앱",
     clientId: "YOUR_CLIENT_ID",
     publicClient: false,
-    webRedirect: "https://app.example.com/api/auth/callback/seogaemo",
+    webRedirect: "https://app.example.com/callback",
+    serverRedirect: "https://app.example.com/auth/callback",
     webOrigin: "https://app.example.com",
+    webRegistered: false,
     postLogout: "https://app.example.com",
     appRedirect: "com.example.app:/oauth/callback",
     alg: "RS256",
@@ -92,8 +100,26 @@ export function examples(f: AppFacts) {
     ...(f.alg === "ES256" ? [`id_token_signed_response_alg: "ES256"`] : []),
   ];
 
-  const authjs = `// auth.ts (Next.js, Auth.js v5)
-import NextAuth from "next-auth";
+  const placeholderNote = f.webRegistered ? "" : "  // 자리 표시 값: 실제 앱 주소로 바꾼다";
+  /** Auth.js는 파일이 여러 개라 파일마다 나눈다 */
+  const authjsFiles: { title: string; code: string }[] = [
+    {
+      title: ".env.local",
+      code: `# 설치: npm i next-auth@beta   (Auth.js v5는 아직 beta 태그로 나온다)
+# 이 파일은 커밋하지 않는다 (.gitignore에 .env*.local이 있는지 확인)
+AUTH_SECRET=        # npx auth secret 또는 openssl rand -base64 32 로 만든 값
+AUTH_URL=${f.webOrigin}${placeholderNote.replace("  //", "  #")}
+# AUTH_URL은 앱이 실제로 뜨는 주소와 포트여야 한다. redirect_uri가 이 값으로 만들어지므로, 다른 포트로 띄우면 등록값과 달라진다
+${f.publicClient ? "" : "SEOGAEMO_CLIENT_SECRET=   # 콘솔에서 받은 Client Secret\n"}`,
+    },
+    {
+      title: "auth.ts (프로젝트 루트)",
+      code: `import NextAuth from "next-auth";
+
+export const SEOGAEMO_ISSUER = "${f.issuer}";
+export const SEOGAEMO_CLIENT_ID = "${f.clientId}";
+// 콘솔의 "로그아웃 후 이동 주소"와 글자 하나까지 같아야 한다
+export const POST_LOGOUT_REDIRECT_URI = "${f.postLogout}";${f.postLogoutUris.length ? "" : placeholderNote}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
@@ -101,21 +127,103 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       id: "seogaemo",
       name: "Seogaemo",
       type: "oidc",
-      issuer: "${f.issuer}",
-      clientId: "${f.clientId}",
+      issuer: SEOGAEMO_ISSUER,
+      clientId: SEOGAEMO_CLIENT_ID,
 ${[
   ...(f.publicClient ? [] : [`      clientSecret: process.env.SEOGAEMO_CLIENT_SECRET,`]),
   ...(clientMetadata.length ? [`      client: { ${clientMetadata.join(", ")} },`] : []),
-  `      checks: ["pkce", "state"],`,
+  `      checks: ["pkce", "state", "nonce"],`,
 ].join("\n")}
     },
   ],
-});
+  callbacks: {
+    // 로그아웃에 쓸 id_token, refresh_token은 암호화된 세션 쿠키(JWT) 안에만 두고 브라우저로 내보내지 않는다
+    async jwt({ token, account }) {
+      if (account) {
+        token.idToken = account.id_token;
+        token.refreshToken = account.refresh_token;
+      }
+      return token;
+    },
+    // session.user에는 email, name, image가 기본으로 들어 있다. 사용자 식별용으로 sub를 더한다 (이메일은 바뀔 수 있다)
+    async session({ session, token }) {
+      if (token.sub) session.user.id = token.sub;
+      return session;
+    },
+  },
+});`,
+    },
+    {
+      title: "app/api/auth/[...nextauth]/route.ts",
+      code: `import { handlers } from "@/auth";
 
-// app/api/auth/[...nextauth]/route.ts
-// export const { GET, POST } = handlers;
+export const { GET, POST } = handlers;`,
+    },
+    {
+      title: "app/actions.ts",
+      code: `"use server";
 
-// Redirect URI로 등록할 주소: ${f.webOrigin}/api/auth/callback/seogaemo`;
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { getToken } from "next-auth/jwt";
+
+import { POST_LOGOUT_REDIRECT_URI, SEOGAEMO_CLIENT_ID, SEOGAEMO_ISSUER, signIn, signOut } from "@/auth";
+
+export async function login() {
+  await signIn("seogaemo", { redirectTo: "/" });
+}
+
+// Auth.js의 signOut()은 이 앱의 쿠키만 지운다. Seogaemo 로그인도 끝내려면 아래 세 단계를 한다
+export async function logout() {
+  // https로 서비스하면 쿠키 이름이 바뀐다 (__Secure-). AUTH_URL이 실제 주소와 같아야 한다
+  const secureCookie = (process.env.AUTH_URL ?? "").startsWith("https://");
+  const token = await getToken({ req: { headers: await headers() }, secret: process.env.AUTH_SECRET, secureCookie });
+
+  // 1. refresh token 폐기 (RFC 7009)
+  if (token?.refreshToken) {
+    await fetch(\`\${SEOGAEMO_ISSUER}/oauth/revoke\`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+${f.publicClient ? "" : `        Authorization: \`Basic \${btoa(\`\${encodeURIComponent(SEOGAEMO_CLIENT_ID)}:\${encodeURIComponent(process.env.SEOGAEMO_CLIENT_SECRET!)}\`)}\`,\n`}      },
+      body: new URLSearchParams({ token: String(token.refreshToken), token_type_hint: "refresh_token"${f.publicClient ? ", client_id: SEOGAEMO_CLIENT_ID" : ""} }),
+    }).catch(() => {});
+  }
+  // 2. 이 앱의 세션 쿠키 삭제
+  await signOut({ redirect: false });
+  // 3. Seogaemo 로그아웃 후 이 앱으로 돌아온다. id_token이 만료됐어도 id_token_hint로 쓸 수 있다 (없으면 확인 화면이 뜬다)
+  const url = new URL(\`\${SEOGAEMO_ISSUER}/oauth/logout\`);
+  if (token?.idToken) url.searchParams.set("id_token_hint", String(token.idToken));
+  url.searchParams.set("post_logout_redirect_uri", POST_LOGOUT_REDIRECT_URI);
+  redirect(url.toString());
+}`,
+    },
+    {
+      title: "app/page.tsx (예)",
+      code: `import { auth } from "@/auth";
+import { login, logout } from "./actions";
+
+export default async function Home() {
+  const session = await auth();
+  if (!session?.user) {
+    return <form action={login}><button>Seogaemo로 로그인</button></form>;
+  }
+  return (
+    <main>
+      <p>{session.user.email}</p>
+      <a href="${f.accountUrl}" target="_blank" rel="noreferrer">계정 관리</a>
+      <form action={logout}><button>로그아웃</button></form>
+    </main>
+  );
+}
+
+// 콘솔에 등록할 Redirect URI: ${f.webOrigin}/api/auth/callback/seogaemo${f.webRegistered ? "" : " (실제 앱 주소로)"}
+// access token으로 API를 부르지 않으면 토큰 갱신은 필요 없다. 부른다면 갱신한 refresh token을 쿠키에 저장해야 하는데,
+// 서버 컴포넌트에서는 쿠키를 쓸 수 없으니 Route Handler나 Server Action에서만 갱신한다.`,
+    },
+  ];
+  const fence = (lang: string, file: { title: string; code: string }) => `\`${file.title}\`\n\n\`\`\`${lang}\n${file.code}\n\`\`\``;
+  const authjsMarkdown = authjsFiles.map((file) => fence(file.title.startsWith(".env") ? "bash" : file.title.endsWith(".tsx (예)") ? "tsx" : "ts", file)).join("\n\n");
 
   const spa = `// SPA (oidc-client-ts)
 import { UserManager } from "oidc-client-ts";
@@ -123,7 +231,7 @@ import { UserManager } from "oidc-client-ts";
 export const auth = new UserManager({
   authority: "${f.issuer}",
   client_id: "${f.clientId}",
-  redirect_uri: "${f.webRedirect}",
+  redirect_uri: "${f.webRedirect}",${f.webRegistered ? "" : " // 예시 값: 콘솔에 등록한 SPA 콜백 주소로 바꾼다"}
   post_logout_redirect_uri: "${f.postLogout}",
   scope: "openid email profile",
 });
@@ -153,7 +261,7 @@ const verifier = client.randomPKCECodeVerifier();
 const state = client.randomState();
 const nonce = client.randomNonce();
 const url = client.buildAuthorizationUrl(config, {
-  redirect_uri: "${f.webRedirect}",
+  redirect_uri: "${f.serverRedirect}",${f.webRegistered ? "" : " // 예시 값: 콘솔에 등록한 콜백 주소로 바꾼다"}
   scope: "openid email profile",
   code_challenge: await client.calculatePKCECodeChallenge(verifier),
   code_challenge_method: "S256",
@@ -247,7 +355,7 @@ ${f.issuer}/oauth/authorize?...&login_hint=user@example.com`;
 
   const accountLink = `<a href="${f.accountUrl}">계정 관리</a>`;
 
-  return { authjs, spa, server, ios, android, prompt, accountLink };
+  return { authjsFiles, authjsMarkdown, spa, server, ios, android, prompt, accountLink };
 }
 
 /** 표준 동작 요약. 공개 문서와 AI 프롬프트에 같이 들어간다 */
@@ -269,11 +377,12 @@ function rules(f: AppFacts) {
 - 인가 응답에 iss가 붙는다 (RFC 9207). 응답은 query로만 온다 (response_mode=query).
 - 클라이언트 인증: 서버가 있는 웹앱은 client_secret_basic 또는 client_secret_post, SPA와 모바일 앱(public client)은 none(PKCE만). public client가 시크릿을 보내면 거절된다.
 - ID 토큰 서명은 앱마다 RS256 또는 ES256 (콘솔 연동 > 토큰 설정). ES256이면 라이브러리에 id_token_signed_response_alg: "ES256"을 알려야 하는 경우가 있다 (Auth.js, openid-client).
-- 토큰: access token은 1시간짜리 JWT (aud = client_id). refresh token은 30일, 쓸 때마다 새 것으로 바뀐다(회전). 응답의 새 refresh token을 저장하고 이전 것은 버린다. 바뀐 지 ${f.graceSec}초가 지난 이전 토큰을 다시 쓰면 탈취로 보고 그 사용자의 토큰을 모두 끊는다.
+- 토큰: access token은 1시간짜리 JWT (aud = client_id). refresh token은 offline_access 없이도 항상 나오고 30일, 쓸 때마다 새 것으로 바뀐다(회전). 응답의 새 refresh token을 저장하고 이전 것은 버린다. 바뀐 지 ${f.graceSec}초가 지난 이전 토큰을 다시 쓰면 탈취로 보고 그 사용자의 토큰을 모두 끊는다.
 - 로그인 유지: 한 번 로그인하면 30일 동안 로그인 화면 없이 넘어간다. prompt=none, login, select_account, consent와 max_age, login_hint를 지원한다.
-- 로그아웃: refresh token을 폐기(revoke)한 뒤 브라우저를 end session으로 보낸다. id_token_hint를 꼭 붙인다 (없으면 "로그아웃할까요?" 확인 화면이 뜬다). post_logout_redirect_uri는 콘솔에 등록한 "로그아웃 후 이동 주소"와 정확히 같아야 앱으로 돌아온다.
+- 로그아웃: refresh token을 폐기(revoke)한 뒤 브라우저를 end session으로 보낸다. id_token_hint를 꼭 붙인다 (없으면 "로그아웃할까요?" 확인 화면이 뜬다). post_logout_redirect_uri는 콘솔에 등록한 "로그아웃 후 이동 주소"와 정확히 같아야 앱으로 돌아온다 (경로 없는 주소만 끝의 /를 같게 본다). client_id는 붙여도 되고 안 붙여도 된다. Auth.js의 signOut()처럼 앱 쿠키만 지우는 함수로는 Seogaemo 로그인이 끝나지 않으니, 위 두 단계를 직접 한다.
 - 네이티브 앱은 ASWebAuthenticationSession(iOS), Custom Tabs(Android)로 연다. WebView 안에서 열면 Google 로그인과 패스키가 막힌다.
-- 계정 관리(비밀번호, 기기, 탈퇴) 화면: ${f.accountUrl}
+- 계정 관리(비밀번호, 기기, 탈퇴) 화면: ${f.accountUrl} (새 탭으로 열어도 된다)
+- Client Secret, AUTH_SECRET 같은 값은 .env.local 등 커밋하지 않는 파일에 둔다. 프로젝트에 .gitignore가 없으면 만든다.
 
 ## 자주 틀리는 것
 
@@ -281,7 +390,9 @@ function rules(f: AppFacts) {
 - "unexpected JWT alg" 같은 오류: 앱의 ID 토큰 서명(RS256/ES256)과 라이브러리 설정이 다르다.
 - invalid_client: public client인데 시크릿을 보냈거나, 서버 앱인데 시크릿이 틀렸다.
 - 로그아웃 뒤 Seogaemo 화면에 머문다: post_logout_redirect_uri가 등록되지 않았다.
-- 탭 여러 개에서 갑자기 로그아웃된다: 갱신한 refresh token을 저장하지 않고 이전 것을 계속 쓰고 있다.`;
+- 탭 여러 개에서 갑자기 로그아웃된다: 갱신한 refresh token을 저장하지 않고 이전 것을 계속 쓰고 있다.
+- 로그아웃했는데 다시 로그인을 누르면 화면 없이 바로 로그인된다: 앱 쿠키만 지우고 Seogaemo 로그아웃(end session)을 안 했다.
+- Auth.js에서 redirect_uri의 호스트나 포트가 이상하다: AUTH_URL을 이 앱의 바깥 주소로 설정한다.`;
 }
 
 /** /llms-full.txt: AI가 읽는 전체 연동 문서 */
@@ -309,9 +420,7 @@ YOUR_CLIENT_ID, app.example.com, com.example.app은 실제 값으로 바꾼다.
 
 ### Next.js (Auth.js v5)
 
-\`\`\`ts
-${ex.authjs}
-\`\`\`
+${ex.authjsMarkdown}
 
 ### SPA (React, Vue 등, oidc-client-ts)
 
@@ -384,9 +493,10 @@ export function appPrompt(service: Service, options: { hasUsers: boolean }): { p
       `Redirect URI가 하나도 등록돼 있지 않다. 이대로는 로그인이 invalid_redirect_uri 오류로 멈춘다. 코드를 쓰기 전에 사용자에게 앱의 개발 주소와 운영 주소(예: http://localhost:3000, https://myapp.com)를 묻고, 쓰기로 한 라이브러리의 실제 콜백 경로로 등록할 주소를 정확히 적어 준 뒤, ${f.consoleUrl} 의 "주소 > Redirect URI"에 붙여 넣고 저장하라고 안내하라. (Auth.js라면 {주소}/api/auth/callback/seogaemo, 네이티브 앱이라면 com.회사도메인.앱이름:/oauth/callback 형식)`,
     );
   }
-  if (webUris.length > 0 && f.postLogoutUris.length === 0) {
+  const needsPostLogout = f.postLogoutUris.length === 0 && (webUris.length > 0 || f.redirectUris.length === 0);
+  if (needsPostLogout) {
     todo.push(
-      `로그아웃 후 이동 주소가 없다. 로그아웃하면 앱으로 돌아오지 못하고 Seogaemo 화면에 머문다. 코드에서 쓸 post_logout_redirect_uri(예: ${new URL(webUris[0]!).origin})를 정하고, ${f.consoleUrl} 의 "주소 > 로그아웃 후 이동 주소"에 등록하라고 안내하라.`,
+      `로그아웃 후 이동 주소가 없다. 이대로는 로그아웃하면 앱으로 돌아오지 못하고 Seogaemo 화면에 머문다. 코드에서 쓸 post_logout_redirect_uri(보통 앱의 첫 화면, 예: ${webUris[0] ? new URL(webUris[0]).origin : "http://localhost:3000"})를 정하고, ${f.consoleUrl} 의 "주소 > 로그아웃 후 이동 주소"에 등록하라고 안내하라. 코드의 값과 글자 하나까지 같아야 한다.`,
     );
   }
   if (!f.publicClient) {
@@ -408,7 +518,7 @@ export function appPrompt(service: Service, options: { hasUsers: boolean }): { p
   const list = (items: string[], empty: string) => (items.length ? items.map((v) => `  - ${v}`).join("\n") : `  - ${empty}`);
 
   // 콘솔에 "아직 안 끝난 설정"으로 세는 것 (시크릿 안내, 첫 로그인 확인은 할 일이 아니라 안내라 빼고 센다)
-  const todoCount = [f.redirectUris.length === 0, webUris.length > 0 && f.postLogoutUris.length === 0, f.providers.length === 0].filter(Boolean).length;
+  const todoCount = [f.redirectUris.length === 0, needsPostLogout, f.providers.length === 0].filter(Boolean).length;
 
   const prompt = `너는 이 프로젝트에 "Seogaemo로 로그인"을 붙인다. Seogaemo SSO는 OpenID Connect 서버이고, 아래는 콘솔에서 복사한 이 앱의 실제 설정이다. 추측하지 말고 이 값과 규칙을 따른다. 더 자세한 내용은 ${f.issuer}/llms-full.txt 에 있다.
 
@@ -438,18 +548,18 @@ ${todo.map((t, i) => `${i + 1}. ${t}`).join("\n")}
 1. 프로젝트의 프레임워크를 확인하고 아래 예시 중 맞는 것을 고른다. 없으면 표준 OIDC 라이브러리를 쓴다 (직접 구현하지 않는다).
 2. 로그인, 콜백, 로그아웃, 로그인한 사용자 표시를 붙인다. 사용자 식별은 sub로 한다 (이메일은 바뀔 수 있다).
 3. 쓰는 redirect_uri와 post_logout_redirect_uri가 위의 등록값과 글자 하나까지 같은지 확인한다. 다르면 코드를 등록값에 맞추거나, 사용자에게 콘솔에 추가해 달라고 한다.
-4. 계정 관리 링크(${f.accountUrl})를 앱의 설정 메뉴에 건다.
+4. 계정 관리 링크(${f.accountUrl})를 로그인한 사용자가 보는 곳에 건다 (설정 메뉴나 사용자 메뉴, 둘 다 없으면 첫 화면).
 5. 끝나면 사용자에게 확인 순서를 알려 준다: 로그인, 새로고침 뒤 로그인 유지, 로그아웃 뒤 앱으로 돌아오기.
 
 ${rules(f)}
 
 ## 이 앱의 값을 채운 예시 코드
+${f.webRegistered ? "" : `
+아직 웹 Redirect URI가 등록되지 않아서, 예시의 ${f.webOrigin}과 그 아래 주소는 자리 표시 값이다. 사용자가 알려 준 앱 주소로 바꾸고, 바꾼 주소를 위의 "먼저 사용자와 처리할 것"대로 콘솔에 등록하게 한다.\n`}
 
 ${f.publicClient ? "" : `### Next.js (Auth.js v5)
 
-\`\`\`ts
-${ex.authjs}
-\`\`\`
+${ex.authjsMarkdown}
 
 ### 그 밖의 서버 (openid-client v6)
 
@@ -467,9 +577,7 @@ ${
     ? `
 ### Next.js (Auth.js v5, public client)
 
-\`\`\`ts
-${ex.authjs}
-\`\`\`
+${ex.authjsMarkdown}
 
 ### iOS (AppAuth-iOS)${appUris.length ? "" : " - 앱 스킴 Redirect URI를 먼저 등록해야 한다"}
 

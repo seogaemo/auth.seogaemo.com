@@ -80,7 +80,11 @@ export function Integration({ service, firstRun }: { service: Service; firstRun:
             description={publicClient ? "Client Secret 없이 PKCE만 써요." : "Client Secret은 환경 변수에 두세요."}
             open={firstRun}
           >
-            <CodeBlock title="auth.ts" code={ex.authjs} />
+            <div className="flex flex-col gap-2">
+              {ex.authjsFiles.map((file) => (
+                <CodeBlock key={file.title} title={file.title} code={file.code} />
+              ))}
+            </div>
           </Example>
           {!publicClient && (
             <Example title="그 밖의 서버 (Express, Hono 등)" description="openid-client v6. 세션에 verifier, state, nonce를 두세요.">
