@@ -112,6 +112,16 @@ export default async function ServiceOverviewPage({
                 action="꾸미기"
               />
             </ol>
+            <p className="text-footnote text-secondary">
+              AI 코딩 도구로 개발한다면{" "}
+              <Link
+                href={`${base}/integration`}
+                className="rounded font-strong text-content-accent underline decoration-1 underline-offset-2 hover:decoration-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--content-accent)]"
+              >
+                연동 화면의 AI용 안내
+              </Link>
+              를 복사해 붙여 넣으세요. 위에서 아직 안 된 설정도 AI가 안내해 줘요.
+            </p>
           </Block>
         ) : (
           <>

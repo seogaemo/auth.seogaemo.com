@@ -17,6 +17,8 @@ pnpm typecheck     # 서버와 SDK 타입 검사
 pnpm dev           # 서버 개발 모드 (apps/auth)
 ```
 
+AI 코딩 도구용 연동 안내는 `https://auth.seogaemo.com/llms.txt`, `/llms-full.txt`에 있다. 앱마다 실제 값이 채워진 안내는 콘솔 연동 화면의 "AI에게 맡기기"에서 복사한다.
+
 main에 push하면 CI가 SDK 테스트를 돌린 뒤 서버를 배포한다 (`.github/workflows/cicd.yml`). SDK는 아직 npm에 올리지 않는다.
 
 ## SDK가 따르는 표준

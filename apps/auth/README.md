@@ -16,7 +16,7 @@ Seogaemo SSO. 누구나 가입해서 자기 서비스를 등록하고 "Seogaemo�
 앱 안의 메뉴는 다섯 개다. 개발자가 하려는 일 하나가 메뉴 하나에서 끝나게 묶는다. 새 기능은 메뉴를 늘리기 전에 이 다섯 중 어느 일에 속하는지 먼저 본다.
 
 - 개요 (`/console/services/[id]`): 지금 상태. 아직 사용자가 없으면 시작 체크리스트(Redirect URI 등록, 예시 코드, 로그인 화면 꾸미기)를 실제 상태로 체크해서 보여준다. 사용자가 생기면 최근 14일 숫자와 하루 로그인 그래프, 최근 로그인 실패(사용자 상세로 연결)
-- 연동 (`/integration`): 코드에 넣을 것 전부. Discovery URL, Client ID, Client Secret 재발급, 계정 화면 주소, Redirect URI, 이 앱의 실제 값을 채운 예시 코드(Auth.js, oidc-client-ts, iOS AppAuth)
+- 연동 (`/integration`): 코드에 넣을 것 전부. 맨 위 "AI에게 맡기기"는 이 앱의 실제 값과 아직 안 끝난 설정(Redirect URI 없음 등)에 대한 지시를 담은 프롬프트를 복사한다 (시크릿은 넣지 않는다). Discovery URL, Client ID, Client Secret 재발급, 계정 화면 주소, Redirect URI, 이 앱의 실제 값을 채운 예시 코드(Auth.js, oidc-client-ts, iOS AppAuth)
 - 로그인 화면 (`/branding`): 사용자에게 보이는 것 전부. 앱 이름과 로그인 방식, 로고와 색(R2), 가입 받기와 약관 링크. 오른쪽 미리보기는 저장 전에도 입력하는 대로 바뀐다
 - 사용자 (`/users`): 이메일, 이름, ID로 찾기. 상세에서 로그인 방식, 로그인된 기기, 최근 기록을 보고 정지, 모든 기기 로그아웃, 삭제. 위에 접근 제한 상태가 보이고 `/users/access`에서 바꾼다 (켜면 허용 목록의 이메일, 도메인만 로그인과 가입. `lib/allowlist.ts`. 확인된 이메일로만 맞추고, 목록 밖 사용자는 refresh token 갱신도 막는다)
 - 관리자 (`/members`): 소유자 말고 같이 관리할 개발자를 콘솔 계정 이메일로 추가 (최대 20명, 가입 전 이메일도 가능, 알림 메일). 관리자는 연동, 로그인 화면, 사용자를 관리하고, 관리자 추가와 앱 삭제는 소유자만 한다. 관리자는 스스로 나갈 수 있다. 최근 활동 5개, 전체 활동 기록은 `/members/activity`. 맨 아래 앱 삭제(소유자만)
@@ -46,6 +46,11 @@ Seogaemo SSO. 누구나 가입해서 자기 서비스를 등록하고 "Seogaemo�
 - **관리**: `/account`에서 자기 이메일의 패스키를 보고 삭제한다 (모든 서비스에 적용). 콘솔 사용자 상세에는 목록만 보이고 삭제는 못 한다. 탈퇴해도 패스키는 지우지 않는다.
 - **청소**: 매일 Cron이 어느 서비스에도 그 이메일의 사용자가 없는 `PasskeyOwner`(와 `Passkey`)를 지운다. 저장 도중 그만둬 패스키 없이 남은 소유자도 하루 뒤 지운다. WebAuthn challenge는 `LoginTransaction.webauthnChallenge`에 두고 한 번 쓰면 지운다.
 - 라이브러리는 `@simplewebauthn/server`, `@simplewebauthn/browser`. 서버 코드는 `lib/passkey.ts`, 액션은 `actions/login.ts`(passkey*), 화면은 `components/login/PasskeyPrompt.tsx`.
+
+### AI용 연동 안내
+
+- `/llms.txt` (llmstxt.org 형식 목록), `/llms-full.txt` (전체 연동 안내: 콘솔에서 할 일, 서버 규칙, 자주 틀리는 것, 스택별 예시). 누구나 읽을 수 있고 CORS가 열려 있다.
+- 콘솔 연동 화면의 예시 코드, "AI에게 맡기기" 프롬프트, 위 두 문서는 모두 `lib/integration-guide.ts`에서 나온다. 서버 동작을 바꾸면 여기를 같이 고친다.
 
 ### Redirect URI
 
