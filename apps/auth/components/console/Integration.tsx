@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 
 import { CodeBlock } from "@/components/console/CodeBlock";
 import { CopyField } from "@/components/console/CopyField";
-import { IdTokenAlgForm } from "@/components/console/IdTokenAlgForm";
+import { TokenSettingsForm } from "@/components/console/TokenSettingsForm";
 import { RedirectUrisForm } from "@/components/console/RedirectUrisForm";
 import { RotateSecret } from "@/components/console/RotateSecret";
 import { Block, InfoRow } from "@/components/console/ui";
@@ -150,7 +150,7 @@ ${issuer}/oauth/authorize?...&login_hint=user@example.com`;
           <RotateSecret serviceId={service.id} />
         )}
         <CopyField label="계정 화면" value={accountUrl} />
-        <IdTokenAlgForm serviceId={service.id} alg={service.idTokenSigningAlg} />
+        <TokenSettingsForm serviceId={service.id} alg={service.idTokenSigningAlg} graceSec={service.refreshTokenGraceSec} />
       </Block>
 
       <Block title="주소" description="로그인과 로그아웃이 끝나면 돌아갈 주소예요. 웹은 https 주소, iOS와 Android 앱은 com.example.app:/oauth/callback 같은 앱 스킴을 등록해요.">

@@ -23,6 +23,9 @@ model Service {
   postLogoutRedirectUris Json @default("[]")
   /// ID 토큰 서명 알고리즘 ("ES256" | "RS256"). 새 앱은 RS256 (OIDC 기본값), 0008 이전 앱은 ES256
   idTokenSigningAlg String @default("ES256")
+  /// 회전된 refresh token을 이 시간(초, 0~60) 안에는 다시 써도 재사용으로 보지 않는다.
+  /// 동시에 갱신하는 요청(여러 탭, 서버 렌더링)이 로그인을 끊지 않게 한다 (Okta grace period, Auth0 reuse interval)
+  refreshTokenGraceSec Int @default(30)
   /// ("google" | "kakao")[]
   providers        Json    @default("[]")
   brandColor       String?
@@ -204,6 +207,8 @@ model RefreshToken {
   authTime  DateTime?
   expiresAt DateTime
   revokedAt DateTime?
+  /// 갱신으로 교체된 시각. 로그아웃, 폐기로 끊긴 토큰은 비어 있다 (유예 시간은 교체된 토큰에만)
+  rotatedAt DateTime?
   createdAt DateTime  @default(now())
 
   @@index([userId])

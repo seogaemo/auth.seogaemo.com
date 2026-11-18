@@ -82,7 +82,8 @@ export function createSeogaemoAuth(options: SeogaemoAuthOptions) {
      * middleware.ts 에서 쓰면 렌더링 전에 토큰을 갱신한다 (서버 컴포넌트가 늘 살아 있는 토큰을 본다).
      *   export default auth.middleware;
      *   export const config = { matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"] };
-     * 미리 불러오기(prefetch) 요청에서는 갱신하지 않는다. 같은 refresh token으로 동시에 갱신하면 서버가 재사용으로 보고 끊기 때문이다.
+     * 미리 불러오기(prefetch) 요청에서는 갱신하지 않는다. 동시에 들어온 요청이 같은 refresh token으로 갱신해도
+     * 서버의 재사용 유예 시간(기본 30초) 안이면 괜찮지만, 쓸데없는 갱신을 줄이려는 것이다.
      */
     async middleware(request: NextRequest) {
       const isPrefetch = request.headers.get("next-router-prefetch") === "1" || request.headers.get("purpose") === "prefetch";

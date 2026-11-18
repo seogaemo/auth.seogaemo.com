@@ -86,6 +86,8 @@ const t2 = await (await form("/oauth/token", { ...tokenBody, code: code2 }, basi
 r = await form("/oauth/token", { grant_type: "refresh_token", refresh_token: t2.refresh_token }, basic);
 const t3 = await r.json();
 check("refresh rotates", r.status === 200 && t3.refresh_token && t3.refresh_token !== t2.refresh_token);
+// 회전 유예 시간(기본 30초)이 지난 재사용이어야 유출로 본다
+sql(`UPDATE "RefreshToken" SET rotatedAt = '${new Date(Date.now() - 120_000).toISOString()}' WHERE tokenHash = '${hex(t2.refresh_token)}';`);
 r = await form("/oauth/token", { grant_type: "refresh_token", refresh_token: t2.refresh_token }, basic);
 check("old refresh reuse -> invalid_grant", (await r.json()).error === "invalid_grant");
 r = await form("/oauth/token", { grant_type: "refresh_token", refresh_token: t3.refresh_token }, basic);

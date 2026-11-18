@@ -60,8 +60,10 @@ for (const [label, options, serviceId, userId] of [
   const refreshed = await client.refresh(result.tokens.refresh_token);
   check("refresh rotates the token", refreshed.tokens.refresh_token && refreshed.tokens.refresh_token !== result.tokens.refresh_token);
   check("refreshed ID token verified", refreshed.claims?.sub === userId);
+  // 회전 유예 시간(기본 30초) 안의 재사용은 동시 갱신으로 보고 새 토큰을 준다. 지난 뒤에는 유출로 본다
+  sql(`UPDATE "RefreshToken" SET rotatedAt = '${new Date(Date.now() - 120_000).toISOString()}' WHERE tokenHash = '${hex(result.tokens.refresh_token)}';`);
   check(
-    "reusing the old refresh token -> invalid_grant",
+    "reusing the old refresh token after the grace period -> invalid_grant",
     await rejects(client.refresh(result.tokens.refresh_token), (e) => e instanceof OAuthError && e.error === "invalid_grant"),
   );
 

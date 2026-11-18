@@ -119,6 +119,41 @@ const plain = await (await form("/oauth/token", { grant_type: "authorization_cod
 r = await get("/oauth/userinfo", { authorization: `Bearer ${plain.access_token}` });
 check("token without openid -> 403 insufficient_scope (OIDC Core 5.3)", r.status === 403 && /insufficient_scope/.test(r.headers.get("www-authenticate") ?? ""), `${r.status}`);
 
+console.log("--- refresh token rotation grace (Okta grace period, Auth0 reuse interval)");
+const refresh = (token) => form("/oauth/token", { grant_type: "refresh_token", refresh_token: token, ...DEV });
+const alive = async (token) => (await refresh(token)).status === 200;
+sql(`UPDATE "Service" SET refreshTokenGraceSec = 30 WHERE id = 'svc_dev';`);
+{
+  const g = await tokens();
+  const r1 = await (await refresh(g.refresh_token)).json();
+  r = await refresh(g.refresh_token);
+  const again = await r.json();
+  check("reusing the just-rotated token within the grace period -> new tokens", r.status === 200 && again.refresh_token && again.refresh_token !== r1.refresh_token, JSON.stringify(again));
+  check("...and the login is not cut (the other branch still works)", await alive(r1.refresh_token));
+
+  const c = await tokens();
+  const [x, y] = await Promise.all([refresh(c.refresh_token), refresh(c.refresh_token)]);
+  check("two refreshes at the same moment both succeed", x.status === 200 && y.status === 200, `${x.status} ${y.status}`);
+
+  const old = await tokens();
+  const o1 = await (await refresh(old.refresh_token)).json();
+  sql(`UPDATE "RefreshToken" SET rotatedAt = '${new Date(Date.now() - 31_000).toISOString()}' WHERE tokenHash = '${hex(old.refresh_token)}';`);
+  check("reuse after the grace period -> invalid_grant", (await (await refresh(old.refresh_token)).json()).error === "invalid_grant");
+  check("...and every token of that user is cut (theft response)", !(await alive(o1.refresh_token)));
+
+  const v = await tokens();
+  const v1 = await (await refresh(v.refresh_token)).json();
+  await form("/oauth/revoke", { token: v1.refresh_token, ...DEV });
+  check("reuse within grace after the newer token was revoked (logout) -> invalid_grant", (await (await refresh(v.refresh_token)).json()).error === "invalid_grant");
+
+  sql(`UPDATE "Service" SET refreshTokenGraceSec = 0 WHERE id = 'svc_dev';`);
+  const z = await tokens();
+  const z1 = await (await refresh(z.refresh_token)).json();
+  check("grace 0 -> immediate reuse is refused", (await (await refresh(z.refresh_token)).json()).error === "invalid_grant");
+  check("...and the login is cut", !(await alive(z1.refresh_token)));
+  sql(`UPDATE "Service" SET refreshTokenGraceSec = 30 WHERE id = 'svc_dev';`);
+}
+
 // wrangler dev가 요청 주소 안의 127.0.0.1을 localhost로 바꿔 넘겨서 로컬에서는 [::1]로 확인한다
 console.log("--- loopback redirect (RFC 8252 7.3)");
 const saved = JSON.parse(JSON.parse(execFileSync("npx", ["wrangler", "d1", "execute", "db.auth.seogaemo.com", "--local", "--json", "--command", `SELECT redirectUris FROM "Service" WHERE id='svc_dev'`], { stdio: "pipe" }).toString())[0].results[0].redirectUris);

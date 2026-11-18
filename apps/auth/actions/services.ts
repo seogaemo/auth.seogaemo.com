@@ -102,16 +102,21 @@ export async function updateRedirectUris(
   return { message: "저장했어요." };
 }
 
-/** 연동: ID 토큰 서명 알고리즘 */
-export async function updateIdTokenAlg(serviceId: string, _prev: ActionState, form: FormData): Promise<ActionState> {
+/** 연동: ID 토큰 서명 알고리즘과 refresh token 유예 시간 */
+export async function updateTokenSettings(serviceId: string, _prev: ActionState, form: FormData): Promise<ActionState> {
   const { developer } = await requireServiceAccess(serviceId);
+  const fields = echo(form, "refreshTokenGraceSec");
   const alg = form.get("idTokenSigningAlg");
-  if (alg !== "RS256" && alg !== "ES256") return { error: "RS256이나 ES256 중에서 고르세요." };
+  if (alg !== "RS256" && alg !== "ES256") return { error: "RS256이나 ES256 중에서 고르세요.", fields };
+  const grace = Number(form.get("refreshTokenGraceSec"));
+  if (!Number.isInteger(grace) || grace < 0 || grace > 60) {
+    return { error: "refresh token 유예 시간은 0초에서 60초 사이의 정수로 입력하세요.", fields };
+  }
 
-  await getPrisma().service.update({ where: { id: serviceId }, data: { idTokenSigningAlg: alg } });
-  await recordAudit(serviceId, developer, "idtoken.update", alg);
+  await getPrisma().service.update({ where: { id: serviceId }, data: { idTokenSigningAlg: alg, refreshTokenGraceSec: grace } });
+  await recordAudit(serviceId, developer, "tokens.update", `${alg}, ${grace}초`);
   revalidateService(serviceId);
-  return { message: "저장했어요. 다음 로그인부터 이 방식으로 서명해요." };
+  return { message: "저장했어요. 다음 토큰부터 적용돼요." };
 }
 
 /** 로그인 화면: 앱 이름과 로그인 방식 */

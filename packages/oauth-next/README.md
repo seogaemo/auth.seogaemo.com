@@ -70,7 +70,7 @@ export default auth.middleware;
 export const config = { matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"] };
 ```
 
-미리 불러오기(prefetch) 요청에서는 갱신하지 않는다.
+미리 불러오기(prefetch) 요청에서는 갱신하지 않는다. 동시에 들어온 요청 여러 개가 같은 refresh token으로 갱신해도 서버의 재사용 유예 시간(콘솔 연동 > 토큰 설정, 기본 30초) 안이면 로그인이 끊기지 않는다. 유예 시간을 0으로 두면 미들웨어 쓰기를 권하지 않는다.
 
 옵션:
 

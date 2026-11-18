@@ -125,7 +125,7 @@ https://auth.seogaemo.com/.well-known/openid-configuration
 | 로그인 유지 | 30일. `prompt`(none, login, select_account), `max_age`, `login_hint` 지원 |
 | 계정 화면 | `/account?client_id=...` |
 
-refresh token을 재사용하면 (이미 교체된 토큰이 다시 들어오면) 그 사용자의 토큰을 전부 끊는다.
+refresh token을 재사용하면 (이미 교체된 토큰이 다시 들어오면) 그 사용자의 토큰을 전부 끊는다. 단, 교체된 지 유예 시간(앱마다 0~60초, 기본 30초, 콘솔 연동 > 토큰 설정) 안이고 그 로그인이 아직 살아 있으면(로그아웃, 폐기 전) 재사용으로 보지 않고 새 토큰을 준다. 여러 탭이나 서버가 동시에 갱신해도 로그인이 끊기지 않게 하려는 것으로, Okta의 grace period, Auth0의 reuse interval과 같다.
 
 ## 로컬 개발
 

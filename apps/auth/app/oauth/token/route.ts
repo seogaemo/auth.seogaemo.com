@@ -1,4 +1,4 @@
-import type { Service } from "@prisma/client";
+import type { RefreshToken, Service } from "@prisma/client";
 
 import { getPrisma } from "@/cloudflare";
 import { isEmailAllowed } from "@/lib/allowlist";
@@ -76,8 +76,10 @@ async function rotateRefreshToken(service: Service, form: URLSearchParams) {
     return oauthError("invalid_grant", "invalid refresh token");
   }
 
-  if (record.revokedAt) {
-    // 이미 교체된 토큰이 다시 쓰였다 = 유출됐을 수 있다. 이 사용자의 토큰을 전부 끊는다.
+  // 방금 교체된 토큰이면 유예 시간 안에서는 새 토큰을 한 번 더 준다 (동시 갱신). 그 밖의 재사용은 유출로 본다
+  const inGrace = record.revokedAt ? await withinGrace(service, record) : false;
+  if (record.revokedAt && !inGrace) {
+    // 이미 교체되거나 끊긴 토큰이 다시 쓰였다 = 유출됐을 수 있다. 이 사용자의 토큰을 전부 끊는다.
     await revokeAllRefreshTokens(record.serviceId, record.userId);
     return oauthError("invalid_grant", "refresh token was revoked");
   }
@@ -100,15 +102,46 @@ async function rotateRefreshToken(service: Service, form: URLSearchParams) {
     return oauthError("invalid_grant", "user is not allowed to sign in to this client");
   }
 
-  const { count } = await prisma.refreshToken.updateMany({
-    where: { tokenHash, revokedAt: null },
-    data: { revokedAt: new Date() },
-  });
-  if (count !== 1) {
-    await revokeAllRefreshTokens(record.serviceId, record.userId);
-    return oauthError("invalid_grant", "refresh token was revoked");
+  if (!inGrace) {
+    const now = new Date();
+    const { count } = await prisma.refreshToken.updateMany({
+      where: { tokenHash, revokedAt: null },
+      data: { revokedAt: now, rotatedAt: now },
+    });
+    // 같은 토큰으로 거의 동시에 온 요청 중 늦은 쪽. 방금 다른 요청이 교체했으면 유예 시간 규칙을 따른다
+    if (count !== 1) {
+      const latest = await prisma.refreshToken.findUnique({ where: { tokenHash } });
+      if (!latest || !isFreshRotation(service, latest)) {
+        await revokeAllRefreshTokens(record.serviceId, record.userId);
+        return oauthError("invalid_grant", "refresh token was revoked");
+      }
+    }
   }
 
   // 새 ID 토큰의 auth_time은 처음 인증 시각 그대로, nonce는 넣지 않는다 (OIDC Core 12.2)
   return json(await issueTokens({ service, user: record.user, scope, sessionId: record.sessionId, authTime: record.authTime }));
+}
+
+/** 갱신으로 교체된 지 유예 시간 안인지 */
+function isFreshRotation(service: Service, token: RefreshToken) {
+  const grace = Math.min(Math.max(service.refreshTokenGraceSec, 0), 60) * 1000;
+  return grace > 0 && token.rotatedAt !== null && Date.now() - token.rotatedAt.getTime() <= grace;
+}
+
+/**
+ * 교체된 토큰을 유예 시간 안에 다시 쓴 경우. 그 사이 로그아웃이나 폐기로 로그인이 끊겼으면(이어진 토큰이 모두 끊김)
+ * 유예하지 않는다. 교체 뒤 만들어진, 같은 로그인 세션의 살아 있는 토큰이 하나라도 있어야 한다.
+ */
+async function withinGrace(service: Service, token: RefreshToken) {
+  if (!isFreshRotation(service, token)) return false;
+  const live = await getPrisma().refreshToken.count({
+    where: {
+      serviceId: token.serviceId,
+      userId: token.userId,
+      sessionId: token.sessionId,
+      revokedAt: null,
+      createdAt: { gte: token.rotatedAt! },
+    },
+  });
+  return live > 0;
 }
