@@ -31,11 +31,11 @@
 	},
 	"devDependencies": {
 		"@types/node": "^22",
-		"next": "15.5.28",
+		"next": "15.5.29",
 		"react": "^19.0.0",
 		"react-dom": "^19.0.0",
 		"typescript": "^5",
-		"vitest": "^3"
+		"vitest": "^4.1.12"
 	},
 	"peerDependencies": {
 		"next": ">=14"
