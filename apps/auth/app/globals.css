@@ -2,6 +2,24 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * 기본 글꼴 LINE Seed Sans KR 서브셋 (SIL OFL 1.1, public/fonts/LICENSE.md, scripts/build-font.py).
+ * 굵기가 Regular, Bold 두 개뿐이라 DS 굵기 토큰(보통 500, 강조 600)이 각각 Regular, Bold에 걸리게 범위로 등록한다.
+ * 서브셋에 없는 한글(KS X 1001 밖)은 Pretendard, 시스템 글꼴 순으로 이어 그린다.
+ */
+@font-face {
+  font-family: "LINE Seed Sans KR";
+  src: url("/fonts/LINESeedSansKR-Regular.woff2") format("woff2");
+  font-weight: 100 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: "LINE Seed Sans KR";
+  src: url("/fonts/LINESeedSansKR-Bold.woff2") format("woff2");
+  font-weight: 600 900;
+  font-display: swap;
+}
+
 /* SeogaemoMono = Monoplex KR 서브셋 (SIL OFL 1.1, public/fonts/LICENSE.md) */
 @font-face {
   font-family: "SeogaemoMono";
@@ -51,6 +69,11 @@
 }
 
 @layer base {
+  /* DS preset의 * { font-family: Pretendard } 를 덮는다. font-mono 같은 클래스가 이보다 우선한다 */
+  * {
+    font-family: "LINE Seed Sans KR", "Pretendard", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  }
+
   /* 위아래로 끝까지 당겨도 고무줄 효과로 빈 배경이 드러나지 않게 한다 */
   html,
   body {

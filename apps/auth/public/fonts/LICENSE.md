@@ -1,3 +1,12 @@
+This folder holds two subset fonts. Both are licensed under the SIL Open Font
+License, Version 1.1, printed in full below.
+
+- LINESeedSansKR-*.woff2: LINE Seed Sans KR, Copyright (c) LY Corporation.
+  https://seed.line.me/index_kr.html (LINE_SeedKR_2023.09.06). Subset to the
+  characters the site uses, and the vertical metrics (ascender, descender) were
+  changed to center the glyphs in the line; the outlines are unchanged.
+- SeogaemoMono-*.woff2: Monoplex KR, notices below.
+
 Copyright (c) 2021, Kim Yangsu with Reserved Font Name "Monoplex"
 
 Monoplex Font Software is licensed under the SIL Open Font License, Version 1.1.

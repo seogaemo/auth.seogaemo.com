@@ -11,7 +11,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // 폰트(Pretendard)는 @seogaemo/ds-tailwind preset이 base 스타일로 넣어준다.
+  // 기본 글꼴(LINE Seed Sans KR)은 globals.css에서 DS preset의 Pretendard를 덮어 쓴다.
   return (
     <html lang="ko">
       <body className="bg-base antialiased">{children}</body>
