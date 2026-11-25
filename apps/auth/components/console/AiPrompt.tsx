@@ -1,15 +1,14 @@
 "use client";
 
-import { useState } from "react";
-
 import { Button } from "./ui";
+import { useCopy } from "./useCopy";
 
 /**
  * "AI에게 맡기기": 이 앱의 실제 값과 아직 안 된 설정을 담은 안내를 복사한다.
  * Claude Code, Cursor 같은 도구에 그대로 붙여 넣으면 된다.
  */
 export function AiPrompt({ prompt, todoCount }: { prompt: string; todoCount: number }) {
-  const [copied, setCopied] = useState(false);
+  const [copied, copy] = useCopy(2000);
 
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-base bg-base-elevated p-4">
@@ -21,16 +20,12 @@ export function AiPrompt({ prompt, todoCount }: { prompt: string; todoCount: num
         </p>
         <Button
           type="button"
-          onClick={async () => {
-            await navigator.clipboard.writeText(prompt);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-          }}
+          onClick={() => copy(prompt)}
         >
-          {copied ? "복사했어요" : "AI용 안내 복사"}
+          {copied === "copied" ? "복사했어요" : copied === "failed" ? "복사 실패, 다시 누르기" : "AI용 안내 복사"}
         </Button>
         <span role="status" className="sr-only">
-          {copied ? "AI용 안내를 복사했어요" : ""}
+          {copied === "copied" ? "AI용 안내를 복사했어요" : copied === "failed" ? "AI용 안내를 복사하지 못했어요. 페이지를 한 번 누른 뒤 다시 시도하세요." : ""}
         </span>
       </div>
       <details className="group">

@@ -51,6 +51,10 @@ jobs:
         run: pnpm run db:migrate:remote
 
       # opennextjs-cloudflare build로 .open-next를 만든 뒤 wrangler deploy까지 한다.
+      # 이 키가 없으면 Next가 빌드마다 Server Action ID를 새로 만들어서, 배포 전에 열어 둔 탭의 저장 버튼이
+      # "Server Action was not found"로 깨진다. 키를 고정하면 액션 코드가 바뀌지 않는 한 ID가 유지된다.
       - name: Build and deploy
         working-directory: apps/auth
+        env:
+          NEXT_SERVER_ACTIONS_ENCRYPTION_KEY: ${{ secrets.NEXT_SERVER_ACTIONS_ENCRYPTION_KEY }}
         run: pnpm run deploy

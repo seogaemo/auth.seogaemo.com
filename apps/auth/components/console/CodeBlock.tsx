@@ -1,12 +1,11 @@
 "use client";
 
-import { useState } from "react";
-
 import { TextAction } from "./ui";
+import { copyStatus, useCopy } from "./useCopy";
 
 /** 복사 버튼이 달린 코드 블록 (연동 가이드) */
 export function CodeBlock({ title, code }: { title: string; code: string }) {
-  const [copied, setCopied] = useState(false);
+  const [copied, copy] = useCopy();
 
   return (
     <div className="overflow-hidden rounded-lg border border-base bg-base-elevated">
@@ -14,15 +13,11 @@ export function CodeBlock({ title, code }: { title: string; code: string }) {
         <span className="font-mono text-label text-secondary">{title}</span>
         <TextAction
           aria-label={`${title} 복사`}
-          onClick={async () => {
-            await navigator.clipboard.writeText(code);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 1500);
-          }}
+          onClick={() => copy(code)}
         >
-          {copied ? "복사됨" : "복사"}
+          {copied === "copied" ? "복사됨" : copied === "failed" ? "복사 실패" : "복사"}
           <span role="status" className="sr-only">
-            {copied ? `${title} 복사됨` : ""}
+            {copyStatus(copied, title)}
           </span>
         </TextAction>
       </div>

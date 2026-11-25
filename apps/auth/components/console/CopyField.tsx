@@ -1,12 +1,11 @@
 "use client";
 
-import { useState } from "react";
-
 import { InfoRow, TextAction } from "./ui";
+import { copyStatus, useCopy } from "./useCopy";
 
 /** 테두리 카드 한 줄 + 복사 (client ID, secret, discovery URL) */
 export function CopyField({ label, value, secret = false }: { label: string; value: string; secret?: boolean }) {
-  const [copied, setCopied] = useState(false);
+  const [copied, copy] = useCopy();
 
   return (
     <InfoRow
@@ -14,15 +13,11 @@ export function CopyField({ label, value, secret = false }: { label: string; val
       action={
         <TextAction
           aria-label={`${label} 복사`}
-          onClick={async () => {
-            await navigator.clipboard.writeText(value);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 1500);
-          }}
+          onClick={() => copy(value)}
         >
-          {copied ? "복사됨" : "복사"}
+          {copied === "copied" ? "복사됨" : copied === "failed" ? "복사 실패" : "복사"}
           <span role="status" className="sr-only">
-            {copied ? `${label} 복사됨` : ""}
+            {copyStatus(copied, label)}
           </span>
         </TextAction>
       }
