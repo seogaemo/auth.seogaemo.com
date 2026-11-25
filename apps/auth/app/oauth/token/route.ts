@@ -5,7 +5,7 @@ import { isEmailAllowed } from "@/lib/allowlist";
 import { hashSecret } from "@/lib/crypto";
 import { consumeAuthorizationCode } from "@/lib/oauth/codes";
 import { authenticateClient, json, oauthError, preflight, readForm, repeatedParam } from "@/lib/oauth/http";
-import { issueTokens, revokeAllRefreshTokens } from "@/lib/oauth/tokens";
+import { issueTokens, revokeAllRefreshTokens, revokeRefreshTokenFamily } from "@/lib/oauth/tokens";
 
 export const dynamic = "force-dynamic";
 
@@ -58,6 +58,7 @@ async function exchangeAuthorizationCode(service: Service, form: URLSearchParams
       sessionId: record.sessionId,
       authTime: record.authTime,
       authMethod: record.authMethod,
+      familyId: record.familyId ?? crypto.randomUUID(),
     }),
   );
 }
@@ -80,8 +81,10 @@ async function rotateRefreshToken(service: Service, form: URLSearchParams) {
   // 방금 교체된 토큰이면 유예 시간 안에서는 새 토큰을 한 번 더 준다 (동시 갱신). 그 밖의 재사용은 유출로 본다
   const inGrace = record.revokedAt ? await withinGrace(service, record) : false;
   if (record.revokedAt && !inGrace) {
-    // 이미 교체되거나 끊긴 토큰이 다시 쓰였다 = 유출됐을 수 있다. 이 사용자의 토큰을 전부 끊는다.
-    await revokeAllRefreshTokens(record.serviceId, record.userId);
+    // 회전으로 교체된 토큰이 다시 쓰였다 = 유출됐을 수 있다. 이 토큰이 속한 로그인(묶음)만 끊는다.
+    // 같은 사용자의 다른 기기 로그인까지 끊으면 한 기기의 실수로 모든 기기가 로그아웃된다 (Auth0, Okta도 묶음 단위).
+    // 로그아웃이나 폐기로 끊긴 토큰은 이미 끝난 로그인이라 거절만 한다.
+    if (record.rotatedAt) await revokeFamilyOf(record);
     return oauthError("invalid_grant", "refresh token was revoked");
   }
   if (record.expiresAt < new Date()) {
@@ -113,7 +116,7 @@ async function rotateRefreshToken(service: Service, form: URLSearchParams) {
     if (count !== 1) {
       const latest = await prisma.refreshToken.findUnique({ where: { tokenHash } });
       if (!latest || !isFreshRotation(service, latest)) {
-        await revokeAllRefreshTokens(record.serviceId, record.userId);
+        if (latest?.rotatedAt) await revokeFamilyOf(latest);
         return oauthError("invalid_grant", "refresh token was revoked");
       }
     }
@@ -128,8 +131,15 @@ async function rotateRefreshToken(service: Service, form: URLSearchParams) {
       sessionId: record.sessionId,
       authTime: record.authTime,
       authMethod: record.authMethod,
+      familyId: record.familyId ?? crypto.randomUUID(),
     }),
   );
+}
+
+/** 재사용이 감지된 토큰의 묶음을 끊는다. 0011 이전에 만들어져 묶음이 없는 토큰이면 예전처럼 그 사용자의 토큰을 모두 끊는다 */
+async function revokeFamilyOf(token: RefreshToken) {
+  if (token.familyId) await revokeRefreshTokenFamily(token.familyId);
+  else await revokeAllRefreshTokens(token.serviceId, token.userId);
 }
 
 /** 갱신으로 교체된 지 유예 시간 안인지 */
@@ -140,7 +150,7 @@ function isFreshRotation(service: Service, token: RefreshToken) {
 
 /**
  * 교체된 토큰을 유예 시간 안에 다시 쓴 경우. 그 사이 로그아웃이나 폐기로 로그인이 끊겼으면(이어진 토큰이 모두 끊김)
- * 유예하지 않는다. 교체 뒤 만들어진, 같은 로그인 세션의 살아 있는 토큰이 하나라도 있어야 한다.
+ * 유예하지 않는다. 교체 뒤 만들어진, 같은 묶음의 살아 있는 토큰이 하나라도 있어야 한다.
  */
 async function withinGrace(service: Service, token: RefreshToken) {
   if (!isFreshRotation(service, token)) return false;
@@ -148,7 +158,7 @@ async function withinGrace(service: Service, token: RefreshToken) {
     where: {
       serviceId: token.serviceId,
       userId: token.userId,
-      sessionId: token.sessionId,
+      ...(token.familyId ? { familyId: token.familyId } : { sessionId: token.sessionId }),
       revokedAt: null,
       createdAt: { gte: token.rotatedAt! },
     },

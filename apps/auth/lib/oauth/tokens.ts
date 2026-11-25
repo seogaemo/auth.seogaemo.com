@@ -42,8 +42,10 @@ export async function issueTokens(params: {
   authTime?: Date | null;
   /** 직접 인증한 수단 (amr). refresh token에도 남겨 갱신 때 그대로 쓴다 */
   authMethod?: string | null;
+  /** 회전으로 이어진 토큰 묶음. code 교환 때 정하고 갱신 때 이어 받는다 */
+  familyId: string;
 }) {
-  const { service, user, scope, nonce, sessionId, authTime, authMethod } = params;
+  const { service, user, scope, nonce, sessionId, authTime, authMethod, familyId } = params;
   // 앱 서버가 "방금 다시 로그인했는지", "어떤 수단으로 들어왔는지"를 access token만 보고 판단할 수 있게 둘 다 넣는다 (RFC 9068 2.2.1)
   const authClaims = {
     ...(authTime ? { auth_time: Math.floor(authTime.getTime() / 1000) } : {}),
@@ -60,6 +62,7 @@ export async function issueTokens(params: {
       sessionId: sessionId ?? null,
       authTime: authTime ?? null,
       authMethod: authMethod ?? null,
+      familyId,
       expiresAt: new Date(Date.now() + TTL.refreshTokenMs),
     },
   });
@@ -91,6 +94,14 @@ export async function issueTokens(params: {
     scope,
     ...(idToken ? { id_token: idToken } : {}),
   };
+}
+
+/** 한 로그인에서 회전으로 이어진 refresh token을 끊는다 (재사용 감지). 같은 사용자의 다른 기기 로그인은 그대로 둔다 */
+export async function revokeRefreshTokenFamily(familyId: string) {
+  await getPrisma().refreshToken.updateMany({
+    where: { familyId, revokedAt: null },
+    data: { revokedAt: new Date() },
+  });
 }
 
 /** 이 사용자가 이 서비스에서 받은 refresh token을 전부 폐기한다 */

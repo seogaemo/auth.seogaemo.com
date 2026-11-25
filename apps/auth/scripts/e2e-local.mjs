@@ -91,7 +91,7 @@ sql(`UPDATE "RefreshToken" SET rotatedAt = '${new Date(Date.now() - 120_000).toI
 r = await form("/oauth/token", { grant_type: "refresh_token", refresh_token: t2.refresh_token }, basic);
 check("old refresh reuse -> invalid_grant", (await r.json()).error === "invalid_grant");
 r = await form("/oauth/token", { grant_type: "refresh_token", refresh_token: t3.refresh_token }, basic);
-check("reuse detection revoked newest too", (await r.json()).error === "invalid_grant");
+check("reuse detection revoked the newest token of that login too", (await r.json()).error === "invalid_grant");
 
 const code3 = b64u(randomBytes(32));
 sql(`INSERT INTO "AuthorizationCode" (codeHash, serviceId, userId, redirectUri, scope, codeChallenge, codeChallengeMethod, expiresAt, createdAt) VALUES ('${hex(code3)}','svc_dev','usr_e2e','http://localhost:5173/callback','openid','${challenge}','S256','${exp}','${new Date().toISOString()}');`);

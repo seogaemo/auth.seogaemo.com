@@ -379,7 +379,7 @@ function rules(f: AppFacts) {
 - 인가 응답에 iss가 붙는다 (RFC 9207). 응답은 query로만 온다 (response_mode=query).
 - 클라이언트 인증: 서버가 있는 웹앱은 client_secret_basic 또는 client_secret_post, SPA와 모바일 앱(public client)은 none(PKCE만). public client가 시크릿을 보내면 거절된다.
 - ID 토큰 서명은 앱마다 RS256 또는 ES256 (콘솔 연동 > 토큰 설정). ES256이면 라이브러리에 id_token_signed_response_alg: "ES256"을 알려야 하는 경우가 있다 (Auth.js, openid-client).
-- 토큰: access token은 1시간짜리 JWT (RFC 9068, aud = client_id). 앱 서버는 jwks_uri로 서명을 확인하고 iss, exp, aud를 본다. refresh token은 offline_access 없이도 항상 나오고, 쓸 때마다 새 것으로 바뀐다(회전). 새 토큰은 다시 30일이라, 30일 안에 한 번이라도 갱신하면 로그인이 계속 이어진다 (절대 만료 없음). 응답의 새 refresh token을 저장하고 이전 것은 버린다. 바뀐 지 ${f.graceSec}초가 지난 이전 토큰을 다시 쓰면 탈취로 보고 그 사용자의 토큰을 모두 끊는다.
+- 토큰: access token은 1시간짜리 JWT (RFC 9068, aud = client_id). 앱 서버는 jwks_uri로 서명을 확인하고 iss, exp, aud를 본다. refresh token은 offline_access 없이도 항상 나오고, 쓸 때마다 새 것으로 바뀐다(회전). 새 토큰은 다시 30일이라, 30일 안에 한 번이라도 갱신하면 로그인이 계속 이어진다 (절대 만료 없음). 응답의 새 refresh token을 저장하고 이전 것은 버린다. 바뀐 지 ${f.graceSec}초가 지난 이전 토큰을 다시 쓰면 탈취로 보고, 그 로그인에서 이어진 토큰(token family)을 끊는다. 같은 사용자가 다른 기기나 브라우저에서 따로 로그인한 토큰은 그대로다. 앱과 확장(위젯, 알림)이 토큰을 같이 쓰면 저장소를 공유해서 갱신된 토큰을 바로 같이 봐야 한다.
 - 로그인 유지: 한 번 로그인하면 30일 동안 로그인 화면 없이 넘어간다. prompt=none, login, select_account, consent와 max_age, login_hint를 지원한다.
 - 로그아웃: refresh token을 폐기(revoke)한 뒤 브라우저를 end session으로 보낸다. id_token_hint를 꼭 붙인다 (없으면 "로그아웃할까요?" 확인 화면이 뜬다). post_logout_redirect_uri는 콘솔에 등록한 "로그아웃 후 이동 주소"와 정확히 같아야 앱으로 돌아온다 (경로 없는 주소만 끝의 /를 같게 본다). client_id는 붙여도 되고 안 붙여도 된다. Auth.js의 signOut()처럼 앱 쿠키만 지우는 함수로는 Seogaemo 로그인이 끝나지 않으니, 위 두 단계를 직접 한다.
 - 네이티브 앱은 ASWebAuthenticationSession(iOS), Custom Tabs(Android)로 연다. WebView 안에서 열면 Google 로그인과 패스키가 막힌다.

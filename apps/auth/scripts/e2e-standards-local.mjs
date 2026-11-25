@@ -148,15 +148,32 @@ sql(`UPDATE "Service" SET refreshTokenGraceSec = 30 WHERE id = 'svc_dev';`);
   check("two refreshes at the same moment both succeed", x.status === 200 && y.status === 200, `${x.status} ${y.status}`);
 
   const old = await tokens();
+  const otherDevice = await tokens();
   const o1 = await (await refresh(old.refresh_token)).json();
   sql(`UPDATE "RefreshToken" SET rotatedAt = '${new Date(Date.now() - 31_000).toISOString()}' WHERE tokenHash = '${hex(old.refresh_token)}';`);
   check("reuse after the grace period -> invalid_grant", (await (await refresh(old.refresh_token)).json()).error === "invalid_grant");
-  check("...and every token of that user is cut (theft response)", !(await alive(o1.refresh_token)));
+  check("...and that login (token family) is cut (theft response)", !(await alive(o1.refresh_token)));
+  check("...but the same user's login on another device keeps working", await alive(otherDevice.refresh_token));
 
   const v = await tokens();
   const v1 = await (await refresh(v.refresh_token)).json();
   await form("/oauth/revoke", { token: v1.refresh_token, ...DEV });
   check("reuse within grace after the newer token was revoked (logout) -> invalid_grant", (await (await refresh(v.refresh_token)).json()).error === "invalid_grant");
+
+  const p = await tokens();
+  const q = await tokens();
+  await form("/oauth/revoke", { token: p.refresh_token, ...DEV });
+  check("reusing a token ended by revoke -> invalid_grant", (await (await refresh(p.refresh_token)).json()).error === "invalid_grant");
+  check("...without cutting the user's other logins (not a theft signal)", await alive(q.refresh_token));
+
+  // code를 두 번 쓰면 그 code로 받은 토큰만 끊는다 (RFC 6749 4.1.2)
+  const twice = issueCode();
+  const first = await (await form("/oauth/token", { grant_type: "authorization_code", code: twice, redirect_uri: R, code_verifier: verifier, ...DEV })).json();
+  const bystander = await tokens();
+  r = await form("/oauth/token", { grant_type: "authorization_code", code: twice, redirect_uri: R, code_verifier: verifier, ...DEV });
+  check("code used twice -> invalid_grant", (await r.json()).error === "invalid_grant");
+  check("...and the tokens from that code are cut", !(await alive(first.refresh_token)));
+  check("...but other logins of the user are not", await alive(bystander.refresh_token));
 
   sql(`UPDATE "Service" SET refreshTokenGraceSec = 0 WHERE id = 'svc_dev';`);
   const z = await tokens();
