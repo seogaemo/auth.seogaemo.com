@@ -16,6 +16,7 @@ import {
 import { hashSecret, randomToken } from "@/lib/crypto";
 import { PROVIDERS } from "@/lib/config";
 import { recordAudit } from "@/lib/events";
+import { deleteUser } from "@/lib/oauth/delete-user";
 import { endAllSessions } from "@/lib/oauth/session";
 
 export type ActionState = {
@@ -226,7 +227,7 @@ async function serviceUser(serviceId: string, userId: string) {
 export async function deleteServiceUser(serviceId: string, userId: string) {
   const { developer, user } = await serviceUser(serviceId, userId);
   if (!user) return;
-  await getPrisma().user.delete({ where: { id: user.id } });
+  await deleteUser(user);
   await recordAudit(serviceId, developer, "user.delete", user.email ?? user.id);
   revalidatePath(`/console/services/${serviceId}/users`);
 }
@@ -265,7 +266,7 @@ export async function updateAllowlist(
 export async function deleteServiceUserFromDetail(serviceId: string, userId: string): Promise<ActionState> {
   const { developer, user } = await serviceUser(serviceId, userId);
   if (user) {
-    await getPrisma().user.delete({ where: { id: user.id } });
+    await deleteUser(user);
     await recordAudit(serviceId, developer, "user.delete", user.email ?? user.id);
   }
   return { redirectTo: `/console/services/${serviceId}/users` };

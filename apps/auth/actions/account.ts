@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { getPrisma } from "@/cloudflare";
+import { deleteUser } from "@/lib/oauth/delete-user";
 import { checkPasswordRule } from "@/lib/email-auth";
 import { currentBrowserKey, endAllSessions, findSession } from "@/lib/oauth/session";
 import { deletePasskey } from "@/lib/passkey";
@@ -117,7 +118,7 @@ export async function deleteAccount(clientId: string, _prev: AccountState, form:
   const prisma = getPrisma();
   // 콘솔 계정이면 관리자로 참여한 앱에서도 뺀다 (같은 이메일로 다시 가입해도 자동으로 돌아오지 않게)
   if (service.isSystem && user.email) await prisma.serviceMember.deleteMany({ where: { email: user.email } });
-  await prisma.user.delete({ where: { id: user.id } });
+  await deleteUser(user);
   // revalidatePath를 하면 지금 화면(이미 지운 사용자)을 다시 그리다 로그인으로 튄다. 이동만 한다.
   return { redirectTo: `/account/deleted?client_id=${encodeURIComponent(service.clientId)}` };
 }
