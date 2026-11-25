@@ -6,16 +6,30 @@
 // @ts-ignore
 import handler from "./.open-next/worker.js";
 
+import { deliverDue } from "./lib/backchannel";
 import { cleanupExpired } from "./lib/cleanup";
+
+/** wrangler.jsonc의 crons와 같아야 한다 */
+const DAILY_CLEANUP = "17 18 * * *";
 
 export default {
   fetch: handler.fetch,
 
-  async scheduled(_controller: ScheduledController, env: CloudflareEnv, ctx: ExecutionContext) {
+  async scheduled(controller: ScheduledController, env: CloudflareEnv, ctx: ExecutionContext) {
+    if (controller.cron === DAILY_CLEANUP) {
+      ctx.waitUntil(
+        cleanupExpired(env.DB).then(
+          (deleted) => console.log("cleanup", JSON.stringify(deleted)),
+          (error) => console.error("cleanup failed", error),
+        ),
+      );
+      return;
+    }
+    // 매분: 실패한 back-channel logout 알림을 다시 보낸다
     ctx.waitUntil(
-      cleanupExpired(env.DB).then(
-        (deleted) => console.log("cleanup", JSON.stringify(deleted)),
-        (error) => console.error("cleanup failed", error),
+      deliverDue(env).then(
+        (count) => count > 0 && console.log("backchannel retry", count),
+        (error) => console.error("backchannel retry failed", error),
       ),
     );
   },

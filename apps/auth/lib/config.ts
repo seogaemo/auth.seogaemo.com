@@ -69,9 +69,9 @@ export function isSocialProvider(value: string): value is SocialProvider {
   return (SOCIAL_PROVIDERS as string[]).includes(value);
 }
 
-/** OIDC issuer. 모든 엔드포인트 주소의 기준이기도 하다. */
-export function getIssuer() {
-  const issuer = getCloudflareContext().env.ISSUER;
+/** OIDC issuer. 모든 엔드포인트 주소의 기준이기도 하다. 요청 밖(Cron)에서는 env를 넘긴다 */
+export function getIssuer(env: Pick<CloudflareEnv, "ISSUER"> = getCloudflareContext().env) {
+  const issuer = env.ISSUER;
   if (!issuer) throw new Error("ISSUER is not set");
   return issuer.replace(/\/+$/, "");
 }

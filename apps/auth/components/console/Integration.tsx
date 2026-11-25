@@ -1,4 +1,4 @@
-import type { Service } from "@prisma/client";
+import type { BackchannelDelivery, Service } from "@prisma/client";
 import type { ReactNode } from "react";
 
 import { AiPrompt } from "@/components/console/AiPrompt";
@@ -6,6 +6,7 @@ import { CodeBlock } from "@/components/console/CodeBlock";
 import { CopyField } from "@/components/console/CopyField";
 import { TokenSettingsForm } from "@/components/console/TokenSettingsForm";
 import { RedirectUrisForm } from "@/components/console/RedirectUrisForm";
+import { BackchannelSettings } from "@/components/console/BackchannelSettings";
 import { RotateSecret } from "@/components/console/RotateSecret";
 import { Block, InfoRow } from "@/components/console/ui";
 import { getIssuer } from "@/lib/config";
@@ -34,7 +35,15 @@ function Example({ title, description, open, children }: { title: string; descri
  * 앱을 붙이는 데 필요한 값과, 이 앱의 실제 값(issuer, Client ID, 등록된 Redirect URI)을 채운 복붙용 예제.
  * 연동 화면 전체: 연동 정보, Redirect URI, 예시 코드. 아직 사용자가 없으면(firstRun) 첫 예제를 펼쳐 둔다.
  */
-export function Integration({ service, firstRun }: { service: Service; firstRun: boolean }) {
+export function Integration({
+  service,
+  firstRun,
+  deliveries,
+}: {
+  service: Service;
+  firstRun: boolean;
+  deliveries: BackchannelDelivery[];
+}) {
   const issuer = getIssuer();
   const facts = appFacts(service);
   const { publicClient, accountUrl } = facts;
@@ -71,6 +80,13 @@ export function Integration({ service, firstRun }: { service: Service; firstRun:
           redirectUris={getRedirectUris(service)}
           postLogoutRedirectUris={getPostLogoutRedirectUris(service)}
         />
+      </Block>
+
+      <Block
+        title="서버 알림"
+        description="앱 서버에 사용자 데이터가 있다면, 로그아웃과 계정 삭제를 서버로 알려 받을 수 있어요 (OIDC Back-Channel Logout)."
+      >
+        <BackchannelSettings serviceId={service.id} uri={service.backchannelLogoutUri} deliveries={deliveries} />
       </Block>
 
       <Block title="예시 코드" description="이 앱의 값을 채워 뒀어요. 복사해서 그대로 쓰면 돼요.">

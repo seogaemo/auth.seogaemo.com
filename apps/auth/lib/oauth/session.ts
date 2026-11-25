@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 
 import { getPrisma } from "@/cloudflare";
 import { isEmailAllowed } from "../allowlist";
+import { notifyBackchannel } from "../backchannel";
 import { BROWSER_COOKIE, TTL } from "../config";
 import { hashSecret, randomToken } from "../crypto";
 import { clientInfo } from "../request";
@@ -75,8 +76,11 @@ export async function startSession(params: { browserKey: string; serviceId: stri
     where: { browserHash_serviceId: { browserHash, serviceId } },
   });
   if (existing && existing.userId !== userId) {
-    // 다른 사용자로 바뀌면 앞 사용자의 이 세션 토큰은 끊는다
+    // 다른 사용자로 바뀌면 앞 사용자의 세션을 끝내고 새 세션(새 sid)을 만든다.
+    // 같은 sid를 이어 쓰면 앱이 앞 사용자에게 보낸 로그아웃 알림과 새 사용자의 토큰을 구분하지 못한다
     await revokeSessionTokens(existing.id);
+    await prisma.session.delete({ where: { id: existing.id } });
+    await notifyBackchannel(serviceId, [{ sub: existing.userId, sid: existing.id }]);
   }
 
   return prisma.session.upsert({
@@ -107,12 +111,30 @@ export async function endSession(browserKey: string | null | undefined, serviceI
   if (!session) return null;
   await revokeSessionTokens(session.id);
   await prisma.session.delete({ where: { id: session.id } });
+  await notifyBackchannel(serviceId, [{ sub: session.userId, sid: session.id }]);
   return session;
 }
 
-/** 한 사용자의 모든 세션과 토큰을 끊는다 (정지, 콘솔의 "세션 모두 끊기", 탈퇴) */
+/**
+ * 한 사용자의 세션과 토큰을 끊는다.
+ * - except 없음 (정지, 콘솔의 "세션 모두 끊기"): 모두 끊고 앱에는 sid 없는 알림 하나 (그 sub의 모든 세션)
+ * - except 있음 (다른 기기 로그아웃, 비밀번호 변경): 지금 세션만 남기고, 끝난 세션마다 sid를 실어 알린다
+ */
 export async function endAllSessions(serviceId: string, userId: string, except?: string) {
   const prisma = getPrisma();
+  // 끝나는 세션들. 세션 행이 청소된 뒤에도 그 세션에서 나온 refresh token은 살아 있을 수 있어서 토큰 쪽도 본다
+  const ended = except
+    ? new Set([
+        ...(await prisma.session.findMany({ where: { serviceId, userId, NOT: { id: except } }, select: { id: true } })).map((s) => s.id),
+        ...(
+          await prisma.refreshToken.findMany({
+            where: { serviceId, userId, revokedAt: null, sessionId: { not: null }, NOT: { sessionId: except } },
+            select: { sessionId: true },
+            distinct: ["sessionId"],
+          })
+        ).map((t) => t.sessionId!),
+      ])
+    : null;
   await prisma.refreshToken.updateMany({
     where: {
       serviceId,
@@ -124,6 +146,7 @@ export async function endAllSessions(serviceId: string, userId: string, except?:
     data: { revokedAt: new Date() },
   });
   await prisma.session.deleteMany({ where: { serviceId, userId, ...(except ? { NOT: { id: except } } : {}) } });
+  await notifyBackchannel(serviceId, ended ? [...ended].map((sid) => ({ sub: userId, sid })) : [{ sub: userId }]);
 }
 
 /** 이 브라우저에서 로그인 유지 중인 계정들 (계정 화면에서 앱을 고를 때). 만료, 정지, 허용 목록 밖은 뺀다. */
@@ -144,4 +167,5 @@ export async function endBrowserSessions(browserKey: string | null | undefined) 
   const sessions = await prisma.session.findMany({ where: { browserHash: await hashSecret(browserKey) } });
   for (const session of sessions) await revokeSessionTokens(session.id);
   await prisma.session.deleteMany({ where: { id: { in: sessions.map((s) => s.id) } } });
+  for (const session of sessions) await notifyBackchannel(session.serviceId, [{ sub: session.userId, sid: session.id }]);
 }

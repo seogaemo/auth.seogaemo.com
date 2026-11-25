@@ -7,6 +7,7 @@ const ACTION_LABEL: Record<string, string> = {
   "redirects.update": "Redirect URI와 로그아웃 후 이동 주소를 바꿈",
   "idtoken.update": "ID 토큰 서명 방식을 바꿈",
   "tokens.update": "토큰 설정을 바꿈",
+  "backchannel.update": "서버 알림(Back-Channel Logout) 주소를 바꿈",
   "login.update": "이름과 로그인 방식을 바꿈",
   "signup.update": "가입과 약관 설정을 바꿈",
   "access.update": "접근 제한을 바꿈",

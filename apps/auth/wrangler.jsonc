@@ -10,8 +10,8 @@
 	"compatibility_flags": [
 		"nodejs_compat"
 	],
-	// 매일 03:17 (KST) 만료된 행 청소. worker.ts의 scheduled
-	"triggers": { "crons": ["17 18 * * *"] },
+	// worker.ts의 scheduled. 매일 03:17 (KST) 만료된 행 청소, 매분 back-channel logout 재전송
+	"triggers": { "crons": ["17 18 * * *", "* * * * *"] },
 	"assets": {
 		"binding": "ASSETS",
 		"directory": ".open-next/assets"

@@ -29,6 +29,8 @@ export interface AccessTokenClaims extends JWTPayload {
   auth_time?: number;
   /** 직접 인증한 수단 (RFC 8176 값, lib/oauth/amr.ts) */
   amr?: string[];
+  /** 이 토큰을 만든 로그인 세션 (back-channel logout의 sid와 같다) */
+  sid?: string;
 }
 
 export interface IdTokenClaims extends JWTPayload {
@@ -59,8 +61,7 @@ const cached = new Map<IdTokenAlg, { source: string; keys: Promise<SigningKeys> 
  * - RS256: JWT_RSA_PRIVATE_JWK (RSA 2048 이상). OIDC Discovery가 RS256 지원을 요구한다
  * 공개키는 개인키 JWK에서 비밀 부분을 뺀 값이다.
  */
-function getSigningKeys(alg: IdTokenAlg = ALG) {
-  const env = getCloudflareContext().env;
+function getSigningKeys(alg: IdTokenAlg = ALG, env: CloudflareEnv = getCloudflareContext().env) {
   const source = alg === "RS256" ? env.JWT_RSA_PRIVATE_JWK : env.JWT_PRIVATE_JWK;
   if (!source) {
     throw new Error(`${alg === "RS256" ? "JWT_RSA_PRIVATE_JWK" : "JWT_PRIVATE_JWK"} is not set`);
@@ -153,8 +154,29 @@ async function sign(
 }
 
 /** RFC 9068 JWT access token. jti는 토큰마다 다른 값이어야 한다 (2.2) */
-export function signAccessToken(claims: Pick<AccessTokenClaims, "sub" | "aud" | "scope" | "client_id" | "auth_time" | "amr">) {
+export function signAccessToken(claims: Pick<AccessTokenClaims, "sub" | "aud" | "scope" | "client_id" | "auth_time" | "amr" | "sid">) {
   return sign({ ...claims, jti: crypto.randomUUID() }, "at+jwt");
+}
+
+/**
+ * OIDC Back-Channel Logout 1.0의 logout token. 요청 밖(Cron 재전송)에서도 서명하니 env를 받는다.
+ * nonce는 넣지 않는다 (2.4). exp는 짧게 둔다. 재전송 때마다 새로 서명하고 jti는 그대로 둔다.
+ */
+export async function signLogoutToken(
+  env: CloudflareEnv,
+  claims: { aud: string; sub: string; sid?: string; jti: string; events: Record<string, object> },
+  alg: IdTokenAlg,
+) {
+  const { kid, privateKey } = await getSigningKeys(alg, env);
+  const { sub, aud, ...rest } = claims;
+  return new SignJWT(rest)
+    .setProtectedHeader({ alg, kid, typ: "logout+jwt" })
+    .setIssuer(getIssuer(env))
+    .setSubject(sub)
+    .setAudience(aud)
+    .setIssuedAt()
+    .setExpirationTime("2m")
+    .sign(privateKey);
 }
 
 export function signIdToken(claims: IdTokenClaims, alg: IdTokenAlg) {

@@ -73,6 +73,8 @@ export async function issueTokens(params: {
     client_id: service.clientId,
     scope,
     ...authClaims,
+    // 앱 서버가 back-channel logout(sid)을 받으면 그 세션의 access token을 만료 전에 거절할 수 있게 한다
+    ...(sessionId ? { sid: sessionId } : {}),
   });
 
   const idToken = hasScope(scope, "openid")

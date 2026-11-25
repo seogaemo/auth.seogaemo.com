@@ -382,6 +382,13 @@ function rules(f: AppFacts) {
 - 토큰: access token은 1시간짜리 JWT (RFC 9068, aud = client_id). 앱 서버는 jwks_uri로 서명을 확인하고 iss, exp, aud를 본다. refresh token은 offline_access 없이도 항상 나오고, 쓸 때마다 새 것으로 바뀐다(회전). 새 토큰은 다시 30일이라, 30일 안에 한 번이라도 갱신하면 로그인이 계속 이어진다 (절대 만료 없음). 응답의 새 refresh token을 저장하고 이전 것은 버린다. 바뀐 지 ${f.graceSec}초가 지난 이전 토큰을 다시 쓰면 탈취로 보고, 그 로그인에서 이어진 토큰(token family)을 끊는다. 같은 사용자가 다른 기기나 브라우저에서 따로 로그인한 토큰은 그대로다. 앱과 확장(위젯, 알림)이 토큰을 같이 쓰면 저장소를 공유해서 갱신된 토큰을 바로 같이 봐야 한다.
 - 로그인 유지: 한 번 로그인하면 30일 동안 로그인 화면 없이 넘어간다. prompt=none, login, select_account, consent와 max_age, login_hint를 지원한다.
 - 로그아웃: refresh token을 폐기(revoke)한 뒤 브라우저를 end session으로 보낸다. id_token_hint를 꼭 붙인다 (없으면 "로그아웃할까요?" 확인 화면이 뜬다). post_logout_redirect_uri는 콘솔에 등록한 "로그아웃 후 이동 주소"와 정확히 같아야 앱으로 돌아온다 (경로 없는 주소만 끝의 /를 같게 본다). client_id는 붙여도 되고 안 붙여도 된다. Auth.js의 signOut()처럼 앱 쿠키만 지우는 함수로는 Seogaemo 로그인이 끝나지 않으니, 위 두 단계를 직접 한다.
+- 서버 알림 (OIDC Back-Channel Logout 1.0): 앱 서버에 사용자 데이터가 있으면 콘솔 연동 화면의 "서버 알림"에 주소를 등록한다. 로그인 세션이 끝나거나 계정이 지워지면 Seogaemo가 그 주소로 POST한다 (Content-Type: application/x-www-form-urlencoded, 본문 logout_token=<JWT>).
+  - JWT 헤더 typ은 logout+jwt, alg는 이 앱의 ID 토큰 서명 방식. jwks_uri로 서명을 확인하고 iss, aud(= client_id), iat(최근인지), events를 본다. nonce가 있으면 거절한다.
+  - 클레임: sub는 늘 있다. sid는 로그인 세션 하나가 끝났을 때만 있다 (ID 토큰과 access token의 sid와 같은 값). sid가 없으면 그 sub의 모든 세션이 끝난 것이다 (관리자가 세션 끊기, 정지).
+  - events에는 "http://schemas.openid.net/event/backchannel-logout": {}가 늘 있다. 계정이 지워졌으면 "https://schemas.openid.net/secevent/risc/event-type/account-purged": {}가 같이 있고, 이때는 그 sub의 데이터를 지운다. 복구 기간은 없고, 다시 가입하면 새 sub다.
+  - 처리: 그 sub(와 sid)이면서 iat가 알림의 iat보다 이른 access token을 거절한다. 다시 로그인해서 받은 새 토큰은 통과시킨다. 1시간(access token 수명) 지난 거절 기록은 지워도 된다.
+  - 성공하면 200이나 204를 돌려준다. 그 밖의 응답이나 연결 실패면 1분, 5분, 30분, 2시간, 6시간, 12시간 간격으로 다시 보낸다 (로그아웃은 하루, 계정 삭제는 7일까지). 재전송은 jti가 같으니 jti로 중복을 거른다.
+  - 앱이 직접 refresh token을 revoke한 경우에는 알림이 가지 않는다.
 - 네이티브 앱은 ASWebAuthenticationSession(iOS), Custom Tabs(Android)로 연다. WebView 안에서 열면 Google 로그인과 패스키가 막힌다.
 - 계정 관리(비밀번호, 기기, 탈퇴) 화면: ${f.accountUrl} (새 탭으로 열어도 된다)
 - Client Secret, AUTH_SECRET 같은 값은 .env.local 등 커밋하지 않는 파일에 둔다. 프로젝트에 .gitignore가 없으면 만든다.

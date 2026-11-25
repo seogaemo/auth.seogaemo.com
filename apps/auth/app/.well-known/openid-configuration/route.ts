@@ -35,6 +35,9 @@ export function GET() {
       request_parameter_supported: false,
       request_uri_parameter_supported: false,
       claims_parameter_supported: false,
+      // OIDC Back-Channel Logout 1.0: 앱이 콘솔에 주소를 등록하면 로그아웃, 계정 삭제를 알린다. 알림에는 sid가 들어간다
+      backchannel_logout_supported: true,
+      backchannel_logout_session_supported: true,
     },
     { headers: { ...CORS_HEADERS, "Cache-Control": "public, max-age=300" } },
   );

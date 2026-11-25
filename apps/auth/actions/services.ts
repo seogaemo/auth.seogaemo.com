@@ -6,6 +6,7 @@ import { getPrisma, getR2 } from "@/cloudflare";
 import { parseAllowlist } from "@/lib/allowlist";
 import { requireDeveloper, requireServiceAccess } from "@/lib/console/session";
 import {
+  parseBackchannelUri,
   parseHexColor,
   parseOptionalHttpsUrl,
   parseProviders,
@@ -16,6 +17,7 @@ import {
 import { hashSecret, randomToken } from "@/lib/crypto";
 import { PROVIDERS } from "@/lib/config";
 import { recordAudit } from "@/lib/events";
+import { retryDelivery } from "@/lib/backchannel";
 import { deleteUser } from "@/lib/oauth/delete-user";
 import { endAllSessions } from "@/lib/oauth/session";
 
@@ -78,6 +80,31 @@ export async function createService(_prev: ActionState, form: FormData): Promise
 /** 앱 화면 전체(개요, 연동, 로그인 화면, 사이드바의 앱 이름)를 다시 그린다 */
 function revalidateService(serviceId: string) {
   revalidatePath(`/console/services/${serviceId}`, "layout");
+}
+
+/** 연동: back-channel logout 주소. 비우면 알림을 끈다 */
+export async function updateBackchannel(serviceId: string, _prev: ActionState, form: FormData): Promise<ActionState> {
+  const { developer } = await requireServiceAccess(serviceId);
+  const fields = echo(form, "backchannelLogoutUri");
+  const parsed = parseBackchannelUri(String(form.get("backchannelLogoutUri") ?? ""));
+  if ("error" in parsed) return { error: parsed.error, fields };
+
+  await getPrisma().service.update({ where: { id: serviceId }, data: { backchannelLogoutUri: parsed.uri } });
+  await recordAudit(serviceId, developer, "backchannel.update", parsed.uri);
+  revalidateService(serviceId);
+  return {
+    message: parsed.uri
+      ? "저장했어요. 이제 로그아웃과 계정 삭제를 이 주소로 알려요."
+      : "알림을 껐어요. 이미 쌓인 알림은 원래 주소로 마저 보내요.",
+  };
+}
+
+/** 전달하지 못한 back-channel 알림을 다시 보낸다 */
+export async function retryBackchannelDelivery(serviceId: string, deliveryId: string): Promise<ActionState> {
+  await requireServiceAccess(serviceId);
+  const ok = await retryDelivery(serviceId, deliveryId);
+  revalidatePath(`/console/services/${serviceId}/integration`);
+  return ok ? { message: "다시 보내고 있어요. 잠시 뒤 결과가 바뀌어요." } : { error: "이미 전달됐거나 지워진 알림이에요." };
 }
 
 /** 연동: Redirect URI와 로그아웃 후 이동 주소 */

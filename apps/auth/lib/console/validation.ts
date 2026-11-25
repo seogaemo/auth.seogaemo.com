@@ -83,3 +83,27 @@ export function webOrigins(uris: string[]) {
   });
   return [...new Set(origins)];
 }
+
+/**
+ * back-channel logout 주소. 서버가 직접 POST하니 웹 주소만 받는다 (https, 개발용 localhost만 http).
+ * 비우면 null (알림을 끈다).
+ */
+export function parseBackchannelUri(input: string): { uri: string | null } | { error: string } {
+  const value = input.trim();
+  if (!value) return { uri: null };
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    return { error: `https://api.example.com/auth/backchannel-logout 형식으로 입력하세요: ${value}` };
+  }
+  if (url.hash || value.includes("#")) return { error: `# 뒤 부분을 빼고 입력하세요: ${value}` };
+  if (url.username || url.password) return { error: `주소에서 아이디와 비밀번호(user:pass@)를 빼고 입력하세요: ${value}` };
+  if (url.protocol === "http:" && !LOCAL_HOSTS.has(url.hostname)) {
+    return { error: `http는 localhost에서만 쓸 수 있어요. https로 바꿔 입력하세요: ${value}` };
+  }
+  if (url.protocol !== "https:" && url.protocol !== "http:") {
+    return { error: `서버 주소(https://...)를 입력하세요. 앱 스킴으로는 보낼 수 없어요: ${value}` };
+  }
+  return { uri: url.toString() };
+}

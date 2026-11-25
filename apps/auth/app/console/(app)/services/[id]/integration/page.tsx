@@ -10,14 +10,19 @@ export const metadata = { title: "연동" };
 export default async function IntegrationPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const { service } = await requireServiceAccess(id);
-  const hasUsers = (await getPrisma().user.count({ where: { serviceId: service.id }, take: 1 })) > 0;
+  const prisma = getPrisma();
+  const [userCount, deliveries] = await Promise.all([
+    prisma.user.count({ where: { serviceId: service.id }, take: 1 }),
+    prisma.backchannelDelivery.findMany({ where: { serviceId: service.id }, orderBy: { createdAt: "desc" }, take: 20 }),
+  ]);
+  const hasUsers = userCount > 0;
 
   return (
     <Page wide>
       <BackLink href={`/console/services/${service.id}`} label={service.name} />
       <div className="flex flex-col gap-8">
         <ServiceHeader id={service.id} name={service.name} hasLogo={!!service.logoKey} subtitle="연동" />
-        <Integration service={service} firstRun={!hasUsers} />
+        <Integration service={service} firstRun={!hasUsers} deliveries={deliveries} />
       </div>
     </Page>
   );

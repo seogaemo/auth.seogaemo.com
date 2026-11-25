@@ -13,6 +13,8 @@ export const RETENTION = {
   loginEventDays: 90,
   /** 콘솔 활동 기록 */
   auditLogDays: 365,
+  /** back-channel logout 전달 기록 (콘솔의 전달 내역). 재전송은 길어야 7일이다 */
+  backchannelDays: 30,
 } as const;
 
 const RULES: { table: string; where: string }[] = [
@@ -35,6 +37,10 @@ const RULES: { table: string; where: string }[] = [
   },
   { table: "LoginEvent", where: `julianday("createdAt") < julianday('now', '-${RETENTION.loginEventDays} days')` },
   { table: "AuditLog", where: `julianday("createdAt") < julianday('now', '-${RETENTION.auditLogDays} days')` },
+  {
+    table: "BackchannelDelivery",
+    where: `julianday("createdAt") < julianday('now', '-${RETENTION.backchannelDays} days') AND "nextAttemptAt" IS NULL`,
+  },
 ];
 
 export async function cleanupExpired(db: D1Database) {
