@@ -46,6 +46,8 @@ const disc = await (await get("/.well-known/openid-configuration")).json();
 check("RS256 is advertised (OIDC Discovery 3)", disc.id_token_signing_alg_values_supported?.includes("RS256"), JSON.stringify(disc.id_token_signing_alg_values_supported));
 check("request_uri_parameter_supported=false (Discovery 3, default is true)", disc.request_uri_parameter_supported === false && disc.request_parameter_supported === false);
 check("response_modes_supported=[query]", JSON.stringify(disc.response_modes_supported) === '["query"]');
+check("subject_types_supported=[pairwise] (sub differs per app)", JSON.stringify(disc.subject_types_supported) === '["pairwise"]');
+check("amr is in claims_supported", disc.claims_supported?.includes("amr"));
 let r = await get("/.well-known/jwks.json", { origin: "https://app.example.com" });
 const jwks = await r.json();
 check("JWKS readable from browsers (CORS)", r.headers.get("access-control-allow-origin") === "*");
@@ -71,6 +73,16 @@ r = await get(`/oauth/authorize?${authorizeQuery({ prompt: "consent" })}`, { coo
 check("prompt=consent with a session asks first (Core 3.1.2.1)", loc(r).endsWith("/login/continue"), loc(r));
 r = await get(`/oauth/authorize?${authorizeQuery()}`, { cookie: bc });
 check("without prompt the session still continues silently", new URL(loc(r)).searchParams.has("code"), loc(r));
+
+console.log("--- auth_time, amr (RFC 9068 2.2.1, RFC 8176)");
+{
+  const viaSession = await (await form("/oauth/token", { grant_type: "authorization_code", code: new URL(loc(r)).searchParams.get("code"), redirect_uri: R, code_verifier: verifier, ...DEV })).json();
+  const at = decode(viaSession.access_token), it = decode(viaSession.id_token);
+  check("password session -> amr [pwd] in the ID token", JSON.stringify(it.amr) === '["pwd"]', JSON.stringify(it));
+  check("access token carries amr and auth_time too", JSON.stringify(at.amr) === '["pwd"]' && at.auth_time === it.auth_time && typeof at.auth_time === "number", JSON.stringify(at));
+  const again = await (await form("/oauth/token", { grant_type: "refresh_token", refresh_token: viaSession.refresh_token, ...DEV })).json();
+  check("refresh keeps amr and auth_time in both tokens", JSON.stringify(decode(again.access_token).amr) === '["pwd"]' && decode(again.access_token).auth_time === at.auth_time && JSON.stringify(decode(again.id_token).amr) === '["pwd"]', JSON.stringify(decode(again.access_token)));
+}
 
 console.log("--- token endpoint");
 const t = await tokens();

@@ -372,12 +372,14 @@ function rules(f: AppFacts) {
   - revocation: ${f.issuer}/oauth/revoke (RFC 7009, refresh token만 폐기할 수 있다)
   - end session: ${f.issuer}/oauth/logout (RP-Initiated Logout)
   - JWKS: ${f.issuer}/.well-known/jwks.json (CORS 열림)
-- scope: openid, email, profile. 클레임은 sub(앱마다 다른 사용자 ID), email, email_verified, name, preferred_username, picture.
+- scope: openid, email, profile. 클레임은 sub, email, email_verified, name, preferred_username, picture, auth_time, amr.
+- sub: 이 앱(Client ID) 안에서의 사용자 ID. 앱마다 다르다 (pairwise). 한 번 만들어지면 바뀌지 않고, 이메일이나 로그인 수단을 나중에 연결해도 그대로다. 다만 탈퇴 뒤 다시 가입하거나, 앱 관리자가 콘솔에서 사용자를 지웠거나, 제공자가 검증하지 않은 이메일(또는 다른 이메일)로 로그인하면 같은 사람이어도 새 sub가 생긴다. 사용자 데이터는 이메일이 아니라 sub에 묶는다.
+- amr: 직접 인증한 수단. pwd(비밀번호), otp(메일 코드), hwk + user(패스키), fed(Google, 카카오). auth_time: 마지막으로 직접 인증한 시각. 둘 다 ID 토큰과 access token에 들어가고, 갱신해도 처음 값 그대로다. 되돌릴 수 없는 작업 전에 "방금 다시 로그인"을 확인하려면 max_age=0(또는 prompt=login)으로 로그인을 다시 받고 auth_time을 본다.
 - redirect_uri는 콘솔에 등록한 값과 글자 하나까지 같아야 한다 (끝의 /, 포트, 경로 포함). 웹은 https만, 개발용 localhost는 http도 된다. 네이티브 앱은 com.example.app:/oauth/callback 같은 역도메인 스킴. 127.0.0.1, [::1] 루프백은 포트만 달라도 된다.
 - 인가 응답에 iss가 붙는다 (RFC 9207). 응답은 query로만 온다 (response_mode=query).
 - 클라이언트 인증: 서버가 있는 웹앱은 client_secret_basic 또는 client_secret_post, SPA와 모바일 앱(public client)은 none(PKCE만). public client가 시크릿을 보내면 거절된다.
 - ID 토큰 서명은 앱마다 RS256 또는 ES256 (콘솔 연동 > 토큰 설정). ES256이면 라이브러리에 id_token_signed_response_alg: "ES256"을 알려야 하는 경우가 있다 (Auth.js, openid-client).
-- 토큰: access token은 1시간짜리 JWT (aud = client_id). refresh token은 offline_access 없이도 항상 나오고 30일, 쓸 때마다 새 것으로 바뀐다(회전). 응답의 새 refresh token을 저장하고 이전 것은 버린다. 바뀐 지 ${f.graceSec}초가 지난 이전 토큰을 다시 쓰면 탈취로 보고 그 사용자의 토큰을 모두 끊는다.
+- 토큰: access token은 1시간짜리 JWT (RFC 9068, aud = client_id). 앱 서버는 jwks_uri로 서명을 확인하고 iss, exp, aud를 본다. refresh token은 offline_access 없이도 항상 나오고, 쓸 때마다 새 것으로 바뀐다(회전). 새 토큰은 다시 30일이라, 30일 안에 한 번이라도 갱신하면 로그인이 계속 이어진다 (절대 만료 없음). 응답의 새 refresh token을 저장하고 이전 것은 버린다. 바뀐 지 ${f.graceSec}초가 지난 이전 토큰을 다시 쓰면 탈취로 보고 그 사용자의 토큰을 모두 끊는다.
 - 로그인 유지: 한 번 로그인하면 30일 동안 로그인 화면 없이 넘어간다. prompt=none, login, select_account, consent와 max_age, login_hint를 지원한다.
 - 로그아웃: refresh token을 폐기(revoke)한 뒤 브라우저를 end session으로 보낸다. id_token_hint를 꼭 붙인다 (없으면 "로그아웃할까요?" 확인 화면이 뜬다). post_logout_redirect_uri는 콘솔에 등록한 "로그아웃 후 이동 주소"와 정확히 같아야 앱으로 돌아온다 (경로 없는 주소만 끝의 /를 같게 본다). client_id는 붙여도 되고 안 붙여도 된다. Auth.js의 signOut()처럼 앱 쿠키만 지우는 함수로는 Seogaemo 로그인이 끝나지 않으니, 위 두 단계를 직접 한다.
 - 네이티브 앱은 ASWebAuthenticationSession(iOS), Custom Tabs(Android)로 연다. WebView 안에서 열면 Google 로그인과 패스키가 막힌다.

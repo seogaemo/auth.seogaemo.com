@@ -57,6 +57,7 @@ async function exchangeAuthorizationCode(service: Service, form: URLSearchParams
       nonce: record.nonce,
       sessionId: record.sessionId,
       authTime: record.authTime,
+      authMethod: record.authMethod,
     }),
   );
 }
@@ -119,7 +120,16 @@ async function rotateRefreshToken(service: Service, form: URLSearchParams) {
   }
 
   // 새 ID 토큰의 auth_time은 처음 인증 시각 그대로, nonce는 넣지 않는다 (OIDC Core 12.2)
-  return json(await issueTokens({ service, user: record.user, scope, sessionId: record.sessionId, authTime: record.authTime }));
+  return json(
+    await issueTokens({
+      service,
+      user: record.user,
+      scope,
+      sessionId: record.sessionId,
+      authTime: record.authTime,
+      authMethod: record.authMethod,
+    }),
+  );
 }
 
 /** 갱신으로 교체된 지 유예 시간 안인지 */

@@ -20,11 +20,12 @@ export function GET() {
       response_types_supported: ["code"],
       response_modes_supported: ["query"],
       grant_types_supported: ["authorization_code", "refresh_token"],
-      subject_types_supported: ["public"],
+      // sub는 앱(Client ID)마다 다르다. 사용자가 서비스마다 따로 있어서 같은 사람도 앱마다 다른 sub를 받는다
+      subject_types_supported: ["pairwise"],
       // OIDC Discovery 3: RS256은 반드시 들어가야 한다. 앱마다 콘솔에서 고른다
       id_token_signing_alg_values_supported: idTokenAlgsSupported(),
       scopes_supported: SUPPORTED_SCOPES,
-      claims_supported: ["sub", "iss", "aud", "exp", "iat", "auth_time", "nonce", "sid", "email", "email_verified", "name", "preferred_username", "picture"],
+      claims_supported: ["sub", "iss", "aud", "exp", "iat", "auth_time", "amr", "nonce", "sid", "email", "email_verified", "name", "preferred_username", "picture"],
       prompt_values_supported: SUPPORTED_PROMPTS,
       token_endpoint_auth_methods_supported: ["client_secret_basic", "client_secret_post", "none"],
       revocation_endpoint_auth_methods_supported: ["client_secret_basic", "client_secret_post", "none"],

@@ -4,6 +4,7 @@ import { getPrisma } from "@/cloudflare";
 import { TTL } from "../config";
 import { hashSecret, randomToken } from "../crypto";
 import { signAccessToken, signIdToken } from "../token";
+import { amrFor } from "./amr";
 
 function hasScope(scope: string, value: string) {
   return scope.split(" ").includes(value);
@@ -39,8 +40,15 @@ export async function issueTokens(params: {
   sessionId?: string | null;
   /** 마지막 직접 인증 시각 (id_token auth_time). refresh token에도 남겨 갱신 때 그대로 쓴다 */
   authTime?: Date | null;
+  /** 직접 인증한 수단 (amr). refresh token에도 남겨 갱신 때 그대로 쓴다 */
+  authMethod?: string | null;
 }) {
-  const { service, user, scope, nonce, sessionId, authTime } = params;
+  const { service, user, scope, nonce, sessionId, authTime, authMethod } = params;
+  // 앱 서버가 "방금 다시 로그인했는지", "어떤 수단으로 들어왔는지"를 access token만 보고 판단할 수 있게 둘 다 넣는다 (RFC 9068 2.2.1)
+  const authClaims = {
+    ...(authTime ? { auth_time: Math.floor(authTime.getTime() / 1000) } : {}),
+    ...(amrFor(authMethod) ? { amr: amrFor(authMethod) } : {}),
+  };
 
   const refreshToken = randomToken();
   await getPrisma().refreshToken.create({
@@ -51,6 +59,7 @@ export async function issueTokens(params: {
       scope,
       sessionId: sessionId ?? null,
       authTime: authTime ?? null,
+      authMethod: authMethod ?? null,
       expiresAt: new Date(Date.now() + TTL.refreshTokenMs),
     },
   });
@@ -60,6 +69,7 @@ export async function issueTokens(params: {
     aud: service.clientId,
     client_id: service.clientId,
     scope,
+    ...authClaims,
   });
 
   const idToken = hasScope(scope, "openid")
@@ -69,7 +79,7 @@ export async function issueTokens(params: {
         aud: service.clientId,
         ...(nonce ? { nonce } : {}),
         ...(sessionId ? { sid: sessionId } : {}),
-        ...(authTime ? { auth_time: Math.floor(authTime.getTime() / 1000) } : {}),
+        ...authClaims,
       }, service.idTokenSigningAlg === "RS256" ? "RS256" : "ES256")
     : undefined;
 

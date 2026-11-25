@@ -185,6 +185,8 @@ model AuthorizationCode {
   /// 이 code를 만든 로그인 세션과 마지막으로 직접 인증한 시각 (id_token의 sid, auth_time)
   sessionId           String?
   authTime            DateTime?
+  /// 직접 인증한 수단 (password, email, google, kakao, passkey). 토큰의 amr
+  authMethod          String?
 
   expiresAt DateTime
   usedAt    DateTime?
@@ -205,6 +207,8 @@ model RefreshToken {
   sessionId String?
   /// 이 토큰을 처음 받게 한 직접 인증 시각. 회전해도 이어진다 (갱신 ID 토큰의 auth_time, OIDC Core 12.2)
   authTime  DateTime?
+  /// 처음 직접 인증한 수단. 회전해도 이어진다 (amr)
+  authMethod String?
   expiresAt DateTime
   revokedAt DateTime?
   /// 갱신으로 교체된 시각. 로그아웃, 폐기로 끊긴 토큰은 비어 있다 (유예 시간은 교체된 토큰에만)

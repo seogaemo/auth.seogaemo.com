@@ -25,7 +25,7 @@ type CodeRequest = Pick<
 >;
 
 /** authorization code를 만들고 서비스로 돌아갈 주소를 돌려준다 */
-export async function issueCode(request: CodeRequest, session: Pick<Session, "id" | "userId" | "authTime">) {
+export async function issueCode(request: CodeRequest, session: Pick<Session, "id" | "userId" | "authTime" | "method">) {
   const code = randomToken();
   await getPrisma().authorizationCode.create({
     data: {
@@ -39,6 +39,7 @@ export async function issueCode(request: CodeRequest, session: Pick<Session, "id
       codeChallengeMethod: request.codeChallengeMethod,
       sessionId: session.id || null,
       authTime: session.authTime,
+      authMethod: session.method,
       expiresAt: new Date(Date.now() + TTL.authorizationCodeMs),
     },
   });
@@ -79,5 +80,5 @@ export async function finishLogin(transaction: LoginTransaction, userId: string,
   await recordLoginEvent({ serviceId: transaction.serviceId, type: "login", userId, email: user.email, method });
 
   if (transaction.returnTo) return transaction.returnTo;
-  return issueCode(transaction, session ?? { id: "", userId, authTime: new Date() });
+  return issueCode(transaction, session ?? { id: "", userId, authTime: new Date(), method });
 }

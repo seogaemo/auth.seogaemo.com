@@ -25,6 +25,10 @@ export interface AccessTokenClaims extends JWTPayload {
   /** 공백으로 구분한 scope */
   scope: string;
   client_id: string;
+  /** 마지막으로 직접 인증한 시각 (RFC 9068 2.2.1). 갱신해도 그대로다 */
+  auth_time?: number;
+  /** 직접 인증한 수단 (RFC 8176 값, lib/oauth/amr.ts) */
+  amr?: string[];
 }
 
 export interface IdTokenClaims extends JWTPayload {
@@ -34,6 +38,7 @@ export interface IdTokenClaims extends JWTPayload {
   /** 로그인 세션 id (RP-Initiated Logout의 id_token_hint로 돌아온다) */
   sid?: string;
   auth_time?: number;
+  amr?: string[];
   email?: string;
   email_verified?: boolean;
   name?: string;
@@ -148,7 +153,7 @@ async function sign(
 }
 
 /** RFC 9068 JWT access token. jti는 토큰마다 다른 값이어야 한다 (2.2) */
-export function signAccessToken(claims: Pick<AccessTokenClaims, "sub" | "aud" | "scope" | "client_id">) {
+export function signAccessToken(claims: Pick<AccessTokenClaims, "sub" | "aud" | "scope" | "client_id" | "auth_time" | "amr">) {
   return sign({ ...claims, jti: crypto.randomUUID() }, "at+jwt");
 }
 
