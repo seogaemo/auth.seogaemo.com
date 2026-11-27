@@ -41,7 +41,7 @@ export default async function ActivityPage({
       <div className="flex flex-col gap-6">
         <ServiceHeader id={service.id} name={service.name} hasLogo={!!service.logoKey} subtitle="활동 기록 / 최근 1년" />
 
-        <ActivityList logs={logs} />
+        <ActivityList serviceId={service.id} logs={logs} />
 
         {pages > 1 && (
           <nav aria-label="페이지" className="flex justify-center gap-4 py-4 text-footnote">

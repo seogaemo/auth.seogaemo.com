@@ -290,7 +290,7 @@ model AuditLog {
   /// settings.update, branding.update, secret.rotate, member.add, member.remove,
   /// user.delete, user.disable, user.enable, user.sessions.revoke, signup.update
   action     String
-  /// 대상 (사용자 이메일, 관리자 이메일 등)
+  /// 대상 (user.* 는 사용자 ID, member.* 는 관리자 이메일)
   target     String?
 
   createdAt DateTime @default(now())

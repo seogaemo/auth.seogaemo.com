@@ -109,7 +109,7 @@ export default async function MembersPage({ params }: { params: Promise<{ id: st
         )}
 
         <Block title="최근 활동" description="관리자들이 이 앱에서 바꾼 것. 1년 동안 남아요.">
-          <ActivityList logs={recent} />
+          <ActivityList serviceId={service.id} logs={recent} />
           {recent.length > 0 && (
             <Link
               href={`/console/services/${service.id}/members/activity`}

@@ -255,7 +255,7 @@ export async function deleteServiceUser(serviceId: string, userId: string) {
   const { developer, user } = await serviceUser(serviceId, userId);
   if (!user) return;
   await deleteUser(user);
-  await recordAudit(serviceId, developer, "user.delete", user.email ?? user.id);
+  await recordAudit(serviceId, developer, "user.delete", user.id);
   revalidatePath(`/console/services/${serviceId}/users`);
 }
 
@@ -294,7 +294,7 @@ export async function deleteServiceUserFromDetail(serviceId: string, userId: str
   const { developer, user } = await serviceUser(serviceId, userId);
   if (user) {
     await deleteUser(user);
-    await recordAudit(serviceId, developer, "user.delete", user.email ?? user.id);
+    await recordAudit(serviceId, developer, "user.delete", user.id);
   }
   return { redirectTo: `/console/services/${serviceId}/users` };
 }
@@ -305,7 +305,7 @@ export async function setUserDisabled(serviceId: string, userId: string, disable
   if (!user) return { error: "이미 지워진 사용자예요. 목록으로 돌아가세요." };
   await getPrisma().user.update({ where: { id: user.id }, data: { disabledAt: disabled ? new Date() : null } });
   if (disabled) await endAllSessions(serviceId, user.id);
-  await recordAudit(serviceId, developer, disabled ? "user.disable" : "user.enable", user.email ?? user.id);
+  await recordAudit(serviceId, developer, disabled ? "user.disable" : "user.enable", user.id);
   revalidatePath(`/console/services/${serviceId}/users/${userId}`);
   return { message: disabled ? "정지했어요. 이 사용자의 로그인과 토큰을 모두 끊었어요." : "정지를 풀었어요. 다시 로그인할 수 있어요." };
 }
@@ -314,7 +314,7 @@ export async function revokeUserSessions(serviceId: string, userId: string): Pro
   const { developer, user } = await serviceUser(serviceId, userId);
   if (!user) return { error: "이미 지워진 사용자예요. 목록으로 돌아가세요." };
   await endAllSessions(serviceId, user.id);
-  await recordAudit(serviceId, developer, "user.sessions.revoke", user.email ?? user.id);
+  await recordAudit(serviceId, developer, "user.sessions.revoke", user.id);
   revalidatePath(`/console/services/${serviceId}/users/${userId}`);
   return { message: "모든 기기의 로그인과 refresh token을 끊었어요. 다음 요청부터 다시 로그인해야 해요." };
 }
